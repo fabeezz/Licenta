@@ -8,3 +8,7 @@ pillow
 rembg
 onnxruntime
 colorthief
+alembic
+torch
+transformers
+Pillow

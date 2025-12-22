@@ -27,7 +27,7 @@ os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
 app.mount("/media", StaticFiles(directory=settings.MEDIA_ROOT), name="media")
 
 # creăm tabelele pe baza modelelor ORM (MVP; poți trece la Alembic ulterior)
-Base.metadata.create_all(bind=engine)
+# Base.metadata.create_all(bind=engine)
 
 # înregistrăm routerul pentru garderobă
 app.include_router(wardrobe_router)
