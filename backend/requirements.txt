@@ -2,6 +2,7 @@ fastapi
 uvicorn
 sqlalchemy
 pydantic-settings
+pydantic[email]
 psycopg2-binary
 python-multipart
 pillow
@@ -12,3 +13,5 @@ alembic
 torch
 transformers
 Pillow
+bcrypt
+python-jose[cryptography]

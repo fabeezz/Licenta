@@ -1,7 +1,7 @@
 from collections import Counter
 from PIL import Image
 from typing import Dict, List
-from app.services.color_utils import rgb_to_color_name
+from app.services.image.color_utils import rgb_to_color_name
 
 class ColorThiefExtractor:
     def __init__(self, palette_size: int = 5, quality: int = 2):

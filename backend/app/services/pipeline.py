@@ -3,13 +3,13 @@ from typing import Any, Dict, List
 from PIL import Image
 
 from app.services.storage import save_upload
-from app.services.bg_removal import remove_background
-from app.services.preprocess import ImagePrepConfig, load_prepared_rgb
-from app.services.color_extractor_colorthief import ColorThiefExtractor
-from app.services.category_classifier_clip import ClipCategoryClassifier, ClipPrediction
-from app.services.material_classifier import MaterialClassifier
-from app.services.occasion_classifier import OccasionClassifier
-from app.services.season_logic import infer_season
+from app.services.image.bg_removal import remove_background
+from app.services.image.preprocess import ImagePrepConfig, load_prepared_rgb
+from app.services.image.color_extractor_colorthief import ColorThiefExtractor
+from app.services.ai.category_classifier import ClipCategoryClassifier, ClipPrediction
+from app.services.ai.material_classifier import ClipMaterialClassifier
+from app.services.ai.occasion_classifier import ClipOccasionClassifier
+from app.services.ai.season_logic import infer_season
 
 logger = logging.getLogger(__name__)
 
@@ -18,8 +18,8 @@ class ItemPipeline:
         self,
         color_extractor: ColorThiefExtractor,
         category_classifier: ClipCategoryClassifier,
-        material_classifier: MaterialClassifier, # <--- Now required
-        occasion_classifier: OccasionClassifier, # <--- Now required
+        material_classifier: ClipMaterialClassifier,
+        occasion_classifier: ClipOccasionClassifier,
         categories_en: List[str],
         prep_cfg: ImagePrepConfig = ImagePrepConfig(max_size=400, crop_to_alpha=True),
     ):

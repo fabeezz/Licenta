@@ -1,10 +1,10 @@
 from typing import List
 from PIL import Image
 
-from app.services.clip_attribute_classifier import ClipAttributeClassifier, AttributePrediction
-from app.services.ai_config import OCCASION_LABELS
+from app.services.ai.clip_attribute_classifier import ClipAttributeClassifier, AttributePrediction
+from app.services.ai.config import OCCASION_LABELS
 
-class OccasionClassifier:
+class ClipOccasionClassifier:
     def __init__(self, base_classifier: ClipAttributeClassifier) -> None:
         self._base = base_classifier
         self._labels: List[str] = OCCASION_LABELS
@@ -26,6 +26,7 @@ class OccasionClassifier:
             "shorts": "casual",
             "sneakers": "casual",
             "blazer": "formal",
+            "jacket": "casual",
         }
 
     def predict(self, rgb_img: Image.Image, category: str | None) -> AttributePrediction:

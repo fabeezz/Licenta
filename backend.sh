@@ -1,6 +1,6 @@
 set -e
 
-PROJECT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/backend" 
+PROJECT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/backend"
 cd "$PROJECT_DIR"
 
 VENV_DIR="$PROJECT_DIR/venv"

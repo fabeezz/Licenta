@@ -1,10 +1,10 @@
 from typing import List
 from PIL import Image
 
-from app.services.clip_attribute_classifier import ClipAttributeClassifier, AttributePrediction
-from app.services.ai_config import MATERIAL_LABELS
+from app.services.ai.clip_attribute_classifier import ClipAttributeClassifier, AttributePrediction
+from app.services.ai.config import MATERIAL_LABELS
 
-class MaterialClassifier:
+class ClipMaterialClassifier:
     def __init__(self, base_classifier: ClipAttributeClassifier) -> None:
         self._base = base_classifier
         self._labels: List[str] = MATERIAL_LABELS

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import List, Tuple
 from PIL import Image
 
-from app.services.clip_attribute_classifier import ClipAttributeClassifier, AttributePrediction
+from app.services.ai.clip_attribute_classifier import ClipAttributeClassifier, AttributePrediction
 
 @dataclass
 class ClipPrediction:

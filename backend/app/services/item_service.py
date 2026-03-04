@@ -1,37 +1,33 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Iterable, List
+from typing import Iterable
 
 from sqlalchemy.orm import Session
-from sqlalchemy import asc, desc, func
+from sqlalchemy import asc, desc, func, text
 
-from app.models.wardrobe import WardrobeItem
-from app.schemas.wardrobe import WardrobeItemUpdate
-from app.services.color_extractor_colorthief import ColorThiefExtractor
-from app.services.clip_attribute_classifier import ClipAttributeClassifier
-from app.services.category_classifier_clip import ClipCategoryClassifier
-from app.services.material_classifier import MaterialClassifier
-from app.services.occasion_classifier import OccasionClassifier
+from app.models.item import Item
+from app.schemas.item import ItemUpdate
+from app.services.image.color_extractor_colorthief import ColorThiefExtractor
+from app.services.ai.clip_attribute_classifier import ClipAttributeClassifier
+from app.services.ai.category_classifier import ClipCategoryClassifier
+from app.services.ai.material_classifier import ClipMaterialClassifier
+from app.services.ai.occasion_classifier import ClipOccasionClassifier
 from app.services.pipeline import ItemPipeline
-from app.services.ai_config import CATEGORIES_EN, CLIP_MODEL_ID
+from app.services.ai.config import CATEGORIES_EN, CLIP_MODEL_ID
 
-class WardrobeService:
+
+class ItemService:
     """
     Application service layer for wardrobe operations.
     Keeps FastAPI routers thin and centralizes domain logic.
     """
 
     def __init__(self) -> None:
-        # 1. LOAD THE HEAVY MODEL ONCE
         self._base_clip = ClipAttributeClassifier(CLIP_MODEL_ID)
-        
-        # 2. INJECT IT INTO THE WRAPPERS
         category_classifier = ClipCategoryClassifier(self._base_clip)
-        material_classifier = MaterialClassifier(self._base_clip)
-        occasion_classifier = OccasionClassifier(self._base_clip)
-
-        # 3. BUILD THE PIPELINE
+        material_classifier = ClipMaterialClassifier(self._base_clip)
+        occasion_classifier = ClipOccasionClassifier(self._base_clip)
         self._pipeline = ItemPipeline(
             color_extractor=ColorThiefExtractor(palette_size=5, quality=2),
             category_classifier=category_classifier,
@@ -48,28 +44,23 @@ class WardrobeService:
         file_bytes: bytes,
         ext: str,
         *,
+        user_id: int,
         brand: str | None = None,
         material: str | None = None,
         season: str | None = None,
         occasion: str | None = None,
-    ) -> WardrobeItem:
-        """
-        Full pipeline: save, remove bg, preprocess, extract colors, classify, persist.
-        """
+    ) -> Item:
         result = self._pipeline.process_upload(file_bytes, ext)
-
-        # AI suggested values
         ai_category = result["category"]
         ai_material = result.get("material")
         ai_season = result.get("season")
         ai_occasion = result.get("occasion")
-
-        # user overrides AI if provided
         material_value = material or ai_material
         season_value = season or ai_season
         occasion_value = occasion or ai_occasion
 
-        item = WardrobeItem(
+        item = Item(
+            user_id=user_id,
             image_original_name=result["image_original_name"],
             image_no_bg_name=result["image_no_bg_name"],
             color_tags=result["color_tags"],
@@ -80,11 +71,15 @@ class WardrobeService:
             occasion=(occasion_value.lower() if occasion_value else None),
             wear_count=0,
         )
-
         db.add(item)
         db.commit()
         db.refresh(item)
         return item
+
+    def delete_item(self, db: Session, item_id: int, *, user_id: int) -> None:
+        item = self.get_item_or_404(db, item_id, user_id=user_id)
+        db.delete(item)
+        db.commit()
 
     # -------- Read / list --------
 
@@ -92,8 +87,10 @@ class WardrobeService:
         self,
         db: Session,
         *,
+        user_id: int,
         category: str | None = None,
         brand: str | None = None,
+        dominant_color: str | None = None,
         material: str | None = None,
         season: str | None = None,
         occasion: str | None = None,
@@ -101,40 +98,42 @@ class WardrobeService:
         sort_dir: str = "desc",
         limit: int = 50,
         offset: int = 0,
-    ) -> Iterable[WardrobeItem]:
-        query = db.query(WardrobeItem)
-
+    ) -> Iterable[Item]:
+        query = db.query(Item).filter(Item.user_id == user_id)
         if category:
-            query = query.filter(WardrobeItem.category == category)
+            query = query.filter(Item.category == category)
         if brand:
-            query = query.filter(WardrobeItem.brand == brand)
+            query = query.filter(Item.brand == brand)
+        if dominant_color:
+            dc = dominant_color.strip().lower()
+            query = query.filter(
+                Item.color_tags.isnot(None),
+                text("(items.color_tags->'dominant'->>0) = :dc").bindparams(dc=dc),
+            )
         if material:
-            query = query.filter(WardrobeItem.material == material)
+            query = query.filter(Item.material == material)
         if season:
-            query = query.filter(WardrobeItem.season == season)
+            query = query.filter(Item.season == season)
         if occasion:
-            query = query.filter(WardrobeItem.occasion == occasion)
-
+            query = query.filter(Item.occasion == occasion)
         sort_field_map = {
-            "created_at": WardrobeItem.created_at,
-            "wear_count": WardrobeItem.wear_count,
-            "last_worn_at": WardrobeItem.last_worn_at,
+            "created_at": Item.created_at,
+            "wear_count": Item.wear_count,
+            "last_worn_at": Item.last_worn_at,
         }
-        sort_col = sort_field_map.get(sort_by, WardrobeItem.created_at)
-
+        sort_col = sort_field_map.get(sort_by, Item.created_at)
         if sort_dir == "asc":
             query = query.order_by(asc(sort_col))
         else:
             query = query.order_by(desc(sort_col))
-
         return query.offset(offset).limit(limit).all()
 
     # -------- Update / mutations --------
 
-    def get_item_or_404(self, db: Session, item_id: int) -> WardrobeItem:
-        item = db.query(WardrobeItem).filter(WardrobeItem.id == item_id).first()
+    def get_item_or_404(self, db: Session, item_id: int, *, user_id: int) -> Item:
+        from fastapi import HTTPException
+        item = db.query(Item).filter(Item.id == item_id, Item.user_id == user_id).first()
         if not item:
-            from fastapi import HTTPException
             raise HTTPException(status_code=404, detail="Item not found")
         return item
 
@@ -142,33 +141,32 @@ class WardrobeService:
         self,
         db: Session,
         item_id: int,
-        payload: WardrobeItemUpdate,
-    ) -> WardrobeItem:
-        item = self.get_item_or_404(db, item_id)
-
-        data = payload.dict(exclude_unset=True)
+        payload: ItemUpdate,
+        *,
+        user_id: int,
+    ) -> Item:
+        item = self.get_item_or_404(db, item_id, user_id=user_id)
+        data = payload.model_dump(exclude_unset=True) if hasattr(payload, "model_dump") else payload.dict(exclude_unset=True)
         for field, value in data.items():
             setattr(item, field, value)
-
         db.commit()
         db.refresh(item)
         return item
 
-    def mark_item_worn(self, db: Session, item_id: int) -> WardrobeItem:
-        item = self.get_item_or_404(db, item_id)
-
+    def mark_item_worn(self, db: Session, item_id: int, *, user_id: int) -> Item:
+        item = self.get_item_or_404(db, item_id, user_id=user_id)
         item.wear_count += 1
         item.last_worn_at = datetime.utcnow()
-
         db.commit()
         db.refresh(item)
         return item
-    
-    def get_basic_stats(self, db: Session) -> dict:
-        total = db.query(WardrobeItem).count()
+
+    def get_basic_stats(self, db: Session, *, user_id: int) -> dict:
+        query = db.query(Item).filter(Item.user_id == user_id)
+        total = query.count()
         by_category = (
-            db.query(WardrobeItem.category, func.count(WardrobeItem.id))
-            .group_by(WardrobeItem.category)
+            query.with_entities(Item.category, func.count(Item.id))
+            .group_by(Item.category)
             .all()
         )
         return {
@@ -180,18 +178,18 @@ class WardrobeService:
         self,
         db: Session,
         *,
+        user_id: int,
         occasion: str | None = None,
         season: str | None = None,
         limit: int = 3,
-    ) -> list[WardrobeItem]:
-        query = db.query(WardrobeItem)
+    ) -> list[Item]:
+        query = db.query(Item).filter(Item.user_id == user_id)
         if occasion:
-            query = query.filter(WardrobeItem.occasion == occasion)
+            query = query.filter(Item.occasion == occasion)
         if season:
-            query = query.filter(WardrobeItem.season == season)
-        
-        query = query.order_by(WardrobeItem.wear_count.asc(), WardrobeItem.created_at.asc())
+            query = query.filter(Item.season == season)
+        query = query.order_by(Item.wear_count.asc(), Item.created_at.asc())
         return query.limit(limit).all()
 
-# Singleton instance created at module load time
-wardrobe_service = WardrobeService()
+
+item_service = ItemService()
