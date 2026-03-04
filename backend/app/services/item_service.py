@@ -174,22 +174,22 @@ class ItemService:
             "by_category": [{"category": c, "count": n} for c, n in by_category],
         }
 
-    def recommend_simple(
-        self,
-        db: Session,
-        *,
-        user_id: int,
-        occasion: str | None = None,
-        season: str | None = None,
-        limit: int = 3,
-    ) -> list[Item]:
-        query = db.query(Item).filter(Item.user_id == user_id)
-        if occasion:
-            query = query.filter(Item.occasion == occasion)
-        if season:
-            query = query.filter(Item.season == season)
-        query = query.order_by(Item.wear_count.asc(), Item.created_at.asc())
-        return query.limit(limit).all()
+    # def recommend_simple(
+    #     self,
+    #     db: Session,
+    #     *,
+    #     user_id: int,
+    #     occasion: str | None = None,
+    #     season: str | None = None,
+    #     limit: int = 3,
+    # ) -> list[Item]:
+    #     query = db.query(Item).filter(Item.user_id == user_id)
+    #     if occasion:
+    #         query = query.filter(Item.occasion == occasion)
+    #     if season:
+    #         query = query.filter(Item.season == season)
+    #     query = query.order_by(Item.wear_count.asc(), Item.created_at.asc())
+    #     return query.limit(limit).all()
 
 
 item_service = ItemService()
