@@ -1,4 +1,4 @@
-# app/services/pipeline.py
+import logging
 from typing import Any, Dict, List
 from PIL import Image
 
@@ -7,35 +7,60 @@ from app.services.bg_removal import remove_background
 from app.services.preprocess import ImagePrepConfig, load_prepared_rgb
 from app.services.color_extractor_colorthief import ColorThiefExtractor
 from app.services.category_classifier_clip import ClipCategoryClassifier, ClipPrediction
+from app.services.material_classifier import MaterialClassifier
+from app.services.occasion_classifier import OccasionClassifier
+from app.services.season_logic import infer_season
+
+logger = logging.getLogger(__name__)
 
 class ItemPipeline:
     def __init__(
         self,
         color_extractor: ColorThiefExtractor,
         category_classifier: ClipCategoryClassifier,
+        material_classifier: MaterialClassifier, # <--- Now required
+        occasion_classifier: OccasionClassifier, # <--- Now required
         categories_en: List[str],
         prep_cfg: ImagePrepConfig = ImagePrepConfig(max_size=400, crop_to_alpha=True),
     ):
         self.color_extractor = color_extractor
         self.category_classifier = category_classifier
+        self.material_classifier = material_classifier
+        self.occasion_classifier = occasion_classifier
         self.categories_en = categories_en
         self.prep_cfg = prep_cfg
 
     def process_upload(self, file_bytes: bytes, ext: str) -> Dict[str, Any]:
-        # 1) save original
+        logger.info("Starting pipeline for upload (ext=%s)", ext)
+
         original_name = save_upload(file_bytes, ext)
+        logger.debug("Saved original image: %s", original_name)
 
-        # 2) background removal
         nobg_name = remove_background(original_name)
+        logger.debug("Background removed: %s -> %s", original_name, nobg_name)
 
-        # 3) load + preprocess NO-BG for both tasks (recommended)
         rgb_img: Image.Image = load_prepared_rgb(nobg_name, self.prep_cfg)
-
-        # 4) colors
         colors = self.color_extractor.extract(rgb_img)
+        logger.debug("Extracted colors: %s", colors)
 
-        # 5) category via CLIP
-        pred: ClipPrediction = self.category_classifier.predict(rgb_img, self.categories_en, top_k=3)
+        # category
+        pred: ClipPrediction = self.category_classifier.predict(
+            rgb_img, self.categories_en, top_k=3
+        )
+        logger.info("Predicted category: %s (conf=%.3f)", pred.label, pred.confidence)
+
+        # material
+        mat_pred = self.material_classifier.predict(rgb_img, pred.label)
+        
+        logger.info("Predicted material: %s (conf=%.3f)", mat_pred.label, mat_pred.confidence)
+
+        # occasion
+        occ_pred = self.occasion_classifier.predict(rgb_img, pred.label)
+        logger.info("Predicted occasion: %s (conf=%.3f)", occ_pred.label, occ_pred.confidence)
+
+        # season
+        season = infer_season(pred.label, mat_pred.label)
+        logger.info("Inferred season: %s", season)
 
         return {
             "image_original_name": original_name,
@@ -44,4 +69,9 @@ class ItemPipeline:
             "category": pred.label,
             "category_confidence": pred.confidence,
             "category_topk": pred.topk,
+            "material": mat_pred.label,
+            "material_confidence": mat_pred.confidence,
+            "occasion": occ_pred.label,
+            "occasion_confidence": occ_pred.confidence,
+            "season": season,
         }

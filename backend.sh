@@ -25,4 +25,4 @@ else
 fi
 
 echo "[INFO] Starting backend with uvicorn ..."
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
