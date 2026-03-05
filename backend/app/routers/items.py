@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, Depends, Query, status
+from fastapi import APIRouter, UploadFile, File, Form, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user
@@ -16,10 +16,10 @@ router = APIRouter(
 @router.post("/create", response_model=ItemOut)
 async def create_item(
     image: UploadFile = File(...),
-    brand: str | None = None,
-    material: str | None = None,
-    season: str | None = None,
-    occasion: str | None = None,
+    brand: str | None = Form(None),
+    material: str | None = Form(None),
+    season: str | None = Form(None),
+    occasion: str | None = Form(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
