@@ -4,8 +4,8 @@ import com.example.outfitai.data.model.ItemOutDto
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.http.Multipart
-import retrofit2.http.POST
-import retrofit2.http.Part
+import retrofit2.http.*
+import com.example.outfitai.data.model.ItemUpdateDto
 
 interface ItemApi {
     @Multipart
@@ -17,4 +17,15 @@ interface ItemApi {
         @Part("season") season: RequestBody? = null,
         @Part("occasion") occasion: RequestBody? = null,
     ): ItemOutDto
+
+    @GET("item/read/{id}")
+    suspend fun read(@Path("id") id: Int): ItemOutDto
+    @PATCH("item/update/{id}")
+    suspend fun update(@Path("id") id: Int, @Body body: ItemUpdateDto): ItemOutDto
+    @POST("item/wear/{id}")
+    suspend fun wear(@Path("id") id: Int): ItemOutDto
+    @DELETE("item/delete/{id}")
+    suspend fun delete(@Path("id") id: Int)
+
+
 }

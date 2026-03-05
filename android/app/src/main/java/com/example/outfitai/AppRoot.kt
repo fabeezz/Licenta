@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.*
 import androidx.compose.ui.Alignment
 import com.example.outfitai.ui.auth.*
+import com.example.outfitai.ui.nav.AppNav
 import com.example.outfitai.ui.wardrobe.WardrobeRoute
 
 @Composable
@@ -27,6 +28,6 @@ fun AppRoot(vm: AuthViewModel) {
       onRegister = vm::register
     )
 
-    is AuthStatus.LoggedIn -> WardrobeRoute(onLogout = vm::logout)
+    is AuthStatus.LoggedIn -> AppNav(onLogout = vm::logout)
   }
 }

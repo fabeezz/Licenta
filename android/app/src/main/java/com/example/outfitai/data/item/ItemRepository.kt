@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import com.example.outfitai.data.api.ItemApi
 import com.example.outfitai.data.model.ItemOutDto
+import com.example.outfitai.data.model.ItemUpdateDto
 import dagger.hilt.android.qualifiers.ApplicationContext
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
@@ -55,4 +56,12 @@ class ItemRepository @Inject constructor(
             occasion = textPartOrNull(occasion),
         )
     }
+
+    suspend fun getItem(id: Int) = api.read(id)
+
+    suspend fun updateItem(id: Int, body: ItemUpdateDto) = api.update(id, body)
+
+    suspend fun wearItem(id: Int) = api.wear(id)
+
+    suspend fun deleteItem(id: Int) { api.delete(id) }
 }

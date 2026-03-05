@@ -30,6 +30,8 @@ import com.example.outfitai.ui.upload.UploadViewModel
 @Composable
 fun WardrobeRoute(
     onLogout: () -> Unit,
+    onItemClick: (Int) -> Unit,
+    onOutfitsClick: () -> Unit,
     vm: WardrobeViewModel = hiltViewModel(),
     uploadVm: UploadViewModel = hiltViewModel(),
 ) {
@@ -53,6 +55,8 @@ fun WardrobeRoute(
         uploadState = uploadState,
         onRefresh = vm::refresh,
         onLogout = onLogout,
+        onItemClick = onItemClick,
+        onOutfitsClick = onOutfitsClick,
         onAddClick = { pickerLauncher.launch("image/*") },
         onUploadDismiss = { uploadVm.setUri(null) },
         onUpload = uploadVm::upload,
@@ -70,6 +74,8 @@ fun WardrobeScreen(
     uploadState: UploadUiState,
     onRefresh: () -> Unit,
     onLogout: () -> Unit,
+    onItemClick: (Int) -> Unit,
+    onOutfitsClick: () -> Unit,
     onAddClick: () -> Unit,
     onUploadDismiss: () -> Unit,
     onUpload: () -> Unit,
@@ -83,6 +89,7 @@ fun WardrobeScreen(
             TopAppBar(
                 title = { Text("My wardrobe") },
                 actions = {
+                    TextButton(onClick = onOutfitsClick) { Text("Outfits") }
                     TextButton(onClick = onRefresh, enabled = !state.isLoading) { Text("Refresh") }
                     TextButton(onClick = onLogout) { Text("Logout") }
                 }
@@ -121,7 +128,7 @@ fun WardrobeScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     items(state.items, key = { it.id }) { item ->
-                        ItemCard(item)
+                        ItemCard(item, onClick = { onItemClick(item.id) })
                     }
                 }
             }
@@ -141,10 +148,13 @@ fun WardrobeScreen(
 }
 
 @Composable
-private fun ItemCard(item: ItemOutDto) {
+private fun ItemCard(item: ItemOutDto, onClick: () -> Unit) {
     val filename = item.imageNoBgName ?: item.imageOriginalName
 
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick
+    ) {
         Column {
             AsyncImage(
                 model = mediaUrl(filename),

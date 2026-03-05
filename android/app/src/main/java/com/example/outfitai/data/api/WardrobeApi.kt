@@ -3,6 +3,7 @@ package com.example.outfitai.data.api
 import com.example.outfitai.data.model.ItemOutDto
 import retrofit2.http.GET
 import retrofit2.http.Query
+import com.example.outfitai.data.model.OutfitOutDto
 
 interface WardrobeApi {
   @GET("wardrobe/items")
@@ -18,4 +19,11 @@ interface WardrobeApi {
     @Query("limit") limit: Int = 50,
     @Query("offset") offset: Int = 0
   ): List<ItemOutDto>
+
+  @GET("wardrobe/outfits")
+  suspend fun outfits(
+    @Query("season") season: String? = null,
+    @Query("occasion") occasion: String? = null,
+    @Query("limit") limit: Int = 6
+  ): List<OutfitOutDto>
 }
