@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.security import hash_password, verify_password, create_access_token
 from app.db.session import get_db
 from app.models.user import User
-from app.schemas.user import UserCreate, UserLogin, UserOut, TokenOut
+from app.schemas.user import UserCreate, UserLogin, UserOut, TokenOut, PasswordResetRequest
 from app.core.dependencies import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -55,3 +55,21 @@ def login(
 @router.get("/me", response_model=UserOut)
 def me(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+@router.post("/reset-password", response_model=TokenOut)
+def reset_password(
+    payload: PasswordResetRequest,
+    db: Session = Depends(get_db),
+):
+    user = db.query(User).filter(User.username == payload.username).first()
+    if not user or user.email != payload.email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username and email do not match",
+        )
+    user.hashed_password = hash_password(payload.new_password)
+    db.commit()
+    db.refresh(user)
+    token = create_access_token(user.id)
+    return TokenOut(access_token=token, user=UserOut.model_validate(user))

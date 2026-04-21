@@ -29,3 +29,10 @@ data class TokenOutDto(
     @SerialName("token_type") val tokenType: String = "bearer",
     val user: UserOutDto
 )
+
+@Serializable
+data class PasswordResetDto(
+    val username: String,
+    val email: String,
+    @SerialName("new_password") val newPassword: String,
+)

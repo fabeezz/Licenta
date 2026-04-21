@@ -1,6 +1,8 @@
 package com.example.outfitai.ui.itemdetails
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -8,7 +10,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.example.outfitai.data.model.ItemConstants
+import com.example.outfitai.ui.components.DropdownSelector
 import com.example.outfitai.util.mediaUrl
+
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 @Composable
 fun ItemDetailsRoute(
@@ -33,6 +42,17 @@ fun ItemDetailsRoute(
         onOccasion = vm::setOccasion,
     )
 }
+
+private fun extractColorList(
+    colorTags: Map<String, JsonElement>?,
+    key: String
+): List<String> {
+    val arr = (colorTags?.get(key) as? JsonArray) ?: return emptyList()
+    return arr.mapNotNull { runCatching { it.jsonPrimitive.content }.getOrNull() }
+}
+
+private fun formatColors(values: List<String>): String =
+    if (values.isEmpty()) "-" else values.joinToString(", ")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,6 +105,7 @@ private fun ItemDetailsScreen(
                     Column(
                         Modifier
                             .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
                             .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
@@ -102,12 +123,42 @@ private fun ItemDetailsScreen(
                         Text("Worn: ${item.wearCount}")
 
                         if (state.isEditing) {
-                            OutlinedTextField(state.category, onCategory, label = { Text("Category") }, modifier = Modifier.fillMaxWidth())
-                            OutlinedTextField(state.brand, onBrand, label = { Text("Brand") }, modifier = Modifier.fillMaxWidth())
-                            OutlinedTextField(state.material, onMaterial, label = { Text("Material") }, modifier = Modifier.fillMaxWidth())
-                            OutlinedTextField(state.season, onSeason, label = { Text("Season") }, modifier = Modifier.fillMaxWidth())
-                            OutlinedTextField(state.occasion, onOccasion, label = { Text("Occasion") }, modifier = Modifier.fillMaxWidth())
+                            DropdownSelector(
+                                label = "Category",
+                                selectedOption = state.category,
+                                options = ItemConstants.CATEGORIES,
+                                onOptionSelected = onCategory
+                            )
+                            OutlinedTextField(
+                                value = state.brand,
+                                onValueChange = onBrand,
+                                label = { Text("Brand") },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            DropdownSelector(
+                                label = "Material",
+                                selectedOption = state.material,
+                                options = ItemConstants.MATERIALS,
+                                onOptionSelected = onMaterial
+                            )
+                            DropdownSelector(
+                                label = "Season",
+                                selectedOption = state.season,
+                                options = ItemConstants.SEASONS,
+                                onOptionSelected = onSeason
+                            )
+                            DropdownSelector(
+                                label = "Occasion",
+                                selectedOption = state.occasion,
+                                options = ItemConstants.OCCASIONS,
+                                onOptionSelected = onOccasion
+                            )
                         } else {
+                            val dominantColors = extractColorList(item.colorTags, "dominant")
+                            val accentColors = extractColorList(item.colorTags, "accent")
+
+                            Text("Dominant color: ${formatColors(dominantColors)}")
+                            Text("Accent colors: ${formatColors(accentColors)}")
                             Text("Category: ${item.category ?: "-"}")
                             Text("Brand: ${item.brand ?: "-"}")
                             Text("Material: ${item.material ?: "-"}")

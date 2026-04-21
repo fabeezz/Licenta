@@ -4,6 +4,7 @@ import com.example.outfitai.data.model.TokenOutDto
 import com.example.outfitai.data.model.UserCreateDto
 import com.example.outfitai.data.model.UserLoginDto
 import com.example.outfitai.data.model.UserOutDto
+import com.example.outfitai.data.model.PasswordResetDto
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -17,4 +18,7 @@ interface AuthApi {
 
   @GET("auth/me")
   suspend fun me(): UserOutDto
+
+  @POST("auth/reset-password")
+  suspend fun resetPassword(@Body body: PasswordResetDto): TokenOutDto
 }

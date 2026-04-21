@@ -25,7 +25,8 @@ fun AppRoot(vm: AuthViewModel) {
       onEmail = vm::onEmailChange,
       onPassword = vm::onPasswordChange,
       onLogin = vm::login,
-      onRegister = vm::register
+      onRegister = vm::register,
+      onResetPassword = vm::resetPassword
     )
 
     is AuthStatus.LoggedIn -> AppNav(onLogout = vm::logout)

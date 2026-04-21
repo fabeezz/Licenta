@@ -104,6 +104,27 @@ class AuthViewModel @Inject constructor(
     }
   }
 
+  fun resetPassword() {
+    val s = _state.value
+    if (s.username.isBlank() || s.email.isBlank() || s.password.isBlank()) {
+      _state.value = s.copy(error = "Completează username, email și parola nouă.")
+      return
+    }
+
+    _state.value = s.copy(isBusy = true, error = null)
+    viewModelScope.launch {
+      try {
+        repo.resetPassword(s.username.trim(), s.email.trim(), s.password)
+        val me = authApi.me()
+        _state.value = _state.value.copy(status = AuthStatus.LoggedIn(me), isBusy = false, password = "")
+      } catch (e: HttpException) {
+        _state.value = _state.value.copy(isBusy = false, error = if (e.code() == 400) "Username și email nu se potrivesc." else "Eroare server (${e.code()}).")
+      } catch (_: IOException) {
+        _state.value = _state.value.copy(isBusy = false, error = "Nu pot contacta serverul.")
+      }
+    }
+  }
+
   fun logout() {
     viewModelScope.launch {
       repo.logout()

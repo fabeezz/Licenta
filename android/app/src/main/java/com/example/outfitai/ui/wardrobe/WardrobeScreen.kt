@@ -1,31 +1,44 @@
 package com.example.outfitai.ui.wardrobe
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Checkroom
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
-import com.example.outfitai.data.model.ItemOutDto
-import com.example.outfitai.util.mediaUrl
-import androidx.compose.runtime.collectAsState
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
+import com.example.outfitai.data.model.ItemConstants
+import com.example.outfitai.data.model.ItemOutDto
+import com.example.outfitai.ui.components.DropdownSelector
 import com.example.outfitai.ui.upload.UploadUiState
 import com.example.outfitai.ui.upload.UploadViewModel
+import com.example.outfitai.util.mediaUrl
 
 @Composable
 fun WardrobeRoute(
@@ -67,7 +80,6 @@ fun WardrobeRoute(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WardrobeScreen(
     state: WardrobeUiState,
@@ -86,46 +98,81 @@ fun WardrobeScreen(
 ) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("My wardrobe") },
-                actions = {
-                    TextButton(onClick = onOutfitsClick) { Text("Outfits") }
-                    TextButton(onClick = onRefresh, enabled = !state.isLoading) { Text("Refresh") }
-                    TextButton(onClick = onLogout) { Text("Logout") }
-                }
+            WardrobeTopBar(
+                isLoading = state.isLoading,
+                onOutfitsClick = onOutfitsClick,
+                onRefresh = onRefresh,
+                onLogout = onLogout,
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = onAddClick) {
-                Icon(Icons.Default.Add, contentDescription = "Add item")
-            }
-        }
+            ExtendedFloatingActionButton(
+                onClick = onAddClick,
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shape = RoundedCornerShape(50),
+                icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                text = { Text("Add Item", style = MaterialTheme.typography.labelLarge) },
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.background,
     ) { pad ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(pad)
+                .padding(horizontal = 20.dp),
         ) {
+            // Header
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = "Wardrobe",
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "${state.items.size} items curated for you",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(32.dp))
+
+            // Content
             when {
-                state.isLoading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
-                state.error != null -> Text(
-                    text = state.error,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .padding(20.dp)
-                )
-                state.items.isEmpty() -> Text(
-                    text = "Nu ai încă iteme. Adaugă prima haină din butonul de upload (pasul următor).",
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .padding(20.dp)
-                )
+                state.isLoading -> Box(
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator()
+                }
+                state.error != null -> Box(
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = state.error,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(20.dp),
+                    )
+                }
+                state.items.isEmpty() -> Box(
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "No items yet. Tap Add Item to upload your first piece.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(20.dp),
+                    )
+                }
                 else -> LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 160.dp),
-                    contentPadding = PaddingValues(12.dp),
+                    columns = GridCells.Fixed(2),
+                    contentPadding = PaddingValues(bottom = 96.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.weight(1f),
                 ) {
                     items(state.items, key = { it.id }) { item ->
                         ItemCard(item, onClick = { onItemClick(item.id) })
@@ -133,6 +180,7 @@ fun WardrobeScreen(
                 }
             }
         }
+
         if (uploadState.selectedUri != null) {
             UploadDialog(
                 uploadState = uploadState,
@@ -148,44 +196,167 @@ fun WardrobeScreen(
 }
 
 @Composable
+private fun WardrobeTopBar(
+    isLoading: Boolean,
+    onOutfitsClick: () -> Unit,
+    onRefresh: () -> Unit,
+    onLogout: () -> Unit,
+) {
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.8f))
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceContainerLow),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Text(
+                    text = "OutfitAI",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                IconButton(onClick = onOutfitsClick) {
+                    Icon(
+                        imageVector = Icons.Default.Checkroom,
+                        contentDescription = "Outfits",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+                IconButton(onClick = onRefresh, enabled = !isLoading) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Refresh",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+                IconButton(onClick = onLogout) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Logout,
+                        contentDescription = "Logout",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
+        }
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+    }
+}
+
+@Composable
 private fun ItemCard(item: ItemOutDto, onClick: () -> Unit) {
     val filename = item.imageNoBgName ?: item.imageOriginalName
 
-    ElevatedCard(
+    Surface(
+        onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        onClick = onClick
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
     ) {
         Column {
-            AsyncImage(
-                model = mediaUrl(filename),
-                contentDescription = item.category ?: "Item",
+            // Image tile
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(180.dp)
-            )
+                    .aspectRatio(4f / 5f)
+                    .padding(12.dp)
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(Color(0xFFF9F9F9)),
+                contentAlignment = Alignment.Center,
+            ) {
+                AsyncImage(
+                    model = mediaUrl(filename),
+                    contentDescription = item.category ?: "Item",
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(8.dp),
+                    contentScale = ContentScale.Fit,
+                )
+            }
 
-            Column(Modifier.padding(12.dp)) {
+            // Details
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top,
+                ) {
+                    if (!item.brand.isNullOrBlank()) {
+                        Text(
+                            text = item.brand.uppercase(),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f).padding(end = 4.dp),
+                        )
+                    } else {
+                        Spacer(Modifier.weight(1f))
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.History,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            text = "${item.wearCount}",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
                 Text(
                     text = item.category ?: "Unknown",
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
                 )
-                val subtitle = listOfNotNull(item.brand, item.material, item.season, item.occasion)
-                    .take(2)
-                    .joinToString(" • ")
+
+                val subtitle = listOfNotNull(item.material, item.category).joinToString(" • ")
                 if (subtitle.isNotBlank()) {
                     Text(
                         text = subtitle,
                         style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
-                Text(
-                    text = "Worn: ${item.wearCount}",
-                    style = MaterialTheme.typography.bodySmall
-                )
             }
         }
     }
@@ -203,7 +374,7 @@ private fun UploadDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Adaugă item") },
+        title = { Text("Add Item") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 uploadState.selectedUri?.let { uri ->
@@ -213,7 +384,7 @@ private fun UploadDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(180.dp),
-                        contentScale = ContentScale.Fit
+                        contentScale = ContentScale.Fit,
                     )
                 }
                 OutlinedTextField(
@@ -221,28 +392,25 @@ private fun UploadDialog(
                     onValueChange = onBrandChange,
                     label = { Text("Brand") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
                 )
-                OutlinedTextField(
-                    value = uploadState.material,
-                    onValueChange = onMaterialChange,
-                    label = { Text("Material") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                DropdownSelector(
+                    label = "Material",
+                    selectedOption = uploadState.material,
+                    options = ItemConstants.MATERIALS,
+                    onOptionSelected = onMaterialChange,
                 )
-                OutlinedTextField(
-                    value = uploadState.season,
-                    onValueChange = onSeasonChange,
-                    label = { Text("Sezon") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                DropdownSelector(
+                    label = "Season",
+                    selectedOption = uploadState.season,
+                    options = ItemConstants.SEASONS,
+                    onOptionSelected = onSeasonChange,
                 )
-                OutlinedTextField(
-                    value = uploadState.occasion,
-                    onValueChange = onOccasionChange,
-                    label = { Text("Ocazie") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                DropdownSelector(
+                    label = "Occasion",
+                    selectedOption = uploadState.occasion,
+                    options = ItemConstants.OCCASIONS,
+                    onOptionSelected = onOccasionChange,
                 )
                 if (uploadState.error != null) {
                     Text(uploadState.error, color = MaterialTheme.colorScheme.error)
@@ -252,7 +420,7 @@ private fun UploadDialog(
         confirmButton = {
             Button(
                 onClick = onUpload,
-                enabled = !uploadState.isUploading
+                enabled = !uploadState.isUploading,
             ) {
                 if (uploadState.isUploading) {
                     CircularProgressIndicator(Modifier.size(24.dp))
@@ -262,7 +430,7 @@ private fun UploadDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Anulare") }
-        }
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        },
     )
 }
