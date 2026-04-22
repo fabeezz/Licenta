@@ -48,7 +48,7 @@ class OutfitStudioViewModel @Inject constructor(
                     async {
                         val categories = slotCategories(slot)
                         val items = categories.map { cat ->
-                            async { wardrobeRepo.listByCategory(cat) }
+                            async { wardrobeRepo.listItems(category = cat, limit = 200) }
                         }.awaitAll().flatten()
                         slot to SlotItems(items = items)
                     }

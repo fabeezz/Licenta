@@ -42,17 +42,16 @@ fun AppNav(
 
         composable(Routes.OutfitStudio) {
             OutfitStudioRoute(
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onWardrobeClick = { navController.popBackStack() },
             )
         }
 
         composable(Routes.Wardrobe) {
             val vm: WardrobeViewModel = hiltViewModel()
 
-            // Access the savedStateHandle safely
             val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
 
-            // Use the extension function directly on the handle
             val shouldRefresh by savedStateHandle?.getStateFlow("wardrobe_refresh", false)
                 ?.collectAsState()
                 ?: androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
@@ -66,7 +65,7 @@ fun AppNav(
 
             WardrobeRoute(
                 onLogout = onLogout,
-                onOutfitsClick = { navController.navigate(Routes.OutfitStudio) },
+                onStudioClick = { navController.navigate(Routes.OutfitStudio) },
                 vm = vm,
                 onItemClick = { id -> navController.navigate(Routes.itemDetails(id)) }
             )

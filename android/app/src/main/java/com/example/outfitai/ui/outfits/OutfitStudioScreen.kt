@@ -24,17 +24,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
-import com.example.outfitai.ui.common.FloatingPillNav
-import com.example.outfitai.ui.common.PillDest
+import com.example.outfitai.ui.components.AppBottomBar
+import com.example.outfitai.ui.components.BottomBarDest
+import com.example.outfitai.ui.upload.rememberUploadLauncher
 import com.example.outfitai.util.mediaUrl
 
 @Composable
 fun OutfitStudioRoute(
     onBack: () -> Unit,
+    onWardrobeClick: () -> Unit,
     vm: OutfitStudioViewModel = hiltViewModel(),
 ) {
     val state by vm.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val upload = rememberUploadLauncher()
 
     LaunchedEffect(state.snackbarMessage) {
         state.snackbarMessage?.let { msg ->
@@ -50,6 +53,8 @@ fun OutfitStudioRoute(
         onToggleLayers = vm::toggleLayers,
         onShuffle = vm::shuffle,
         onSave = vm::save,
+        onWardrobeClick = onWardrobeClick,
+        onAddClick = upload.launch,
     )
 }
 
@@ -61,6 +66,8 @@ private fun OutfitStudioScreen(
     onToggleLayers: () -> Unit,
     onShuffle: () -> Unit,
     onSave: () -> Unit,
+    onWardrobeClick: () -> Unit,
+    onAddClick: () -> Unit,
 ) {
     val canSave = state.top.current != null && state.bottom.current != null && state.shoes.current != null
     val colors = MaterialTheme.colorScheme
@@ -68,6 +75,16 @@ private fun OutfitStudioScreen(
     Scaffold(
         containerColor = colors.surface,
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        bottomBar = {
+            Box(modifier = Modifier.padding(bottom = 24.dp)) {
+                AppBottomBar(
+                    active = BottomBarDest.STUDIO,
+                    onStudio = {},
+                    onAdd = onAddClick,
+                    onWardrobe = onWardrobeClick,
+                )
+            }
+        },
     ) { innerPad ->
         Box(
             modifier = Modifier
@@ -131,7 +148,7 @@ private fun OutfitStudioScreen(
                         .weight(1f)
                         .fillMaxWidth()
                         // leave right margin for the fixed control buttons
-                        .padding(start = 20.dp, end = 72.dp, bottom = 96.dp),
+                        .padding(start = 20.dp, end = 72.dp, bottom = 16.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     val availH = maxHeight
@@ -188,14 +205,6 @@ private fun OutfitStudioScreen(
                 )
             }
 
-            // ── Floating pill bottom nav (fixed) ─────────────────────────────
-            FloatingPillNav(
-                active = PillDest.STUDIO,
-                onSelect = { },
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 24.dp),
-            )
         }
     }
 }

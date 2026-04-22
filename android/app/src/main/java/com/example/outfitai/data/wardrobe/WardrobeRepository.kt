@@ -8,10 +8,18 @@ class WardrobeRepository @Inject constructor(
     private val api: WardrobeApi
 ) {
     suspend fun listItems(
+        category: String? = null,
+        dominantColor: String? = null,
+        season: String? = null,
+        occasion: String? = null,
         limit: Int = 50,
         offset: Int = 0,
-    ): List<ItemOutDto> = api.listItems(limit = limit, offset = offset)
-
-    suspend fun listByCategory(category: String, limit: Int = 200): List<ItemOutDto> =
-        api.listItems(category = category, limit = limit)
+    ): List<ItemOutDto> = api.listItems(
+        category = category,
+        dominantColor = dominantColor,
+        season = season,
+        occasion = occasion,
+        limit = limit,
+        offset = offset,
+    )
 }
