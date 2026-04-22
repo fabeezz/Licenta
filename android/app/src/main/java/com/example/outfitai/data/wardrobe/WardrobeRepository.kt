@@ -11,4 +11,7 @@ class WardrobeRepository @Inject constructor(
         limit: Int = 50,
         offset: Int = 0,
     ): List<ItemOutDto> = api.listItems(limit = limit, offset = offset)
+
+    suspend fun listByCategory(category: String, limit: Int = 200): List<ItemOutDto> =
+        api.listItems(category = category, limit = limit)
 }

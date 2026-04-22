@@ -5,6 +5,7 @@ import com.example.outfitai.Config
 import com.example.outfitai.data.api.AuthApi
 import com.example.outfitai.data.api.AuthInterceptor
 import com.example.outfitai.data.api.ItemApi
+import com.example.outfitai.data.api.OutfitApi
 import com.example.outfitai.data.api.WardrobeApi
 import com.example.outfitai.data.auth.AuthRepository
 import com.example.outfitai.data.auth.AuthStore
@@ -67,4 +68,8 @@ object AppModule {
   @Provides @Singleton
   fun provideItemApi(retrofit: Retrofit): ItemApi =
     retrofit.create(ItemApi::class.java)
+
+  @Provides @Singleton
+  fun provideOutfitApi(retrofit: Retrofit): OutfitApi =
+    retrofit.create(OutfitApi::class.java)
 }

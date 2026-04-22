@@ -3,6 +3,7 @@ package com.example.outfitai.data.auth
 import com.example.outfitai.data.api.AuthApi
 import com.example.outfitai.data.model.UserCreateDto
 import com.example.outfitai.data.model.UserLoginDto
+import com.example.outfitai.data.model.UserOutDto
 import com.example.outfitai.data.model.PasswordResetDto
 
 class AuthRepository(
@@ -23,6 +24,8 @@ class AuthRepository(
     val res = authApi.resetPassword(PasswordResetDto(username, email, newPassword))
     authStore.setToken(res.accessToken)
   }
+
+  suspend fun me(): UserOutDto = authApi.me()
 
   suspend fun logout() {
     authStore.clear()

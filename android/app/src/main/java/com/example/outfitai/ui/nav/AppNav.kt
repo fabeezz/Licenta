@@ -11,12 +11,15 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.outfitai.ui.itemdetails.ItemDetailsRoute
+import com.example.outfitai.ui.outfits.OutfitsRoute
+import com.example.outfitai.ui.outfits.OutfitStudioRoute
 import com.example.outfitai.ui.wardrobe.WardrobeRoute
 import com.example.outfitai.ui.wardrobe.WardrobeViewModel
-import com.example.outfitai.ui.outfits.OutfitsRoute
+
 object Routes {
     const val Wardrobe = "wardrobe"
     const val Outfits = "outfits"
+    const val OutfitStudio = "outfit-studio"
     const val ItemDetails = "item/{itemId}"
     fun itemDetails(id: Int) = "item/$id"
 }
@@ -33,6 +36,12 @@ fun AppNav(
     ) {
         composable(Routes.Outfits) {
             OutfitsRoute(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Routes.OutfitStudio) {
+            OutfitStudioRoute(
                 onBack = { navController.popBackStack() }
             )
         }
@@ -57,7 +66,7 @@ fun AppNav(
 
             WardrobeRoute(
                 onLogout = onLogout,
-                onOutfitsClick = { navController.navigate(Routes.Outfits) },
+                onOutfitsClick = { navController.navigate(Routes.OutfitStudio) },
                 vm = vm,
                 onItemClick = { id -> navController.navigate(Routes.itemDetails(id)) }
             )

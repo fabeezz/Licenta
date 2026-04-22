@@ -12,3 +12,4 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
 
     items: Mapped[list["Item"]] = relationship("Item", back_populates="user")
+    outfits: Mapped[list["Outfit"]] = relationship("Outfit", back_populates="user", cascade="all, delete-orphan")
