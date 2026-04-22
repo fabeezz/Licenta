@@ -1,35 +1,37 @@
-package com.example.outfitai.ui.upload
+package com.example.outfitai.ui.outfits
 
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.example.outfitai.data.model.ItemConstants
+import com.example.outfitai.data.model.ItemOutDto
 import com.example.outfitai.ui.common.FormDropdownSelector
 import com.example.outfitai.ui.common.FormTextField
+import com.example.outfitai.util.mediaUrl
 
 @Composable
-fun UploadDialog(
-    uploadState: UploadUiState,
+fun SaveOutfitDialog(
+    state: OutfitStudioUiState,
     onDismiss: () -> Unit,
-    onUpload: () -> Unit,
-    onBrandChange: (String) -> Unit,
-    onMaterialChange: (String) -> Unit,
+    onSave: () -> Unit,
+    onNameChange: (String) -> Unit,
     onSeasonChange: (String) -> Unit,
     onOccasionChange: (String) -> Unit,
 ) {
@@ -54,7 +56,7 @@ fun UploadDialog(
                             Icon(Icons.Default.Close, contentDescription = "Close")
                         }
                         Text(
-                            text = "Add New Item",
+                            text = "Save Outfit",
                             style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center,
@@ -71,8 +73,8 @@ fun UploadDialog(
                     modifier = Modifier.imePadding(),
                 ) {
                     Button(
-                        onClick = onUpload,
-                        enabled = !uploadState.isUploading,
+                        onClick = onSave,
+                        enabled = !state.isSaving,
                         shape = RoundedCornerShape(20.dp),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -80,7 +82,7 @@ fun UploadDialog(
                             .padding(horizontal = 20.dp, vertical = 16.dp)
                             .heightIn(min = 56.dp),
                     ) {
-                        if (uploadState.isUploading) {
+                        if (state.isSaving) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(24.dp),
                                 color = MaterialTheme.colorScheme.onPrimary,
@@ -88,7 +90,7 @@ fun UploadDialog(
                             )
                         } else {
                             Text(
-                                "Upload to Wardrobe",
+                                "Confirm Save",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.SemiBold,
                             )
@@ -103,88 +105,136 @@ fun UploadDialog(
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
             ) {
                 Spacer(Modifier.height(8.dp))
 
+                // --- Visual Preview ---
                 Surface(
                     shape = RoundedCornerShape(24.dp),
                     color = MaterialTheme.colorScheme.surfaceContainerLow,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .aspectRatio(4f / 5f),
+                        .aspectRatio(1f),
                 ) {
-                    AsyncImage(
-                        model = uploadState.selectedUri,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize(),
-                    )
+                    BoxWithConstraints(
+                        modifier = Modifier.fillMaxSize().padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        val availH = maxHeight
+                        val availW = maxWidth
+                        val gap = 8.dp
+
+                        if (state.includeOuter) {
+                            StaticFourPieceLayout(state, availH, availW, gap)
+                        } else {
+                            StaticThreePieceLayout(state, availH, availW, gap)
+                        }
+                    }
                 }
 
+                // --- Form Fields ---
                 FormTextField(
-                    label = "Brand",
-                    value = uploadState.brand,
-                    onValueChange = onBrandChange,
-                )
-
-                FormDropdownSelector(
-                    label = "Material",
-                    selectedOption = uploadState.material,
-                    options = ItemConstants.MATERIALS,
-                    onOptionSelected = onMaterialChange,
+                    label = "Outfit Name",
+                    value = state.outfitName,
+                    onValueChange = onNameChange,
                 )
 
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     FormDropdownSelector(
                         label = "Season",
-                        selectedOption = uploadState.season,
-                        options = ItemConstants.SEASONS,
+                        selectedOption = state.selectedSeason,
+                        options = listOf("") + ItemConstants.SEASONS,
                         onOptionSelected = onSeasonChange,
                         modifier = Modifier.weight(1f),
                     )
                     FormDropdownSelector(
                         label = "Occasion",
-                        selectedOption = uploadState.occasion,
-                        options = ItemConstants.OCCASIONS,
+                        selectedOption = state.selectedOccasion,
+                        options = listOf("") + ItemConstants.OCCASIONS,
                         onOptionSelected = onOccasionChange,
                         modifier = Modifier.weight(1f),
                     )
                 }
 
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerLow,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            Icons.Default.AutoAwesome,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Text(
-                            "AI will automatically figure out the details of your product if no info is provided.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-
-                if (uploadState.error != null) {
-                    Text(
-                        uploadState.error,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(16.dp))
             }
+        }
+    }
+}
+
+@Composable
+private fun StaticThreePieceLayout(
+    state: OutfitStudioUiState,
+    availH: Dp,
+    availW: Dp,
+    gap: Dp,
+) {
+    val sizeByH = (availH - gap * 2) / 2.75f
+    val itemSize = minOf(sizeByH, availW)
+
+    Column(
+        modifier = Modifier.width(itemSize),
+        verticalArrangement = Arrangement.spacedBy(gap),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        PreviewItem(state.top.current, itemSize, itemSize)
+        PreviewItem(state.bottom.current, itemSize, itemSize)
+        PreviewItem(state.shoes.current, itemSize, itemSize * 0.75f)
+    }
+}
+
+@Composable
+private fun StaticFourPieceLayout(
+    state: OutfitStudioUiState,
+    availH: Dp,
+    availW: Dp,
+    gap: Dp,
+) {
+    val itemW = (availW - gap) / 2
+    val rowH = itemW * 1.25f
+    val remaining = availH - rowH - gap * 2
+    val bottomH = remaining * 0.6f
+    val shoesH = remaining * 0.4f
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(gap),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(gap),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            PreviewItem(state.outer.current, itemW, rowH)
+            PreviewItem(state.top.current, itemW, rowH)
+        }
+        PreviewItem(state.bottom.current, availW, bottomH)
+        PreviewItem(state.shoes.current, availW, shoesH)
+    }
+}
+
+@Composable
+private fun PreviewItem(
+    item: ItemOutDto?,
+    width: Dp,
+    height: Dp,
+) {
+    Box(
+        modifier = Modifier
+            .width(width)
+            .height(height)
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+        contentAlignment = Alignment.Center
+    ) {
+        if (item != null) {
+            AsyncImage(
+                model = mediaUrl(item.imageNoBgName ?: item.imageOriginalName),
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.padding(4.dp).fillMaxSize()
+            )
         }
     }
 }

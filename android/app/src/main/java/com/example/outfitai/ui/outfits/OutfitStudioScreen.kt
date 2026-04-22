@@ -1,6 +1,5 @@
 package com.example.outfitai.ui.outfits
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
@@ -18,10 +17,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.outfitai.ui.components.AppBottomBar
@@ -46,13 +43,24 @@ fun OutfitStudioRoute(
         }
     }
 
+    if (state.showSaveDialog) {
+        SaveOutfitDialog(
+            state = state,
+            onDismiss = vm::closeSaveDialog,
+            onSave = vm::save,
+            onNameChange = vm::updateOutfitName,
+            onSeasonChange = vm::updateSeason,
+            onOccasionChange = vm::updateOccasion,
+        )
+    }
+
     OutfitStudioScreen(
         state = state,
         snackbarHostState = snackbarHostState,
         onStep = vm::stepSlot,
         onToggleLayers = vm::toggleLayers,
         onShuffle = vm::shuffle,
-        onSave = vm::save,
+        onSave = vm::openSaveDialog,
         onWardrobeClick = onWardrobeClick,
         onAddClick = upload.launch,
     )

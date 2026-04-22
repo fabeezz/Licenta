@@ -102,6 +102,26 @@ class OutfitStudioViewModel @Inject constructor(
         }
     }
 
+    fun openSaveDialog() {
+        _state.update { it.copy(showSaveDialog = true, outfitName = "", selectedSeason = "", selectedOccasion = "") }
+    }
+
+    fun closeSaveDialog() {
+        _state.update { it.copy(showSaveDialog = false) }
+    }
+
+    fun updateOutfitName(name: String) {
+        _state.update { it.copy(outfitName = name) }
+    }
+
+    fun updateSeason(season: String) {
+        _state.update { it.copy(selectedSeason = season) }
+    }
+
+    fun updateOccasion(occasion: String) {
+        _state.update { it.copy(selectedOccasion = occasion) }
+    }
+
     fun save() {
         val s = _state.value
         val top   = s.top.current   ?: return
@@ -109,17 +129,24 @@ class OutfitStudioViewModel @Inject constructor(
         val shoes  = s.shoes.current  ?: return
         val outer  = if (s.includeOuter) s.outer.current else null
 
-        val name = "Outfit ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM HH:mm"))}"
-        _state.update { it.copy(isSaving = true) }
+        val finalName = if (s.outfitName.isBlank()) {
+            "Outfit ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM HH:mm"))}"
+        } else {
+            s.outfitName
+        }
+
+        _state.update { it.copy(isSaving = true, showSaveDialog = false) }
         viewModelScope.launch {
             runCatching {
                 outfitRepo.create(
                     OutfitCreateDto(
-                        name     = name,
+                        name     = finalName,
                         topId    = top.id,
                         bottomId = bottom.id,
                         shoeId   = shoes.id,
                         outerId  = outer?.id,
+                        season   = s.selectedSeason.takeIf { it.isNotBlank() },
+                        occasion = s.selectedOccasion.takeIf { it.isNotBlank() },
                     )
                 )
             }.onSuccess { id ->
