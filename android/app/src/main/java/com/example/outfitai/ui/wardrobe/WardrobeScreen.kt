@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import coil.compose.AsyncImage
 import com.example.outfitai.data.model.ItemConstants
@@ -52,7 +53,7 @@ fun WardrobeRoute(
     val uploadState by uploadVm.state.collectAsState()
 
     val pickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent(),
+        contract = ActivityResultContracts.PickVisualMedia(),
         onResult = { uri: Uri? -> uploadVm.setUri(uri) }
     )
 
@@ -70,7 +71,11 @@ fun WardrobeRoute(
         onLogout = onLogout,
         onItemClick = onItemClick,
         onOutfitsClick = onOutfitsClick,
-        onAddClick = { pickerLauncher.launch("image/*") },
+        onAddClick = { 
+            pickerLauncher.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+            )
+        },
         onUploadDismiss = { uploadVm.setUri(null) },
         onUpload = uploadVm::upload,
         onBrandChange = uploadVm::setBrand,
