@@ -26,6 +26,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.outfitai.data.model.ItemConstants
 import com.example.outfitai.ui.components.DropdownSelector
+import com.example.outfitai.util.colorNameToComposeColor
 import com.example.outfitai.util.mediaUrl
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -57,23 +58,6 @@ fun ItemDetailsRoute(
 private fun extractColorList(colorTags: Map<String, JsonElement>?, key: String): List<String> {
     val arr = (colorTags?.get(key) as? JsonArray) ?: return emptyList()
     return arr.mapNotNull { runCatching { it.jsonPrimitive.content }.getOrNull() }
-}
-
-private fun colorNameToColor(name: String, fallback: Color): Color = when (name.lowercase().trim()) {
-    "black", "noir", "jet"                        -> Color(0xFF1A1A1A)
-    "white", "blanc", "ivory", "cream"            -> Color(0xFFF0EFE8)
-    "gray", "grey", "silver", "charcoal"          -> Color(0xFF9E9E9E)
-    "navy", "navy blue"                           -> Color(0xFF1B2A4A)
-    "blue", "cobalt", "sapphire"                  -> Color(0xFF3B5BDB)
-    "red", "crimson", "scarlet"                   -> Color(0xFFE03131)
-    "green", "olive", "forest"                    -> Color(0xFF2F9E44)
-    "brown", "tan", "camel", "khaki", "beige"     -> Color(0xFFA67C52)
-    "yellow", "mustard", "gold"                   -> Color(0xFFE8B400)
-    "orange", "rust", "amber"                     -> Color(0xFFE8590C)
-    "pink", "blush", "rose"                       -> Color(0xFFE64980)
-    "purple", "violet", "lavender"                -> Color(0xFF7048E8)
-    "teal", "cyan", "turquoise"                   -> Color(0xFF0CA678)
-    else                                          -> fallback
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -353,7 +337,7 @@ private fun ItemDetailsScreen(
                                             name = name,
                                             role = "Dominant",
                                             size = 64.dp,
-                                            color = colorNameToColor(name, cs.surfaceVariant)
+                                            color = colorNameToComposeColor(name, cs.surfaceVariant)
                                         )
                                     }
                                     accent.take(3).forEach { name ->
@@ -361,7 +345,7 @@ private fun ItemDetailsScreen(
                                             name = name,
                                             role = "Accent",
                                             size = 48.dp,
-                                            color = colorNameToColor(name, cs.surfaceVariant)
+                                            color = colorNameToComposeColor(name, cs.surfaceVariant)
                                         )
                                     }
                                 }
