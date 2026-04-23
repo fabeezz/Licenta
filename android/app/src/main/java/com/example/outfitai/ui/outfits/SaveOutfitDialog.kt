@@ -192,10 +192,7 @@ private fun StaticFourPieceLayout(
     gap: Dp,
 ) {
     val itemW = (availW - gap) / 2
-    val rowH = itemW * 1.25f
-    val remaining = availH - rowH - gap * 2
-    val bottomH = remaining * 0.6f
-    val shoesH = remaining * 0.4f
+    val itemH = (availH - gap) / 2
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -206,11 +203,16 @@ private fun StaticFourPieceLayout(
             horizontalArrangement = Arrangement.spacedBy(gap),
             modifier = Modifier.fillMaxWidth()
         ) {
-            PreviewItem(state.outer.current, itemW, rowH)
-            PreviewItem(state.top.current, itemW, rowH)
+            PreviewItem(state.outer.current, itemW, itemH)
+            PreviewItem(state.top.current, itemW, itemH)
         }
-        PreviewItem(state.bottom.current, availW, bottomH)
-        PreviewItem(state.shoes.current, availW, shoesH)
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(gap),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            PreviewItem(state.bottom.current, itemW, itemH)
+            PreviewItem(state.shoes.current, itemW, itemH)
+        }
     }
 }
 
