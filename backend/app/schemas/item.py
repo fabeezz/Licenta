@@ -31,3 +31,4 @@ class ItemUpdate(BaseModel):
     material: str | None = None
     season: str | None = None
     occasion: str | None = None
+    color_tags: dict | None = None

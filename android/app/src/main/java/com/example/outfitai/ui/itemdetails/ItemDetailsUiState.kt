@@ -12,6 +12,8 @@ data class ItemDetailsUiState(
     val material: String = "",
     val season: String = "",
     val occasion: String = "",
+    val dominantColors: List<String> = emptyList(),
+    val accentColors: List<String> = emptyList(),
 
     val isBusy: Boolean = false,
     val error: String? = null,

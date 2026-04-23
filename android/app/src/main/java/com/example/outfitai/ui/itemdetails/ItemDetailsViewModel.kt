@@ -9,6 +9,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.jsonPrimitive
 import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
@@ -26,6 +29,11 @@ class ItemDetailsViewModel @Inject constructor(
 
     init { load() }
 
+    private fun extractColorList(colorTags: Map<String, JsonElement>?, key: String): List<String> {
+        val arr = (colorTags?.get(key) as? JsonArray) ?: return emptyList()
+        return arr.mapNotNull { it.jsonPrimitive.content }
+    }
+
     fun load() {
         _state.value = _state.value.copy(isLoading = true, error = null)
         viewModelScope.launch {
@@ -39,6 +47,8 @@ class ItemDetailsViewModel @Inject constructor(
                     material = it.material.orEmpty(),
                     season = it.season.orEmpty(),
                     occasion = it.occasion.orEmpty(),
+                    dominantColors = extractColorList(it.colorTags, "dominant"),
+                    accentColors = extractColorList(it.colorTags, "accent"),
                 )
             } catch (e: HttpException) {
                 _state.value = _state.value.copy(isLoading = false, error = "Eroare server (${e.code()}).")
@@ -50,7 +60,23 @@ class ItemDetailsViewModel @Inject constructor(
 
     fun toggleEdit() {
         val s = _state.value
-        _state.value = s.copy(isEditing = !s.isEditing, error = null)
+        val isStartingEdit = !s.isEditing
+        if (isStartingEdit && s.item != null) {
+            // Reset to current item state when starting edit
+            _state.value = s.copy(
+                isEditing = true,
+                error = null,
+                category = s.item.category.orEmpty(),
+                brand = s.item.brand.orEmpty(),
+                material = s.item.material.orEmpty(),
+                season = s.item.season.orEmpty(),
+                occasion = s.item.occasion.orEmpty(),
+                dominantColors = extractColorList(s.item.colorTags, "dominant"),
+                accentColors = extractColorList(s.item.colorTags, "accent"),
+            )
+        } else {
+            _state.value = s.copy(isEditing = false, error = null)
+        }
     }
 
     fun setCategory(v: String) { _state.value = _state.value.copy(category = v) }
@@ -58,6 +84,20 @@ class ItemDetailsViewModel @Inject constructor(
     fun setMaterial(v: String) { _state.value = _state.value.copy(material = v) }
     fun setSeason(v: String) { _state.value = _state.value.copy(season = v) }
     fun setOccasion(v: String) { _state.value = _state.value.copy(occasion = v) }
+
+    fun setDominantColor(color: String) {
+        _state.value = _state.value.copy(dominantColors = listOf(color))
+    }
+
+    fun toggleAccentColor(color: String) {
+        val current = _state.value.accentColors.toMutableList()
+        if (current.contains(color)) {
+            current.remove(color)
+        } else {
+            current.add(color)
+        }
+        _state.value = _state.value.copy(accentColors = current)
+    }
 
     private fun blankToNull(s: String) = s.trim().takeIf { it.isNotBlank() }
 
@@ -74,9 +114,19 @@ class ItemDetailsViewModel @Inject constructor(
                         material = blankToNull(s.material),
                         season = blankToNull(s.season),
                         occasion = blankToNull(s.occasion),
+                        colorTags = mapOf(
+                            "dominant" to s.dominantColors,
+                            "accent" to s.accentColors
+                        )
                     )
                 )
-                _state.value = _state.value.copy(isBusy = false, isEditing = false, item = updated)
+                _state.value = _state.value.copy(
+                    isBusy = false,
+                    isEditing = false,
+                    item = updated,
+                    dominantColors = extractColorList(updated.colorTags, "dominant"),
+                    accentColors = extractColorList(updated.colorTags, "accent"),
+                )
                 onSaved()
             } catch (e: HttpException) {
                 _state.value = _state.value.copy(isBusy = false, error = "Eroare server (${e.code()}).")
