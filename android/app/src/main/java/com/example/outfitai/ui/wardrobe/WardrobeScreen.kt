@@ -115,7 +115,7 @@ private fun WardrobeScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(pad)
+                .padding(top = pad.calculateTopPadding())
                 .padding(horizontal = 20.dp),
         ) {
             Spacer(Modifier.height(12.dp))
@@ -144,11 +144,13 @@ private fun WardrobeScreen(
                 WardrobeTab.Pieces -> PiecesContent(
                     state = state,
                     onItemClick = onItemClick,
+                    bottomPadding = pad.calculateBottomPadding(),
                     modifier = Modifier.weight(1f),
                 )
                 WardrobeTab.Fits -> FitsContent(
                     state = state,
                     onOutfitClick = onOutfitClick,
+                    bottomPadding = pad.calculateBottomPadding(),
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -332,6 +334,7 @@ private fun DropdownFilterChip(
 private fun PiecesContent(
     state: WardrobeUiState,
     onItemClick: (Int) -> Unit,
+    bottomPadding: androidx.compose.ui.unit.Dp,
     modifier: Modifier = Modifier,
 ) {
     when {
@@ -364,7 +367,7 @@ private fun PiecesContent(
         }
         else -> LazyVerticalGrid(
             columns = GridCells.Fixed(3),
-            contentPadding = PaddingValues(bottom = 96.dp),
+            contentPadding = PaddingValues(bottom = bottomPadding + 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             modifier = modifier,
@@ -404,6 +407,7 @@ private fun ItemTile(item: ItemOutDto, onClick: () -> Unit) {
 private fun FitsContent(
     state: WardrobeUiState,
     onOutfitClick: (Int) -> Unit,
+    bottomPadding: androidx.compose.ui.unit.Dp,
     modifier: Modifier = Modifier
 ) {
     when {
@@ -436,7 +440,7 @@ private fun FitsContent(
         }
         else -> LazyVerticalGrid(
             columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(bottom = 96.dp),
+            contentPadding = PaddingValues(bottom = bottomPadding + 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             modifier = modifier,

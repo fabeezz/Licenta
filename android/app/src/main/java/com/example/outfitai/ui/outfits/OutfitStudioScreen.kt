@@ -97,7 +97,7 @@ private fun OutfitStudioScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPad),
+                .padding(top = innerPad.calculateTopPadding()),
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
 
@@ -156,7 +156,11 @@ private fun OutfitStudioScreen(
                         .weight(1f)
                         .fillMaxWidth()
                         // leave right margin for the fixed control buttons
-                        .padding(start = 20.dp, end = 72.dp, bottom = 16.dp),
+                        .padding(
+                            start = 20.dp,
+                            end = 72.dp,
+                            bottom = innerPad.calculateBottomPadding() + 16.dp
+                        ),
                     contentAlignment = Alignment.Center,
                 ) {
                     val availH = maxHeight
