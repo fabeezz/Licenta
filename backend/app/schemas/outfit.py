@@ -1,4 +1,5 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
+from typing import Any
 
 
 class OutfitItemRef(BaseModel):
@@ -25,6 +26,34 @@ class ItemMinimal(BaseModel):
     id: int
     image_original_name: str
     image_no_bg_name: str | None
+    dominant_color: str | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def extract_dominant_color(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if not data.get("dominant_color") and "color_tags" in data:
+                tags = data["color_tags"]
+                if tags and "dominant" in tags and tags["dominant"]:
+                    data["dominant_color"] = tags["dominant"][0]
+            return data
+        
+        # For ORM objects (from_attributes=True)
+        # If the object has color_tags but no dominant_color attribute,
+        # we can't easily add an attribute to the ORM object without risks.
+        # However, we can return a proxy or a dict.
+        # Most reliable way in Pydantic V2 to augment ORM loading:
+        if not hasattr(data, "dominant_color") and hasattr(data, "color_tags"):
+            tags = data.color_tags
+            if tags and "dominant" in tags and tags["dominant"]:
+                # We can return a dict that pydantic will use instead of the object
+                return {
+                    "id": data.id,
+                    "image_original_name": data.image_original_name,
+                    "image_no_bg_name": data.image_no_bg_name,
+                    "dominant_color": tags["dominant"][0]
+                }
+        return data
 
 
 class OutfitCreate(BaseModel):

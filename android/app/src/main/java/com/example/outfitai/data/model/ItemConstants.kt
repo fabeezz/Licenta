@@ -29,4 +29,24 @@ object ItemConstants {
         "spring/autumn",
         "all-season"
     )
+
+    val COLORS = listOf(
+        "black",
+        "white",
+        "gray",
+        "beige",
+        "burgundy",
+        "pink",
+        "red",
+        "brown",
+        "orange",
+        "olive",
+        "yellow",
+        "dark green",
+        "green",
+        "cyan",
+        "navy",
+        "blue",
+        "purple"
+    )
 }

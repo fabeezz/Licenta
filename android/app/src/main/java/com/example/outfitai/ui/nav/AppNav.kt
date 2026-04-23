@@ -11,6 +11,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.outfitai.ui.itemdetails.ItemDetailsRoute
+import com.example.outfitai.ui.outfits.OutfitDetailRoute
 import com.example.outfitai.ui.outfits.OutfitsRoute
 import com.example.outfitai.ui.outfits.OutfitStudioRoute
 import com.example.outfitai.ui.wardrobe.WardrobeRoute
@@ -22,6 +23,9 @@ object Routes {
     const val OutfitStudio = "outfit-studio"
     const val ItemDetails = "item/{itemId}"
     fun itemDetails(id: Int) = "item/$id"
+
+    const val OutfitDetail = "outfit-detail/{outfitId}"
+    fun outfitDetail(id: Int) = "outfit-detail/$id"
 }
 
 @Composable
@@ -67,7 +71,8 @@ fun AppNav(
                 onLogout = onLogout,
                 onStudioClick = { navController.navigate(Routes.OutfitStudio) },
                 vm = vm,
-                onItemClick = { id -> navController.navigate(Routes.itemDetails(id)) }
+                onItemClick = { id -> navController.navigate(Routes.itemDetails(id)) },
+                onOutfitClick = { id -> navController.navigate(Routes.outfitDetail(id)) }
             )
         }
 
@@ -78,6 +83,21 @@ fun AppNav(
             ItemDetailsRoute(
                 onBack = { navController.popBackStack() },
                 onItemChanged = {
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("wardrobe_refresh", true)
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(
+            route = Routes.OutfitDetail,
+            arguments = listOf(navArgument("outfitId") { type = NavType.IntType })
+        ) {
+            OutfitDetailRoute(
+                onBack = { navController.popBackStack() },
+                onDeleted = {
                     navController.previousBackStackEntry
                         ?.savedStateHandle
                         ?.set("wardrobe_refresh", true)

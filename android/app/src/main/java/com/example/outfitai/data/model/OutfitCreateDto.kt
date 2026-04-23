@@ -15,7 +15,21 @@ data class OutfitCreateDto(
 )
 
 @Serializable
+data class ItemMinimalDto(
+    val id: Int,
+    @SerialName("image_original_name") val imageOriginalName: String,
+    @SerialName("image_no_bg_name") val imageNoBgName: String? = null,
+    @SerialName("dominant_color") val dominantColor: String? = null,
+)
+
+@Serializable
 data class OutfitSavedDto(
     val id: Int,
     val name: String,
+    val season: String? = null,
+    val occasion: String? = null,
+    val top: ItemMinimalDto,
+    val bottom: ItemMinimalDto,
+    val shoe: ItemMinimalDto,
+    val outer: ItemMinimalDto? = null,
 )

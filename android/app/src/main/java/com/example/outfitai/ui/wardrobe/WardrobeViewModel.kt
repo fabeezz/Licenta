@@ -24,23 +24,36 @@ class WardrobeViewModel @Inject constructor(
     }
 
     fun refresh() {
-        val filters = _state.value
-        _state.value = filters.copy(isLoading = true, error = null)
+        val s = _state.value
+        _state.value = s.copy(isLoading = true, error = null)
         viewModelScope.launch {
             try {
-                val items = repo.listItems(
-                    category = filters.filterCategory,
-                    dominantColor = filters.filterColor,
-                    season = filters.filterSeason,
-                    occasion = filters.filterOccasion,
-                )
-                _state.value = _state.value.copy(isLoading = false, items = items, error = null)
+                if (s.selectedTab == WardrobeTab.Pieces) {
+                    val items = repo.listItems(
+                        category = s.filterCategory,
+                        dominantColor = s.filterColor,
+                        season = s.filterSeason,
+                        occasion = s.filterOccasion,
+                    )
+                    _state.value = _state.value.copy(isLoading = false, items = items, error = null)
+                } else {
+                    val outfits = repo.listOutfits(
+                        season = s.filterSeason,
+                        occasion = s.filterOccasion,
+                    )
+                    _state.value = _state.value.copy(isLoading = false, outfits = outfits, error = null)
+                }
             } catch (e: HttpException) {
-                _state.value = _state.value.copy(isLoading = false, items = emptyList(), error = "Eroare server (${e.code()}).")
+                _state.value = _state.value.copy(isLoading = false, error = "Eroare server (${e.code()}).")
             } catch (_: IOException) {
-                _state.value = _state.value.copy(isLoading = false, items = emptyList(), error = "Nu pot contacta serverul.")
+                _state.value = _state.value.copy(isLoading = false, error = "Nu pot contacta serverul.")
             }
         }
+    }
+
+    fun setTab(tab: WardrobeTab) {
+        _state.value = _state.value.copy(selectedTab = tab)
+        refresh()
     }
 
     fun setFilterCategory(value: String?) {

@@ -23,10 +23,14 @@ def create_outfit(
 def list_outfits(
     skip: int = 0,
     limit: int = 100,
+    season: str | None = None,
+    occasion: str | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return outfit_service.list(db, user_id=current_user.id, skip=skip, limit=limit)
+    return outfit_service.list(
+        db, user_id=current_user.id, skip=skip, limit=limit, season=season, occasion=occasion
+    )
 
 
 @router.get("/{outfit_id}", response_model=OutfitResponse)

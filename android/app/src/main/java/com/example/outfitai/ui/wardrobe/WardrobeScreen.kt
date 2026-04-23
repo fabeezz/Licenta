@@ -1,13 +1,13 @@
 package com.example.outfitai.ui.wardrobe
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Refresh
@@ -15,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -23,18 +24,19 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.outfitai.data.model.ItemConstants
+import com.example.outfitai.data.model.ItemMinimalDto
 import com.example.outfitai.data.model.ItemOutDto
+import com.example.outfitai.data.model.OutfitSavedDto
 import com.example.outfitai.ui.components.AppBottomBar
 import com.example.outfitai.ui.components.BottomBarDest
 import com.example.outfitai.ui.upload.rememberUploadLauncher
 import com.example.outfitai.util.mediaUrl
 
-private enum class WardrobeTab { Pieces, Fits }
-
 @Composable
 fun WardrobeRoute(
     onLogout: () -> Unit,
     onItemClick: (Int) -> Unit,
+    onOutfitClick: (Int) -> Unit,
     onStudioClick: () -> Unit,
     vm: WardrobeViewModel = hiltViewModel(),
 ) {
@@ -46,8 +48,10 @@ fun WardrobeRoute(
         onRefresh = vm::refresh,
         onLogout = onLogout,
         onItemClick = onItemClick,
+        onOutfitClick = onOutfitClick,
         onStudioClick = onStudioClick,
         onAddClick = upload.launch,
+        onTabSelect = vm::setTab,
         onFilterCategory = vm::setFilterCategory,
         onFilterColor = vm::setFilterColor,
         onFilterSeason = vm::setFilterSeason,
@@ -63,16 +67,16 @@ private fun WardrobeScreen(
     onRefresh: () -> Unit,
     onLogout: () -> Unit,
     onItemClick: (Int) -> Unit,
+    onOutfitClick: (Int) -> Unit,
     onStudioClick: () -> Unit,
     onAddClick: () -> Unit,
+    onTabSelect: (WardrobeTab) -> Unit,
     onFilterCategory: (String?) -> Unit,
     onFilterColor: (String?) -> Unit,
     onFilterSeason: (String?) -> Unit,
     onFilterOccasion: (String?) -> Unit,
     onClearFilters: () -> Unit,
 ) {
-    var tab by remember { mutableStateOf(WardrobeTab.Pieces) }
-
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -118,8 +122,8 @@ private fun WardrobeScreen(
 
             // Segmented control
             SegmentedControl(
-                selected = tab,
-                onSelect = { tab = it },
+                selected = state.selectedTab,
+                onSelect = onTabSelect,
             )
 
             Spacer(Modifier.height(12.dp))
@@ -136,13 +140,17 @@ private fun WardrobeScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            when (tab) {
+            when (state.selectedTab) {
                 WardrobeTab.Pieces -> PiecesContent(
                     state = state,
                     onItemClick = onItemClick,
                     modifier = Modifier.weight(1f),
                 )
-                WardrobeTab.Fits -> FitsContent(modifier = Modifier.weight(1f))
+                WardrobeTab.Fits -> FitsContent(
+                    state = state,
+                    onOutfitClick = onOutfitClick,
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
     }
@@ -198,9 +206,9 @@ private fun FilterChipsRow(
     onClearFilters: () -> Unit,
 ) {
     val allSelected = state.filterCategory == null &&
-        state.filterColor == null &&
-        state.filterSeason == null &&
-        state.filterOccasion == null
+            state.filterColor == null &&
+            state.filterSeason == null &&
+            state.filterOccasion == null
 
     Row(
         modifier = Modifier.horizontalScroll(rememberScrollState()),
@@ -225,13 +233,16 @@ private fun FilterChipsRow(
             ),
         )
 
-        DropdownFilterChip(
-            label = "Category",
-            selected = state.filterCategory,
-            options = ItemConstants.CATEGORIES,
-            onSelect = { onFilterCategory(it) },
-            onClear = { onFilterCategory(null) },
-        )
+        // Category filter only for Pieces
+        if (state.selectedTab == WardrobeTab.Pieces) {
+            DropdownFilterChip(
+                label = "Category",
+                selected = state.filterCategory,
+                options = ItemConstants.CATEGORIES,
+                onSelect = { onFilterCategory(it) },
+                onClear = { onFilterCategory(null) },
+            )
+        }
 
         DropdownFilterChip(
             label = "Season",
@@ -248,6 +259,17 @@ private fun FilterChipsRow(
             onSelect = { onFilterOccasion(it) },
             onClear = { onFilterOccasion(null) },
         )
+
+        // Color filter only for Pieces
+        if (state.selectedTab == WardrobeTab.Pieces) {
+            DropdownFilterChip(
+                label = "Color",
+                selected = state.filterColor,
+                options = ItemConstants.COLORS,
+                onSelect = { onFilterColor(it) },
+                onClear = { onFilterColor(null) },
+            )
+        }
     }
 }
 
@@ -373,20 +395,126 @@ private fun ItemTile(item: ItemOutDto, onClick: () -> Unit) {
                 .fillMaxSize()
                 .padding(8.dp),
             contentScale = ContentScale.Fit,
+            filterQuality = androidx.compose.ui.graphics.FilterQuality.High,
         )
     }
 }
 
 @Composable
-private fun FitsContent(modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier.fillMaxWidth(),
-        contentAlignment = Alignment.Center,
+private fun FitsContent(
+    state: WardrobeUiState,
+    onOutfitClick: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    when {
+        state.isLoading -> Box(
+            modifier = modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center,
+        ) {
+            CircularProgressIndicator()
+        }
+        state.error != null -> Box(
+            modifier = modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = state.error,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(20.dp),
+            )
+        }
+        state.outfits.isEmpty() -> Box(
+            modifier = modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = "No outfits saved yet.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(20.dp),
+            )
+        }
+        else -> LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            contentPadding = PaddingValues(bottom = 96.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = modifier,
+        ) {
+            items(state.outfits, key = { it.id }) { outfit ->
+                FitCard(outfit = outfit, onClick = { onOutfitClick(outfit.id) })
+            }
+        }
+    }
+}
+
+@Composable
+private fun FitCard(
+    outfit: OutfitSavedDto,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(24.dp),
+        color = Color(0xFFF9F9F9),
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(3f / 4f)
     ) {
-        Text(
-            text = "TODO: Fits implementation coming soon",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        val gap = 4.dp
+        Box(modifier = Modifier.padding(12.dp)) {
+            if (outfit.outer != null) {
+                // 4-piece layout: 2x2 grid
+                Column(verticalArrangement = Arrangement.spacedBy(gap)) {
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(gap)
+                    ) {
+                        FitCardItem(outfit.outer, Modifier.weight(1f))
+                        FitCardItem(outfit.top, Modifier.weight(1f))
+                    }
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(gap)
+                    ) {
+                        FitCardItem(outfit.bottom, Modifier.weight(1f))
+                        FitCardItem(outfit.shoe, Modifier.weight(1f))
+                    }
+                }
+            } else {
+                // 3-piece layout: Top (large) + Row(Bottom, Shoes)
+                Column(verticalArrangement = Arrangement.spacedBy(gap)) {
+                    FitCardItem(outfit.top, Modifier.weight(1.5f))
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(gap)
+                    ) {
+                        FitCardItem(outfit.bottom, Modifier.weight(1f))
+                        FitCardItem(outfit.shoe, Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FitCardItem(
+    item: ItemMinimalDto,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.White.copy(alpha = 0.5f)),
+        contentAlignment = Alignment.Center
+    ) {
+        AsyncImage(
+            model = mediaUrl(item.imageNoBgName ?: item.imageOriginalName),
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.padding(4.dp).fillMaxSize()
         )
     }
 }

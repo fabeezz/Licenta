@@ -39,11 +39,25 @@ class OutfitService:
         db.refresh(outfit)
         return self._load(db, outfit.id, user_id=user_id)
 
-    def list(self, db: Session, *, user_id: int, skip: int = 0, limit: int = 100) -> list[Outfit]:
+    def list(
+        self,
+        db: Session,
+        *,
+        user_id: int,
+        season: str | None = None,
+        occasion: str | None = None,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> list[Outfit]:
+        query = db.query(Outfit).filter(Outfit.user_id == user_id)
+
+        if season:
+            query = query.filter(Outfit.season == season)
+        if occasion:
+            query = query.filter(Outfit.occasion == occasion)
+
         return (
-            db.query(Outfit)
-            .filter(Outfit.user_id == user_id)
-            .options(
+            query.options(
                 joinedload(Outfit.shoe),
                 joinedload(Outfit.bottom),
                 joinedload(Outfit.top),
