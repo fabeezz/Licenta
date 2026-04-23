@@ -155,17 +155,17 @@ private fun OutfitStudioScreen(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
-                        // leave right margin for the fixed control buttons
+                        // standard margin, items go under fixed control buttons
                         .padding(
                             start = 20.dp,
-                            end = 72.dp,
+                            end = 20.dp,
                             bottom = innerPad.calculateBottomPadding() + 16.dp
                         ),
                     contentAlignment = Alignment.Center,
                 ) {
                     val availH = maxHeight
                     val availW = maxWidth
-                    val gap = 8.dp
+                    val gap = 0.dp
 
                     if (state.isLoading) {
                         CircularProgressIndicator()
@@ -338,7 +338,7 @@ private fun SwipeableSlotTile(
             .width(width)
             .height(height)
             .clip(RoundedCornerShape(24.dp))
-            .background(colors.surfaceContainerHighest)
+            .background(colors.surfaceContainerLow)
             .pointerInput(slot.items.size) {
                 detectHorizontalDragGestures(
                     onDragEnd = {
