@@ -24,7 +24,7 @@ import com.example.outfitai.data.model.ItemConstants
 import com.example.outfitai.data.model.ItemOutDto
 import com.example.outfitai.ui.common.FormDropdownSelector
 import com.example.outfitai.ui.common.FormTextField
-import com.example.outfitai.util.mediaUrl
+import com.example.outfitai.core.media.mediaUrl
 
 @Composable
 fun SaveOutfitDialog(

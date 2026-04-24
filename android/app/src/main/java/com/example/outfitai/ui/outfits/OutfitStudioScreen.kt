@@ -25,7 +25,7 @@ import coil.compose.AsyncImage
 import com.example.outfitai.ui.components.AppBottomBar
 import com.example.outfitai.ui.components.BottomBarDest
 import com.example.outfitai.ui.upload.rememberUploadLauncher
-import com.example.outfitai.util.mediaUrl
+import com.example.outfitai.core.media.mediaUrl
 
 @Composable
 fun OutfitStudioRoute(

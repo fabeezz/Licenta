@@ -27,8 +27,8 @@ import coil.size.Precision
 import coil.size.Size
 import com.example.outfitai.data.model.ItemMinimalDto
 import com.example.outfitai.data.model.OutfitSavedDto
-import com.example.outfitai.util.colorNameToComposeColor
-import com.example.outfitai.util.mediaUrl
+import com.example.outfitai.core.ui.color.colorNameToComposeColor
+import com.example.outfitai.core.media.mediaUrl
 
 @Composable
 fun OutfitDetailRoute(

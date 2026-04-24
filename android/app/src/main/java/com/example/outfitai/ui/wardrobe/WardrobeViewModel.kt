@@ -2,87 +2,125 @@ package com.example.outfitai.ui.wardrobe
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.outfitai.data.wardrobe.WardrobeRepository
+import com.example.outfitai.core.common.Resource
+import com.example.outfitai.domain.usecase.wardrobe.GetFilteredWardrobeUseCase
+import com.example.outfitai.domain.usecase.wardrobe.GetWardrobeOutfitsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import retrofit2.HttpException
-import java.io.IOException
 import javax.inject.Inject
+
+sealed interface WardrobeIntent {
+    data class SelectTab(val tab: WardrobeTab) : WardrobeIntent
+    data class SetCategoryFilter(val value: String?) : WardrobeIntent
+    data class SetColorFilter(val value: String?) : WardrobeIntent
+    data class SetSeasonFilter(val value: String?) : WardrobeIntent
+    data class SetOccasionFilter(val value: String?) : WardrobeIntent
+    data object ClearFilters : WardrobeIntent
+    data object Refresh : WardrobeIntent
+}
+
+private data class ActiveFilters(
+    val tab: WardrobeTab = WardrobeTab.Pieces,
+    val category: String? = null,
+    val color: String? = null,
+    val season: String? = null,
+    val occasion: String? = null,
+    val nonce: Int = 0, // incremented on Refresh to re-trigger same filters
+)
 
 @HiltViewModel
 class WardrobeViewModel @Inject constructor(
-    private val repo: WardrobeRepository
+    private val getFilteredWardrobe: GetFilteredWardrobeUseCase,
+    private val getWardrobeOutfits: GetWardrobeOutfitsUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(WardrobeUiState())
     val state = _state.asStateFlow()
 
-    init {
-        refresh()
-    }
+    private val _filters = MutableStateFlow(ActiveFilters())
 
-    fun refresh() {
-        val s = _state.value
-        _state.value = s.copy(isLoading = true, error = null)
+    private fun reduce(block: WardrobeUiState.() -> WardrobeUiState) =
+        _state.update { it.block() }
+
+    init {
         viewModelScope.launch {
-            try {
-                if (s.selectedTab == WardrobeTab.Pieces) {
-                    val items = repo.listItems(
-                        category = s.filterCategory,
-                        dominantColor = s.filterColor,
-                        season = s.filterSeason,
-                        occasion = s.filterOccasion,
-                    )
-                    _state.value = _state.value.copy(isLoading = false, items = items, error = null)
-                } else {
-                    val outfits = repo.listOutfits(
-                        season = s.filterSeason,
-                        occasion = s.filterOccasion,
-                    )
-                    _state.value = _state.value.copy(isLoading = false, outfits = outfits, error = null)
+            @Suppress("OPT_IN_USAGE")
+            _filters
+                .debounce(200L)
+                .collectLatest { f ->
+                    reduce { copy(isLoading = true, error = null) }
+                    if (f.tab == WardrobeTab.Pieces) {
+                        when (val result = getFilteredWardrobe(
+                            category = f.category,
+                            dominantColor = f.color,
+                            season = f.season,
+                            occasion = f.occasion,
+                        )) {
+                            is Resource.Success -> reduce {
+                                copy(isLoading = false, items = result.data, error = null)
+                            }
+                            is Resource.Error -> reduce { copy(isLoading = false, error = result.message) }
+                            Resource.Loading -> Unit
+                        }
+                    } else {
+                        when (val result = getWardrobeOutfits(
+                            season = f.season,
+                            occasion = f.occasion,
+                        )) {
+                            is Resource.Success -> reduce {
+                                copy(isLoading = false, outfits = result.data, error = null)
+                            }
+                            is Resource.Error -> reduce { copy(isLoading = false, error = result.message) }
+                            Resource.Loading -> Unit
+                        }
+                    }
                 }
-            } catch (e: HttpException) {
-                _state.value = _state.value.copy(isLoading = false, error = "Eroare server (${e.code()}).")
-            } catch (_: IOException) {
-                _state.value = _state.value.copy(isLoading = false, error = "Nu pot contacta serverul.")
-            }
         }
     }
 
-    fun setTab(tab: WardrobeTab) {
-        _state.value = _state.value.copy(selectedTab = tab)
-        refresh()
+    fun onIntent(intent: WardrobeIntent) {
+        when (intent) {
+            is WardrobeIntent.SelectTab -> {
+                reduce { copy(selectedTab = intent.tab) }
+                _filters.update { it.copy(tab = intent.tab) }
+            }
+            is WardrobeIntent.SetCategoryFilter -> {
+                reduce { copy(filterCategory = intent.value) }
+                _filters.update { it.copy(category = intent.value) }
+            }
+            is WardrobeIntent.SetColorFilter -> {
+                reduce { copy(filterColor = intent.value) }
+                _filters.update { it.copy(color = intent.value) }
+            }
+            is WardrobeIntent.SetSeasonFilter -> {
+                reduce { copy(filterSeason = intent.value) }
+                _filters.update { it.copy(season = intent.value) }
+            }
+            is WardrobeIntent.SetOccasionFilter -> {
+                reduce { copy(filterOccasion = intent.value) }
+                _filters.update { it.copy(occasion = intent.value) }
+            }
+            WardrobeIntent.ClearFilters -> {
+                reduce {
+                    copy(filterCategory = null, filterColor = null, filterSeason = null, filterOccasion = null)
+                }
+                _filters.update { it.copy(category = null, color = null, season = null, occasion = null) }
+            }
+            WardrobeIntent.Refresh -> _filters.update { it.copy(nonce = it.nonce + 1) }
+        }
     }
 
-    fun setFilterCategory(value: String?) {
-        _state.value = _state.value.copy(filterCategory = value)
-        refresh()
-    }
-
-    fun setFilterColor(value: String?) {
-        _state.value = _state.value.copy(filterColor = value)
-        refresh()
-    }
-
-    fun setFilterSeason(value: String?) {
-        _state.value = _state.value.copy(filterSeason = value)
-        refresh()
-    }
-
-    fun setFilterOccasion(value: String?) {
-        _state.value = _state.value.copy(filterOccasion = value)
-        refresh()
-    }
-
-    fun clearFilters() {
-        _state.value = _state.value.copy(
-            filterCategory = null,
-            filterColor = null,
-            filterSeason = null,
-            filterOccasion = null,
-        )
-        refresh()
-    }
+    // Convenience delegates for existing call sites in WardrobeScreen
+    fun refresh() = onIntent(WardrobeIntent.Refresh)
+    fun setTab(tab: WardrobeTab) = onIntent(WardrobeIntent.SelectTab(tab))
+    fun setFilterCategory(value: String?) = onIntent(WardrobeIntent.SetCategoryFilter(value))
+    fun setFilterColor(value: String?) = onIntent(WardrobeIntent.SetColorFilter(value))
+    fun setFilterSeason(value: String?) = onIntent(WardrobeIntent.SetSeasonFilter(value))
+    fun setFilterOccasion(value: String?) = onIntent(WardrobeIntent.SetOccasionFilter(value))
+    fun clearFilters() = onIntent(WardrobeIntent.ClearFilters)
 }

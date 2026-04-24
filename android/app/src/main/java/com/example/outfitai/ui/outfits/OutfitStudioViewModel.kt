@@ -2,10 +2,11 @@ package com.example.outfitai.ui.outfits
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.outfitai.data.auth.AuthRepository
+import com.example.outfitai.core.common.Resource
 import com.example.outfitai.data.model.OutfitCreateDto
-import com.example.outfitai.data.outfits.OutfitRepository
-import com.example.outfitai.data.wardrobe.WardrobeRepository
+import com.example.outfitai.domain.usecase.auth.GetCurrentUserUseCase
+import com.example.outfitai.domain.usecase.outfits.CreateOutfitUseCase
+import com.example.outfitai.domain.usecase.wardrobe.GetFilteredWardrobeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -20,9 +21,9 @@ import kotlin.random.Random
 
 @HiltViewModel
 class OutfitStudioViewModel @Inject constructor(
-    private val wardrobeRepo: WardrobeRepository,
-    private val outfitRepo: OutfitRepository,
-    private val authRepo: AuthRepository,
+    private val getFilteredWardrobe: GetFilteredWardrobeUseCase,
+    private val createOutfit: CreateOutfitUseCase,
+    private val getCurrentUser: GetCurrentUserUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(OutfitStudioUiState())
@@ -35,8 +36,10 @@ class OutfitStudioViewModel @Inject constructor(
 
     private fun loadUsername() {
         viewModelScope.launch {
-            runCatching { authRepo.me().username }
-                .onSuccess { name -> _state.update { it.copy(username = name) } }
+            val result = getCurrentUser()
+            if (result is Resource.Success) {
+                _state.update { it.copy(username = result.data?.username ?: "") }
+            }
         }
     }
 
@@ -44,7 +47,7 @@ class OutfitStudioViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
             val fState = _state.value.filterState
-            
+
             val occ = when (fState.style) {
                 "Casual" -> "casual"
                 "Athleisure" -> "sportswear"
@@ -59,33 +62,30 @@ class OutfitStudioViewModel @Inject constructor(
                         var seasonOverride: String? = null
                         var materialOverride: String? = null
                         var skip = false
-                        
+
                         if (fState.climate == "Cold") {
-                            // Cold: Only Winter or All-season for Bottom/Outer/Shoes
                             if (slot != Slot.TOP) seasonOverride = "winter,all-season"
                         } else if (fState.climate == "Warm") {
-                            // Warm: Summer, Spring, Autumn, or All-season. Disable Outer.
                             if (slot == Slot.OUTER) skip = true
                             else seasonOverride = "summer,spring,autumn,all-season"
                         } else if (fState.climate == "Rainy") {
-                            // Rainy: Prefer nylon for outer, or all-season
                             if (slot == Slot.OUTER) materialOverride = "nylon"
-                            // For rainy, we should also probably allow all-season items
                         }
-                        
+
                         if (skip) {
                             slot to SlotItems()
                         } else {
                             val items = categories.map { cat ->
-                                async { 
-                                    wardrobeRepo.listItems(
-                                        category = cat, 
+                                async {
+                                    val result = getFilteredWardrobe(
+                                        category = cat,
                                         occasion = occ,
                                         colors = null,
                                         season = seasonOverride,
                                         material = materialOverride,
-                                        limit = 200
-                                    ) 
+                                        limit = 200,
+                                    )
+                                    if (result is Resource.Success) result.data else emptyList()
                                 }
                             }.awaitAll().flatten()
                             slot to SlotItems(items = items)
@@ -104,7 +104,7 @@ class OutfitStudioViewModel @Inject constructor(
                     s.copy(
                         isLoading = false,
                         includeOuter = shouldIncludeOuter,
-                        top   = slots[Slot.TOP]   ?: SlotItems(),
+                        top = slots[Slot.TOP] ?: SlotItems(),
                         bottom = slots[Slot.BOTTOM] ?: SlotItems(),
                         outer = slots[Slot.OUTER] ?: SlotItems(),
                         shoes = slots[Slot.SHOES] ?: SlotItems(),
@@ -116,14 +116,9 @@ class OutfitStudioViewModel @Inject constructor(
         }
     }
 
-    fun openFilterDialog() {
-        _state.update { it.copy(showFilterDialog = true) }
-    }
-    
-    fun closeFilterDialog() {
-        _state.update { it.copy(showFilterDialog = false) }
-    }
-    
+    fun openFilterDialog() { _state.update { it.copy(showFilterDialog = true) } }
+    fun closeFilterDialog() { _state.update { it.copy(showFilterDialog = false) } }
+
     fun applyFilters(style: String?, climate: String?) {
         _state.update { it.copy(filterState = OutfitFilterState(style, climate), showFilterDialog = false) }
         loadAllSlots()
@@ -165,28 +160,18 @@ class OutfitStudioViewModel @Inject constructor(
         _state.update { it.copy(showSaveDialog = true, outfitName = "", selectedSeason = "", selectedOccasion = "") }
     }
 
-    fun closeSaveDialog() {
-        _state.update { it.copy(showSaveDialog = false) }
-    }
+    fun closeSaveDialog() { _state.update { it.copy(showSaveDialog = false) } }
 
-    fun updateOutfitName(name: String) {
-        _state.update { it.copy(outfitName = name) }
-    }
-
-    fun updateSeason(season: String) {
-        _state.update { it.copy(selectedSeason = season) }
-    }
-
-    fun updateOccasion(occasion: String) {
-        _state.update { it.copy(selectedOccasion = occasion) }
-    }
+    fun updateOutfitName(name: String) { _state.update { it.copy(outfitName = name) } }
+    fun updateSeason(season: String) { _state.update { it.copy(selectedSeason = season) } }
+    fun updateOccasion(occasion: String) { _state.update { it.copy(selectedOccasion = occasion) } }
 
     fun save() {
         val s = _state.value
-        val top   = s.top.current   ?: return
+        val top = s.top.current ?: return
         val bottom = s.bottom.current ?: return
-        val shoes  = s.shoes.current  ?: return
-        val outer  = if (s.includeOuter) s.outer.current else null
+        val shoes = s.shoes.current ?: return
+        val outer = if (s.includeOuter) s.outer.current else null
 
         val finalName = if (s.outfitName.isBlank()) {
             "Outfit ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM HH:mm"))}"
@@ -196,22 +181,23 @@ class OutfitStudioViewModel @Inject constructor(
 
         _state.update { it.copy(isSaving = true, showSaveDialog = false) }
         viewModelScope.launch {
-            runCatching {
-                outfitRepo.create(
-                    OutfitCreateDto(
-                        name     = finalName,
-                        topId    = top.id,
-                        bottomId = bottom.id,
-                        shoeId   = shoes.id,
-                        outerId  = outer?.id,
-                        season   = s.selectedSeason.takeIf { it.isNotBlank() },
-                        occasion = s.selectedOccasion.takeIf { it.isNotBlank() },
-                    )
-                )
-            }.onSuccess { id ->
-                _state.update { it.copy(isSaving = false, savedOutfitId = id, snackbarMessage = "Outfit saved!") }
-            }.onFailure { e ->
-                _state.update { it.copy(isSaving = false, snackbarMessage = "Save failed: ${e.message}") }
+            val dto = OutfitCreateDto(
+                name = finalName,
+                topId = top.id,
+                bottomId = bottom.id,
+                shoeId = shoes.id,
+                outerId = outer?.id,
+                season = s.selectedSeason.takeIf { it.isNotBlank() },
+                occasion = s.selectedOccasion.takeIf { it.isNotBlank() },
+            )
+            when (val result = createOutfit(dto)) {
+                is Resource.Success -> _state.update {
+                    it.copy(isSaving = false, savedOutfitId = result.data, snackbarMessage = "Outfit saved!")
+                }
+                is Resource.Error -> _state.update {
+                    it.copy(isSaving = false, snackbarMessage = "Save failed: ${result.message}")
+                }
+                Resource.Loading -> Unit
             }
         }
     }
@@ -220,15 +206,15 @@ class OutfitStudioViewModel @Inject constructor(
 }
 
 private fun OutfitStudioUiState.slotOf(slot: Slot) = when (slot) {
-    Slot.TOP    -> top
+    Slot.TOP -> top
     Slot.BOTTOM -> bottom
-    Slot.OUTER  -> outer
-    Slot.SHOES  -> shoes
+    Slot.OUTER -> outer
+    Slot.SHOES -> shoes
 }
 
 private fun OutfitStudioUiState.withSlot(slot: Slot, items: SlotItems) = when (slot) {
-    Slot.TOP    -> copy(top    = items)
+    Slot.TOP -> copy(top = items)
     Slot.BOTTOM -> copy(bottom = items)
-    Slot.OUTER  -> copy(outer  = items)
-    Slot.SHOES  -> copy(shoes  = items)
+    Slot.OUTER -> copy(outer = items)
+    Slot.SHOES -> copy(shoes = items)
 }

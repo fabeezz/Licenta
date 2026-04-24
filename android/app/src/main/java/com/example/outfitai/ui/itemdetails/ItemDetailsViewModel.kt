@@ -3,29 +3,39 @@ package com.example.outfitai.ui.itemdetails
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.outfitai.data.item.ItemRepository
+import com.example.outfitai.core.common.Resource
+import com.example.outfitai.data.model.ItemOutDto
 import com.example.outfitai.data.model.ItemUpdateDto
+import com.example.outfitai.domain.usecase.item.DeleteItemUseCase
+import com.example.outfitai.domain.usecase.item.GetItemUseCase
+import com.example.outfitai.domain.usecase.item.UpdateItemUseCase
+import com.example.outfitai.domain.usecase.item.WearItemUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.jsonPrimitive
-import retrofit2.HttpException
-import java.io.IOException
 import javax.inject.Inject
 
 @HiltViewModel
 class ItemDetailsViewModel @Inject constructor(
-    private val repo: ItemRepository,
-    savedStateHandle: SavedStateHandle
+    private val getItem: GetItemUseCase,
+    private val updateItem: UpdateItemUseCase,
+    private val wearItem: WearItemUseCase,
+    private val deleteItem: DeleteItemUseCase,
+    savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
     private val itemId: Int = checkNotNull(savedStateHandle["itemId"])
 
     private val _state = MutableStateFlow(ItemDetailsUiState())
     val state = _state.asStateFlow()
+
+    private fun reduce(block: ItemDetailsUiState.() -> ItemDetailsUiState) =
+        _state.update { it.block() }
 
     init { load() }
 
@@ -34,135 +44,109 @@ class ItemDetailsViewModel @Inject constructor(
         return arr.mapNotNull { it.jsonPrimitive.content }
     }
 
+    private fun applyItem(item: ItemOutDto) = reduce {
+        copy(
+            isLoading = false,
+            item = item,
+            category = item.category.orEmpty(),
+            brand = item.brand.orEmpty(),
+            material = item.material.orEmpty(),
+            season = item.season.orEmpty(),
+            occasion = item.occasion.orEmpty(),
+            dominantColors = extractColorList(item.colorTags, "dominant"),
+            accentColors = extractColorList(item.colorTags, "accent"),
+        )
+    }
+
     fun load() {
-        _state.value = _state.value.copy(isLoading = true, error = null)
+        reduce { copy(isLoading = true, error = null) }
         viewModelScope.launch {
-            try {
-                val it = repo.getItem(itemId)
-                _state.value = _state.value.copy(
-                    isLoading = false,
-                    item = it,
-                    category = it.category.orEmpty(),
-                    brand = it.brand.orEmpty(),
-                    material = it.material.orEmpty(),
-                    season = it.season.orEmpty(),
-                    occasion = it.occasion.orEmpty(),
-                    dominantColors = extractColorList(it.colorTags, "dominant"),
-                    accentColors = extractColorList(it.colorTags, "accent"),
-                )
-            } catch (e: HttpException) {
-                _state.value = _state.value.copy(isLoading = false, error = "Eroare server (${e.code()}).")
-            } catch (_: IOException) {
-                _state.value = _state.value.copy(isLoading = false, error = "Nu pot contacta serverul.")
+            when (val result = getItem(itemId)) {
+                is Resource.Success -> applyItem(result.data)
+                is Resource.Error -> reduce { copy(isLoading = false, error = result.message) }
+                Resource.Loading -> Unit
             }
         }
     }
 
     fun toggleEdit() {
         val s = _state.value
-        val isStartingEdit = !s.isEditing
-        if (isStartingEdit && s.item != null) {
-            // Reset to current item state when starting edit
-            _state.value = s.copy(
-                isEditing = true,
-                error = null,
-                category = s.item.category.orEmpty(),
-                brand = s.item.brand.orEmpty(),
-                material = s.item.material.orEmpty(),
-                season = s.item.season.orEmpty(),
-                occasion = s.item.occasion.orEmpty(),
-                dominantColors = extractColorList(s.item.colorTags, "dominant"),
-                accentColors = extractColorList(s.item.colorTags, "accent"),
-            )
+        if (!s.isEditing && s.item != null) {
+            applyItem(s.item)
+            reduce { copy(isEditing = true, error = null) }
         } else {
-            _state.value = s.copy(isEditing = false, error = null)
+            reduce { copy(isEditing = false, error = null) }
         }
     }
 
-    fun setCategory(v: String) { _state.value = _state.value.copy(category = v) }
-    fun setBrand(v: String) { _state.value = _state.value.copy(brand = v) }
-    fun setMaterial(v: String) { _state.value = _state.value.copy(material = v) }
-    fun setSeason(v: String) { _state.value = _state.value.copy(season = v) }
-    fun setOccasion(v: String) { _state.value = _state.value.copy(occasion = v) }
+    fun setCategory(v: String) { reduce { copy(category = v) } }
+    fun setBrand(v: String) { reduce { copy(brand = v) } }
+    fun setMaterial(v: String) { reduce { copy(material = v) } }
+    fun setSeason(v: String) { reduce { copy(season = v) } }
+    fun setOccasion(v: String) { reduce { copy(occasion = v) } }
 
-    fun setDominantColor(color: String) {
-        _state.value = _state.value.copy(dominantColors = listOf(color))
-    }
+    fun setDominantColor(color: String) { reduce { copy(dominantColors = listOf(color)) } }
 
     fun toggleAccentColor(color: String) {
-        val current = _state.value.accentColors.toMutableList()
-        if (current.contains(color)) {
-            current.remove(color)
-        } else {
-            current.add(color)
+        reduce {
+            val updated = accentColors.toMutableList().apply {
+                if (contains(color)) remove(color) else add(color)
+            }
+            copy(accentColors = updated)
         }
-        _state.value = _state.value.copy(accentColors = current)
     }
-
-    private fun blankToNull(s: String) = s.trim().takeIf { it.isNotBlank() }
 
     fun save(onSaved: () -> Unit) {
         val s = _state.value
-        _state.value = s.copy(isBusy = true, error = null)
+        reduce { copy(isBusy = true, error = null) }
         viewModelScope.launch {
-            try {
-                val updated = repo.updateItem(
-                    itemId,
-                    ItemUpdateDto(
-                        category = blankToNull(s.category),
-                        brand = blankToNull(s.brand),
-                        material = blankToNull(s.material),
-                        season = blankToNull(s.season),
-                        occasion = blankToNull(s.occasion),
-                        colorTags = mapOf(
-                            "dominant" to s.dominantColors,
-                            "accent" to s.accentColors
-                        )
-                    )
-                )
-                _state.value = _state.value.copy(
-                    isBusy = false,
-                    isEditing = false,
-                    item = updated,
-                    dominantColors = extractColorList(updated.colorTags, "dominant"),
-                    accentColors = extractColorList(updated.colorTags, "accent"),
-                )
-                onSaved()
-            } catch (e: HttpException) {
-                _state.value = _state.value.copy(isBusy = false, error = "Eroare server (${e.code()}).")
-            } catch (_: IOException) {
-                _state.value = _state.value.copy(isBusy = false, error = "Nu pot contacta serverul.")
+            val body = ItemUpdateDto(
+                category = s.category.blankToNull(),
+                brand = s.brand.blankToNull(),
+                material = s.material.blankToNull(),
+                season = s.season.blankToNull(),
+                occasion = s.occasion.blankToNull(),
+                colorTags = mapOf("dominant" to s.dominantColors, "accent" to s.accentColors),
+            )
+            when (val result = updateItem(itemId, body)) {
+                is Resource.Success -> {
+                    applyItem(result.data)
+                    reduce { copy(isBusy = false, isEditing = false) }
+                    onSaved()
+                }
+                is Resource.Error -> reduce { copy(isBusy = false, error = result.message) }
+                Resource.Loading -> Unit
             }
         }
     }
 
     fun wear(onChanged: () -> Unit) {
-        _state.value = _state.value.copy(isBusy = true, error = null)
+        reduce { copy(isBusy = true, error = null) }
         viewModelScope.launch {
-            try {
-                val updated = repo.wearItem(itemId)
-                _state.value = _state.value.copy(isBusy = false, item = updated)
-                onChanged()
-            } catch (e: HttpException) {
-                _state.value = _state.value.copy(isBusy = false, error = "Eroare server (${e.code()}).")
-            } catch (_: IOException) {
-                _state.value = _state.value.copy(isBusy = false, error = "Nu pot contacta serverul.")
+            when (val result = wearItem(itemId)) {
+                is Resource.Success -> {
+                    reduce { copy(isBusy = false, item = result.data) }
+                    onChanged()
+                }
+                is Resource.Error -> reduce { copy(isBusy = false, error = result.message) }
+                Resource.Loading -> Unit
             }
         }
     }
 
     fun delete(onDeleted: () -> Unit) {
-        _state.value = _state.value.copy(isBusy = true, error = null)
+        reduce { copy(isBusy = true, error = null) }
         viewModelScope.launch {
-            try {
-                repo.deleteItem(itemId)
-                _state.value = _state.value.copy(isBusy = false)
-                onDeleted()
-            } catch (e: HttpException) {
-                _state.value = _state.value.copy(isBusy = false, error = "Eroare server (${e.code()}).")
-            } catch (_: IOException) {
-                _state.value = _state.value.copy(isBusy = false, error = "Nu pot contacta serverul.")
+            when (val result = deleteItem(itemId)) {
+                is Resource.Success -> {
+                    reduce { copy(isBusy = false) }
+                    onDeleted()
+                }
+                is Resource.Error -> reduce { copy(isBusy = false, error = result.message) }
+                Resource.Loading -> Unit
             }
         }
     }
+
+    private fun String.blankToNull() = trim().takeIf { it.isNotBlank() }
 }

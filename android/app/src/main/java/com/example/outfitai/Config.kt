@@ -1,5 +1,5 @@
 package com.example.outfitai
 
 object Config {
-    const val BASE_URL = "http://192.168.240.1:8000/"
+    val BASE_URL: String get() = BuildConfig.BASE_URL
 }

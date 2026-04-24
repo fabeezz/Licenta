@@ -1,17 +1,10 @@
 package com.example.outfitai.ui.itemdetails
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -20,20 +13,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.outfitai.data.model.ItemConstants
 import com.example.outfitai.ui.components.DropdownSelector
-import com.example.outfitai.util.colorNameToComposeColor
-import com.example.outfitai.util.mediaUrl
+import com.example.outfitai.core.ui.color.colorNameToComposeColor
+import com.example.outfitai.core.media.mediaUrl
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.jsonPrimitive
@@ -185,8 +173,6 @@ private fun ItemDetailsScreen(
                 else -> {
                     val item = state.item
                     val filename = item.imageNoBgName ?: item.imageOriginalName
-                    val dominant = extractColorList(item.colorTags, "dominant")
-                    val accent = extractColorList(item.colorTags, "accent")
 
                     Column(
                         modifier = Modifier
@@ -197,7 +183,6 @@ private fun ItemDetailsScreen(
                     ) {
                         Spacer(Modifier.height(16.dp))
 
-                        // ── Hero image card ──
                         Surface(
                             color = cs.surfaceContainer,
                             shape = shapes.extraLarge,
@@ -238,7 +223,6 @@ private fun ItemDetailsScreen(
 
                         Spacer(Modifier.height(32.dp))
 
-                        // ── Title block ──
                         Text(
                             text = item.category?.replaceFirstChar { it.uppercaseChar() } ?: "Item",
                             style = MaterialTheme.typography.headlineMedium,
@@ -259,7 +243,6 @@ private fun ItemDetailsScreen(
 
                         Spacer(Modifier.height(20.dp))
 
-                        // Mark Worn CTA — only in view mode
                         if (!state.isEditing) {
                             Button(
                                 onClick = onWear,
@@ -285,11 +268,7 @@ private fun ItemDetailsScreen(
 
                         Spacer(Modifier.height(32.dp))
 
-                        // ── Metadata cards (stacked) ──
-                        InfoCard(
-                            title = "Classification",
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
+                        InfoCard(title = "Classification", modifier = Modifier.fillMaxWidth()) {
                             if (state.isEditing) {
                                 DropdownSelector(
                                     label = "Category",
@@ -314,10 +293,7 @@ private fun ItemDetailsScreen(
 
                         Spacer(Modifier.height(12.dp))
 
-                        InfoCard(
-                            title = "Attributes",
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
+                        InfoCard(title = "Attributes", modifier = Modifier.fillMaxWidth()) {
                             if (state.isEditing) {
                                 DropdownSelector(
                                     label = "Material",
@@ -351,11 +327,7 @@ private fun ItemDetailsScreen(
 
                         Spacer(Modifier.height(12.dp))
 
-                        // ── Color Profile card ──
-                        InfoCard(
-                            title = "Color Profile",
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
+                        InfoCard(title = "Color Profile", modifier = Modifier.fillMaxWidth()) {
                             val dominant = if (state.isEditing) state.dominantColors else extractColorList(item.colorTags, "dominant")
                             val accent = if (state.isEditing) state.accentColors else extractColorList(item.colorTags, "accent")
 
@@ -430,11 +402,7 @@ private fun ItemDetailsScreen(
 
                         Spacer(Modifier.height(12.dp))
 
-                        // ── Occasion card (full width) ──
-                        InfoCard(
-                            title = "Occasion",
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
+                        InfoCard(title = "Occasion", modifier = Modifier.fillMaxWidth()) {
                             FlowRow(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -451,7 +419,6 @@ private fun ItemDetailsScreen(
                             }
                         }
 
-                        // ── Edit mode: Save / Cancel bar ──
                         if (state.isEditing) {
                             Spacer(Modifier.height(20.dp))
                             Row(
@@ -485,7 +452,6 @@ private fun ItemDetailsScreen(
                             }
                         }
 
-                        // ── Danger zone ──
                         Spacer(Modifier.height(32.dp))
                         HorizontalDivider(color = cs.outlineVariant.copy(alpha = 0.5f))
                         Spacer(Modifier.height(16.dp))
@@ -509,7 +475,6 @@ private fun ItemDetailsScreen(
             }
 
             if (confirmDelete) {
-                val cs2 = MaterialTheme.colorScheme
                 AlertDialog(
                     onDismissRequest = { confirmDelete = false },
                     title = { Text("Delete item?") },
@@ -517,7 +482,7 @@ private fun ItemDetailsScreen(
                     confirmButton = {
                         Button(
                             onClick = { confirmDelete = false; onDelete() },
-                            colors = ButtonDefaults.buttonColors(containerColor = cs2.error)
+                            colors = ButtonDefaults.buttonColors(containerColor = cs.error)
                         ) { Text("Delete") }
                     },
                     dismissButton = {
@@ -526,239 +491,5 @@ private fun ItemDetailsScreen(
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun InfoCard(
-    title: String,
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    val cs = MaterialTheme.colorScheme
-    Surface(
-        color = cs.surfaceContainerLow,
-        shape = MaterialTheme.shapes.large,
-        border = BorderStroke(1.dp, cs.outlineVariant.copy(alpha = 0.5f)),
-        modifier = modifier
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = title.uppercase(),
-                style = MaterialTheme.typography.labelLarge,
-                color = cs.onSurfaceVariant
-            )
-            Spacer(Modifier.height(8.dp))
-            content()
-        }
-    }
-}
-
-@Composable
-private fun InfoRow(label: String, value: String) {
-    val cs = MaterialTheme.colorScheme
-    Column {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            color = cs.onSurfaceVariant
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium,
-            color = cs.onSurface
-        )
-    }
-}
-
-@Composable
-private fun SeasonChip(season: String) {
-    val cs = MaterialTheme.colorScheme
-    Surface(
-        shape = CircleShape,
-        color = cs.surfaceContainer,
-        border = BorderStroke(1.dp, cs.outlineVariant.copy(alpha = 0.4f))
-    ) {
-        Text(
-            text = season,
-            style = MaterialTheme.typography.labelLarge,
-            color = cs.onSurface,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-        )
-    }
-}
-
-@Composable
-private fun ColorSwatch(
-    name: String,
-    role: String,
-    size: Dp,
-    color: Color,
-    clickable: Boolean = false,
-    onClick: () -> Unit = {}
-) {
-    val cs = MaterialTheme.colorScheme
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = Modifier
-            .clip(MaterialTheme.shapes.medium)
-            .run { if (clickable) clickable(onClick = onClick) else this }
-            .padding(4.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(size)
-                .clip(CircleShape)
-                .background(color)
-                .border(1.dp, cs.outlineVariant.copy(alpha = 0.5f), CircleShape)
-        )
-        Text(
-            text = name.replaceFirstChar { it.uppercaseChar() },
-            style = MaterialTheme.typography.labelLarge,
-            color = cs.onSurface,
-            maxLines = 1
-        )
-        Text(
-            text = role,
-            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 11.sp),
-            color = cs.onSurfaceVariant,
-            maxLines = 1
-        )
-    }
-}
-
-@Composable
-fun ColorSelectionDialog(
-    title: String,
-    currentSelected: List<String>,
-    onDismiss: () -> Unit,
-    onSelect: (String) -> Unit,
-    isMultiple: Boolean = false
-) {
-    val cs = MaterialTheme.colorScheme
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(24.dp),
-            color = cs.surfaceContainerHigh,
-            tonalElevation = 6.dp,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 24.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .padding(24.dp)
-                    .fillMaxWidth()
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = cs.onSurface,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 80.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.heightIn(max = 400.dp)
-                ) {
-                    items(ItemConstants.COLORS) { colorName ->
-                        val isSelected = currentSelected.contains(colorName)
-                        ColorOption(
-                            name = colorName,
-                            isSelected = isSelected,
-                            onClick = { onSelect(colorName) }
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(24.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(onClick = onDismiss) {
-                        Text(if (isMultiple) "Done" else "Cancel")
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ColorOption(
-    name: String,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    val cs = MaterialTheme.colorScheme
-    val color = colorNameToComposeColor(name, cs.surfaceVariant)
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(if (isSelected) cs.primaryContainer else Color.Transparent)
-            .clickable(onClick = onClick)
-            .padding(8.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(color)
-                .border(1.dp, cs.outlineVariant.copy(alpha = 0.3f), CircleShape)
-        ) {
-            if (isSelected) {
-                Icon(
-                    Icons.Default.Check,
-                    contentDescription = null,
-                    tint = if (color.luminance() > 0.5f) Color.Black else Color.White,
-                    modifier = Modifier.align(Alignment.Center).size(20.dp)
-                )
-            }
-        }
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = name.replaceFirstChar { it.uppercaseChar() },
-            style = MaterialTheme.typography.labelMedium,
-            color = if (isSelected) cs.onPrimaryContainer else cs.onSurface,
-            textAlign = TextAlign.Center,
-            maxLines = 1
-        )
-    }
-}
-
-private fun Color.luminance(): Float {
-    return 0.2126f * red + 0.7152f * green + 0.0722f * blue
-}
-
-@Composable
-private fun OccasionChip(
-    label: String,
-    selected: Boolean,
-    clickable: Boolean,
-    onClick: () -> Unit,
-) {
-    val cs = MaterialTheme.colorScheme
-    Surface(
-        shape = CircleShape,
-        color = if (selected) cs.primary else cs.surfaceContainer,
-        border = if (!selected) BorderStroke(1.dp, cs.outlineVariant.copy(alpha = 0.4f)) else null,
-        modifier = if (clickable) Modifier.clickable(onClick = onClick) else Modifier
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-            color = if (selected) cs.onPrimary else cs.onSurface,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-        )
     }
 }
