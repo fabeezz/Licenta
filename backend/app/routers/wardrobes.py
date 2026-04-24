@@ -6,8 +6,6 @@ from app.db.session import get_db
 from app.models.user import User
 from app.schemas.item import ItemOut
 from app.services.item_service import item_service
-from app.schemas.outfit import OutfitOut, OutfitItemRef
-from app.services.outfits.outfit_service import outfit_service
 
 router = APIRouter(
     prefix="/wardrobe",
@@ -68,41 +66,3 @@ def get_stats(
 ):
     return item_service.get_basic_stats(db, user_id=current_user.id)
 
-@router.get("/outfits", response_model=list[OutfitOut])
-def recommend_outfits_mvp1(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-    season: str | None = Query(None),
-    occasion: str | None = Query(None),
-    limit: int = Query(6, ge=1, le=20),
-):
-    outfits = outfit_service.recommend_mvp1(
-        db,
-        user_id=current_user.id,
-        season=season,
-        occasion=occasion,
-        limit=limit,
-    )
-
-    def ref(it):
-        dom = None
-        if it.color_tags and isinstance(it.color_tags.get("dominant"), list) and it.color_tags["dominant"]:
-            dom = it.color_tags["dominant"][0]
-        return OutfitItemRef(
-            id=it.id,
-            category=it.category,
-            image_no_bg_name=it.image_no_bg_name,
-            image_original_name=it.image_original_name,
-            dominant_color=dom,
-        )
-
-    return [
-        OutfitOut(
-            top=ref(o.top),
-            bottom=ref(o.bottom),
-            outer=ref(o.outer),
-            shoes=ref(o.shoes),
-            score=o.score,
-        )
-        for o in outfits
-    ]

@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -54,6 +55,14 @@ fun OutfitStudioRoute(
         )
     }
 
+    if (state.showFilterDialog) {
+        OutfitFilterDialog(
+            initialState = state.filterState,
+            onDismiss = vm::closeFilterDialog,
+            onApply = vm::applyFilters,
+        )
+    }
+
     OutfitStudioScreen(
         state = state,
         snackbarHostState = snackbarHostState,
@@ -63,6 +72,7 @@ fun OutfitStudioRoute(
         onSave = vm::openSaveDialog,
         onWardrobeClick = onWardrobeClick,
         onAddClick = upload.launch,
+        onFilterClick = vm::openFilterDialog,
     )
 }
 
@@ -76,6 +86,7 @@ private fun OutfitStudioScreen(
     onSave: () -> Unit,
     onWardrobeClick: () -> Unit,
     onAddClick: () -> Unit,
+    onFilterClick: () -> Unit,
 ) {
     val canSave = state.top.current != null && state.bottom.current != null && state.shoes.current != null
     val colors = MaterialTheme.colorScheme
@@ -101,52 +112,12 @@ private fun OutfitStudioScreen(
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
 
-                // ── Greeting + Save button ───────────────────────────────────
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 20.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Bottom,
-                ) {
-                    Text(
-                        text = "Good evening,\n${state.username}",
-                        style = MaterialTheme.typography.headlineMedium,
-                    )
-                    Button(
-                        onClick = onSave,
-                        enabled = canSave && !state.isSaving,
-                        shape = CircleShape,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = colors.primary,
-                            contentColor = colors.onPrimary,
-                        ),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
-                    ) {
-                        if (state.isSaving) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                strokeWidth = 2.dp,
-                                color = colors.onPrimary,
-                            )
-                        } else {
-                            Icon(
-                                Icons.Filled.CheckCircle,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                            )
-                        }
-                        Spacer(Modifier.width(8.dp))
-                        Text("SAVE FIT", style = MaterialTheme.typography.labelLarge)
-                    }
-                }
-
                 state.error?.let { err ->
                     Text(
                         text = err,
                         color = colors.error,
                         style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(horizontal = 20.dp).padding(bottom = 8.dp),
+                        modifier = Modifier.padding(horizontal = 20.dp).padding(top = 16.dp, bottom = 8.dp),
                     )
                 }
 
@@ -157,6 +128,7 @@ private fun OutfitStudioScreen(
                         .fillMaxWidth()
                         // standard margin, items go under fixed control buttons
                         .padding(
+                            top = 24.dp,
                             start = 20.dp,
                             end = 20.dp,
                             bottom = innerPad.calculateBottomPadding() + 16.dp
@@ -200,6 +172,10 @@ private fun OutfitStudioScreen(
                     onClick = onToggleLayers,
                     icon = { Icon(Icons.Outlined.Layers, contentDescription = "Toggle layers") },
                     highlighted = state.includeOuter,
+                )
+                FloatingControlButton(
+                    onClick = onFilterClick,
+                    icon = { Icon(Icons.Default.Tune, contentDescription = "Filter") },
                 )
                 FloatingControlButton(
                     onClick = onShuffle,

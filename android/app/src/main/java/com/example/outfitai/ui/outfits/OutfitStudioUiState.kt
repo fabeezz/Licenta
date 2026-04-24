@@ -9,6 +9,12 @@ data class SlotItems(
     val current: ItemOutDto? get() = items.getOrNull(index)
 }
 
+data class OutfitFilterState(
+    val style: String? = null,
+    val climate: String? = null,
+    val colors: Set<String> = emptySet(),
+)
+
 data class OutfitStudioUiState(
     val isLoading: Boolean = true,
     val username: String = "",
@@ -25,4 +31,6 @@ data class OutfitStudioUiState(
     val savedOutfitId: Int? = null,
     val snackbarMessage: String? = null,
     val error: String? = null,
+    val filterState: OutfitFilterState = OutfitFilterState(),
+    val showFilterDialog: Boolean = false,
 )

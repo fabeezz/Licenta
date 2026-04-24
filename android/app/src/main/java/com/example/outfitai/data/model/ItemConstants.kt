@@ -24,9 +24,10 @@ object ItemConstants {
     )
 
     val SEASONS = listOf(
+        "spring",
         "summer",
+        "autumn",
         "winter",
-        "spring/autumn",
         "all-season"
     )
 

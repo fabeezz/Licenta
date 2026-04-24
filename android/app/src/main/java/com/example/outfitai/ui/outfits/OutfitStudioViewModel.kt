@@ -43,21 +43,68 @@ class OutfitStudioViewModel @Inject constructor(
     private fun loadAllSlots() {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
+            val fState = _state.value.filterState
+            
+            val occ = when (fState.style) {
+                "Casual" -> "casual"
+                "Athleisure" -> "sportswear"
+                "Formal" -> "formal"
+                else -> null
+            }
+            val colorsList = fState.colors.toList().takeIf { it.isNotEmpty() }
+
             runCatching {
                 val slots = Slot.entries.map { slot ->
                     async {
                         val categories = slotCategories(slot)
-                        val items = categories.map { cat ->
-                            async { wardrobeRepo.listItems(category = cat, limit = 200) }
-                        }.awaitAll().flatten()
-                        slot to SlotItems(items = items)
+                        var seasonOverride: String? = null
+                        var materialOverride: String? = null
+                        var skip = false
+                        
+                        if (fState.climate == "Cold") {
+                            // Cold: Only Winter or All-season for Bottom/Outer/Shoes
+                            if (slot != Slot.TOP) seasonOverride = "winter,all-season"
+                        } else if (fState.climate == "Warm") {
+                            // Warm: Summer, Spring, Autumn, or All-season. Disable Outer.
+                            if (slot == Slot.OUTER) skip = true
+                            else seasonOverride = "summer,spring,autumn,all-season"
+                        } else if (fState.climate == "Rainy") {
+                            // Rainy: Prefer nylon for outer, or all-season
+                            if (slot == Slot.OUTER) materialOverride = "nylon"
+                            // For rainy, we should also probably allow all-season items
+                        }
+                        
+                        if (skip) {
+                            slot to SlotItems()
+                        } else {
+                            val items = categories.map { cat ->
+                                async { 
+                                    wardrobeRepo.listItems(
+                                        category = cat, 
+                                        occasion = occ,
+                                        colors = colorsList,
+                                        season = seasonOverride,
+                                        material = materialOverride,
+                                        limit = 200
+                                    ) 
+                                }
+                            }.awaitAll().flatten()
+                            slot to SlotItems(items = items)
+                        }
                     }
                 }.awaitAll().toMap()
                 slots
             }.onSuccess { slots ->
                 _state.update { s ->
+                    val shouldIncludeOuter = when (fState.climate) {
+                        "Cold" -> true
+                        "Rainy" -> true
+                        "Warm" -> false
+                        else -> s.includeOuter
+                    }
                     s.copy(
                         isLoading = false,
+                        includeOuter = shouldIncludeOuter,
                         top   = slots[Slot.TOP]   ?: SlotItems(),
                         bottom = slots[Slot.BOTTOM] ?: SlotItems(),
                         outer = slots[Slot.OUTER] ?: SlotItems(),
@@ -68,6 +115,19 @@ class OutfitStudioViewModel @Inject constructor(
                 _state.update { it.copy(isLoading = false, error = "Failed to load wardrobe: ${e.message}") }
             }
         }
+    }
+
+    fun openFilterDialog() {
+        _state.update { it.copy(showFilterDialog = true) }
+    }
+    
+    fun closeFilterDialog() {
+        _state.update { it.copy(showFilterDialog = false) }
+    }
+    
+    fun applyFilters(style: String?, climate: String?, colors: Set<String>) {
+        _state.update { it.copy(filterState = OutfitFilterState(style, climate, colors), showFilterDialog = false) }
+        loadAllSlots()
     }
 
     fun stepSlot(slot: Slot, direction: Int) {

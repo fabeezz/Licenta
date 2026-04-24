@@ -13,6 +13,8 @@ class WardrobeRepository @Inject constructor(
     suspend fun listItems(
         category: String? = null,
         dominantColor: String? = null,
+        colors: List<String>? = null,
+        material: String? = null,
         season: String? = null,
         occasion: String? = null,
         limit: Int = 50,
@@ -20,6 +22,8 @@ class WardrobeRepository @Inject constructor(
     ): List<ItemOutDto> = api.listItems(
         category = category,
         dominantColor = dominantColor,
+        colors = colors,
+        material = material,
         season = season,
         occasion = occasion,
         limit = limit,

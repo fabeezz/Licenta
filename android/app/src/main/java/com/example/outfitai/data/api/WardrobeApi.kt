@@ -11,6 +11,7 @@ interface WardrobeApi {
     @Query("category") category: String? = null,
     @Query("brand") brand: String? = null,
     @Query("dominant_color") dominantColor: String? = null,
+    @Query("colors") colors: List<String>? = null,
     @Query("material") material: String? = null,
     @Query("season") season: String? = null,
     @Query("occasion") occasion: String? = null,
@@ -19,11 +20,4 @@ interface WardrobeApi {
     @Query("limit") limit: Int = 50,
     @Query("offset") offset: Int = 0
   ): List<ItemOutDto>
-
-  @GET("wardrobe/outfits")
-  suspend fun outfits(
-    @Query("season") season: String? = null,
-    @Query("occasion") occasion: String? = null,
-    @Query("limit") limit: Int = 6
-  ): List<OutfitOutDto>
 }

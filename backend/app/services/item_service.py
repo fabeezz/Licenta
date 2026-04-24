@@ -91,6 +91,7 @@ class ItemService:
         category: str | None = None,
         brand: str | None = None,
         dominant_color: str | None = None,
+        colors: list[str] | None = None,
         material: str | None = None,
         season: str | None = None,
         occasion: str | None = None,
@@ -110,10 +111,27 @@ class ItemService:
                 Item.color_tags.isnot(None),
                 text("(items.color_tags->'dominant'->>0) = :dc").bindparams(dc=dc),
             )
+        if colors:
+            allowed_colors = set()
+            for c_group in colors:
+                grp = c_group.strip().lower()
+                if grp == "light": allowed_colors.update(["white", "beige", "pink", "yellow", "cyan"])
+                elif grp == "dark": allowed_colors.update(["black", "gray", "burgundy", "brown", "olive", "dark green", "navy"])
+                elif grp == "colorful": allowed_colors.update(["red", "orange", "green", "blue", "purple"])
+            if allowed_colors:
+                in_clause = ", ".join(f"'{c}'" for c in allowed_colors)
+                query = query.filter(
+                    Item.color_tags.isnot(None),
+                    text(f"(items.color_tags->'dominant'->>0) IN ({in_clause})")
+                )
         if material:
             query = query.filter(Item.material == material)
         if season:
-            query = query.filter(Item.season == season)
+            if "," in season:
+                seasons = [s.strip().lower() for s in season.split(",")]
+                query = query.filter(Item.season.in_(seasons))
+            else:
+                query = query.filter(Item.season == season)
         if occasion:
             query = query.filter(Item.occasion == occasion)
         sort_field_map = {
