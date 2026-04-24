@@ -12,11 +12,10 @@ import androidx.compose.ui.unit.dp
 fun OutfitFilterDialog(
     initialState: OutfitFilterState,
     onDismiss: () -> Unit,
-    onApply: (style: String?, climate: String?, colors: Set<String>) -> Unit
+    onApply: (style: String?, climate: String?) -> Unit
 ) {
     var style by remember { mutableStateOf(initialState.style) }
     var climate by remember { mutableStateOf(initialState.climate) }
-    var colors by remember { mutableStateOf(initialState.colors) }
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
@@ -46,31 +45,6 @@ fun OutfitFilterDialog(
                     FilterChip(
                         selected = style == opt,
                         onClick = { style = if (style == opt) null else opt },
-                        label = { Text(opt) }
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Color
-            Text(
-                text = "Color",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                listOf("Light", "Dark", "Colorful").forEach { opt ->
-                    FilterChip(
-                        selected = colors.contains(opt),
-                        onClick = {
-                            val newSet = colors.toMutableSet()
-                            if (newSet.contains(opt)) newSet.remove(opt) else newSet.add(opt)
-                            colors = newSet
-                        },
                         label = { Text(opt) }
                     )
                 }
@@ -109,12 +83,11 @@ fun OutfitFilterDialog(
                 TextButton(onClick = {
                     style = null
                     climate = null
-                    colors = emptySet()
                 }) {
                     Text("Clear All")
                 }
                 Spacer(modifier = Modifier.width(8.dp))
-                Button(onClick = { onApply(style, climate, colors) }) {
+                Button(onClick = { onApply(style, climate) }) {
                     Text("Apply")
                 }
             }

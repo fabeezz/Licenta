@@ -12,7 +12,6 @@ data class SlotItems(
 data class OutfitFilterState(
     val style: String? = null,
     val climate: String? = null,
-    val colors: Set<String> = emptySet(),
 )
 
 data class OutfitStudioUiState(

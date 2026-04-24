@@ -51,7 +51,6 @@ class OutfitStudioViewModel @Inject constructor(
                 "Formal" -> "formal"
                 else -> null
             }
-            val colorsList = fState.colors.toList().takeIf { it.isNotEmpty() }
 
             runCatching {
                 val slots = Slot.entries.map { slot ->
@@ -82,7 +81,7 @@ class OutfitStudioViewModel @Inject constructor(
                                     wardrobeRepo.listItems(
                                         category = cat, 
                                         occasion = occ,
-                                        colors = colorsList,
+                                        colors = null,
                                         season = seasonOverride,
                                         material = materialOverride,
                                         limit = 200
@@ -125,8 +124,8 @@ class OutfitStudioViewModel @Inject constructor(
         _state.update { it.copy(showFilterDialog = false) }
     }
     
-    fun applyFilters(style: String?, climate: String?, colors: Set<String>) {
-        _state.update { it.copy(filterState = OutfitFilterState(style, climate, colors), showFilterDialog = false) }
+    fun applyFilters(style: String?, climate: String?) {
+        _state.update { it.copy(filterState = OutfitFilterState(style, climate), showFilterDialog = false) }
         loadAllSlots()
     }
 
