@@ -3,6 +3,7 @@ package com.example.outfitai.ui.outfits
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -21,25 +22,19 @@ fun OutfitFilterDialog(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 16.dp)
+                .padding(horizontal = 24.dp, vertical = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "Filters",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
             // Style
             Text(
                 text = "Style",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
+                fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
             ) {
                 listOf("Casual", "Athleisure", "Formal").forEach { opt ->
                     FilterChip(
@@ -51,16 +46,16 @@ fun OutfitFilterDialog(
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Climate
+            // Weather
             Text(
-                text = "Climate",
+                text = "Weather",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
+                fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
             ) {
                 listOf("Cold", "Warm", "Rainy").forEach { opt ->
                     FilterChip(
@@ -77,8 +72,8 @@ fun OutfitFilterDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 TextButton(onClick = {
                     style = null
@@ -86,7 +81,6 @@ fun OutfitFilterDialog(
                 }) {
                     Text("Clear All")
                 }
-                Spacer(modifier = Modifier.width(8.dp))
                 Button(onClick = { onApply(style, climate) }) {
                     Text("Apply")
                 }
