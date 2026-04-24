@@ -15,6 +15,7 @@ data class ItemOutDto(
   val material: String? = null,
   val season: String? = null,
   val occasion: String? = null,
+  @SerialName("dominant_color") val dominantColor: String? = null,
   @SerialName("wear_count") val wearCount: Int,
   @SerialName("last_worn_at") val lastWornAt: String? = null,
   @SerialName("created_at") val createdAt: String

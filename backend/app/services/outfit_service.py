@@ -1,28 +1,50 @@
 from __future__ import annotations
 
-from sqlalchemy.orm import Session, joinedload
+from typing import Sequence
 
+from sqlalchemy.orm import Session
+
+from app.core.exceptions import InvalidItemsError, NotFoundError
 from app.models.outfit import Outfit
-from app.models.item import Item
+from app.repositories.outfit_repository import OutfitRepository
 from app.schemas.outfit import OutfitCreate, OutfitUpdate
 
 
 class OutfitService:
-    def create(self, db: Session, payload: OutfitCreate, *, user_id: int) -> Outfit:
-        from fastapi import HTTPException
+    """Business logic for outfit CRUD operations.
 
-        item_ids = {payload.shoe_id, payload.bottom_id, payload.top_id}
+    Delegates all persistence to :class:`~app.repositories.outfit_repository.OutfitRepository`.
+
+    Args:
+        repo: Outfit repository for all persistence operations.
+    """
+
+    def __init__(self, repo: OutfitRepository) -> None:
+        self._repo = repo
+
+    # ── Creation ─────────────────────────────────────────────────────────────
+
+    def create(self, db: Session, payload: OutfitCreate, *, user_id: int) -> Outfit:
+        """Create a new outfit after validating that all items are owned by the user.
+
+        Args:
+            db: Active database session.
+            payload: Outfit creation data.
+            user_id: Owner of the new outfit.
+
+        Returns:
+            The persisted :class:`~app.models.outfit.Outfit` with all item relations loaded.
+
+        Raises:
+            InvalidItemsError: If any referenced item ID is invalid or not owned.
+        """
+        item_ids: set[int] = {payload.shoe_id, payload.bottom_id, payload.top_id}
         if payload.outer_id is not None:
             item_ids.add(payload.outer_id)
 
-        owned = {
-            row.id
-            for row in db.query(Item.id)
-            .filter(Item.id.in_(item_ids), Item.user_id == user_id)
-            .all()
-        }
+        owned = self._repo.verify_items_owned(user_id, item_ids)
         if owned != item_ids:
-            raise HTTPException(status_code=400, detail="One or more items are invalid or not owned by user")
+            raise InvalidItemsError()
 
         outfit = Outfit(
             user_id=user_id,
@@ -34,10 +56,14 @@ class OutfitService:
             top_id=payload.top_id,
             outer_id=payload.outer_id,
         )
-        db.add(outfit)
+        self._repo.add(outfit)
         db.commit()
-        db.refresh(outfit)
-        return self._load(db, outfit.id, user_id=user_id)
+        loaded = self._repo.get_loaded(outfit.id, user_id=user_id)
+        if not loaded:
+            raise NotFoundError("Outfit", outfit.id)
+        return loaded
+
+    # ── Read ─────────────────────────────────────────────────────────────────
 
     def list(
         self,
@@ -48,60 +74,81 @@ class OutfitService:
         occasion: str | None = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> list[Outfit]:
-        query = db.query(Outfit).filter(Outfit.user_id == user_id)
+    ) -> Sequence[Outfit]:
+        """Return outfits owned by *user_id* with optional filtering.
 
-        if season:
-            query = query.filter(Outfit.season == season)
-        if occasion:
-            query = query.filter(Outfit.occasion == occasion)
+        Args:
+            db: Active database session (unused directly; passed for symmetry).
+            user_id: Owner constraint.
+            season: Optional season filter.
+            occasion: Optional occasion filter.
+            skip: Pagination offset.
+            limit: Maximum number of results.
 
-        return (
-            query.options(
-                joinedload(Outfit.shoe),
-                joinedload(Outfit.bottom),
-                joinedload(Outfit.top),
-                joinedload(Outfit.outer),
-            )
-            .order_by(Outfit.id.desc())
-            .offset(skip)
-            .limit(limit)
-            .all()
+        Returns:
+            Sequence of :class:`~app.models.outfit.Outfit` instances.
+        """
+        return self._repo.list_for_user(
+            user_id, season=season, occasion=occasion, skip=skip, limit=limit
         )
 
     def get_or_404(self, db: Session, outfit_id: int, *, user_id: int) -> Outfit:
-        return self._load(db, outfit_id, user_id=user_id)
+        """Return the outfit with all item relations, raising :exc:`NotFoundError` if absent.
 
-    def update(self, db: Session, outfit_id: int, payload: OutfitUpdate, *, user_id: int) -> Outfit:
+        Args:
+            db: Active database session.
+            outfit_id: Primary key of the requested outfit.
+            user_id: Owner constraint.
+
+        Returns:
+            The matching :class:`~app.models.outfit.Outfit`.
+
+        Raises:
+            NotFoundError: If the outfit does not exist or belongs to another user.
+        """
+        outfit = self._repo.get_loaded(outfit_id, user_id=user_id)
+        if not outfit:
+            raise NotFoundError("Outfit", outfit_id)
+        return outfit
+
+    # ── Mutations ────────────────────────────────────────────────────────────
+
+    def update(
+        self, db: Session, outfit_id: int, payload: OutfitUpdate, *, user_id: int
+    ) -> Outfit:
+        """Apply a partial metadata update to an outfit.
+
+        Args:
+            db: Active database session.
+            outfit_id: Primary key of the outfit to update.
+            payload: Fields to update; unset fields are left unchanged.
+            user_id: Owner constraint.
+
+        Returns:
+            The updated :class:`~app.models.outfit.Outfit`.
+
+        Raises:
+            NotFoundError: If the outfit does not exist or belongs to another user.
+        """
         outfit = self.get_or_404(db, outfit_id, user_id=user_id)
         for field, value in payload.model_dump(exclude_unset=True).items():
             setattr(outfit, field, value)
         db.commit()
-        db.refresh(outfit)
-        return self._load(db, outfit.id, user_id=user_id)
-
-    def delete(self, db: Session, outfit_id: int, *, user_id: int) -> None:
-        outfit = self.get_or_404(db, outfit_id, user_id=user_id)
-        db.delete(outfit)
-        db.commit()
-
-    def _load(self, db: Session, outfit_id: int, *, user_id: int) -> Outfit:
-        from fastapi import HTTPException
-
-        outfit = (
-            db.query(Outfit)
-            .filter(Outfit.id == outfit_id, Outfit.user_id == user_id)
-            .options(
-                joinedload(Outfit.shoe),
-                joinedload(Outfit.bottom),
-                joinedload(Outfit.top),
-                joinedload(Outfit.outer),
-            )
-            .first()
-        )
-        if not outfit:
-            raise HTTPException(status_code=404, detail="Outfit not found")
         return outfit
 
+    def delete(self, db: Session, outfit_id: int, *, user_id: int) -> None:
+        """Delete an outfit.
 
-outfit_service = OutfitService()
+        Args:
+            db: Active database session.
+            outfit_id: Primary key of the outfit to delete.
+            user_id: Owner constraint.
+
+        Raises:
+            NotFoundError: If the outfit does not exist or belongs to another user.
+        """
+        outfit = self._repo.get_for_user(outfit_id, user_id=user_id)
+        if not outfit:
+            raise NotFoundError("Outfit", outfit_id)
+        self._repo.delete(outfit)
+        db.commit()

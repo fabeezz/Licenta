@@ -1,13 +1,13 @@
 package com.example.outfitai.data.wardrobe
 
+import com.example.outfitai.data.api.ItemApi
 import com.example.outfitai.data.api.OutfitApi
-import com.example.outfitai.data.api.WardrobeApi
 import com.example.outfitai.data.model.ItemOutDto
 import com.example.outfitai.data.model.OutfitSavedDto
 import javax.inject.Inject
 
 class WardrobeRepositoryImpl @Inject constructor(
-    private val api: WardrobeApi,
+    private val api: ItemApi,
     private val outfitApi: OutfitApi,
 ) : WardrobeRepository {
 

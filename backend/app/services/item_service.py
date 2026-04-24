@@ -1,42 +1,34 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Iterable
+from typing import Sequence
 
 from sqlalchemy.orm import Session
-from sqlalchemy import asc, desc, func, text
 
+from app.core.exceptions import NotFoundError
 from app.models.item import Item
-from app.schemas.item import ItemUpdate
-from app.services.image.color_extractor_colorthief import ColorThiefExtractor
-from app.services.ai.clip_attribute_classifier import ClipAttributeClassifier
-from app.services.ai.category_classifier import ClipCategoryClassifier
-from app.services.ai.material_classifier import ClipMaterialClassifier
-from app.services.ai.occasion_classifier import ClipOccasionClassifier
+from app.repositories.item_repository import ItemRepository
+from app.schemas.item import ItemListQuery, ItemUpdate
 from app.services.pipeline import ItemPipeline
-from app.services.ai.config import CATEGORIES_EN, CLIP_MODEL_ID
 
 
 class ItemService:
-    """
-    Application service layer for wardrobe operations.
-    Keeps FastAPI routers thin and centralizes domain logic.
+    """Business logic for wardrobe item operations.
+
+    Coordinates the AI pipeline and the item repository.  All persistence
+    is delegated to :class:`~app.repositories.item_repository.ItemRepository`;
+    this class never issues ``db.query`` directly.
+
+    Args:
+        repo: Item repository for all persistence operations.
+        pipeline: Fully-constructed AI processing pipeline.
     """
 
-    def __init__(self) -> None:
-        self._base_clip = ClipAttributeClassifier(CLIP_MODEL_ID)
-        category_classifier = ClipCategoryClassifier(self._base_clip)
-        material_classifier = ClipMaterialClassifier(self._base_clip)
-        occasion_classifier = ClipOccasionClassifier(self._base_clip)
-        self._pipeline = ItemPipeline(
-            color_extractor=ColorThiefExtractor(palette_size=5, quality=2),
-            category_classifier=category_classifier,
-            material_classifier=material_classifier,
-            occasion_classifier=occasion_classifier,
-            categories_en=CATEGORIES_EN,
-        )
+    def __init__(self, repo: ItemRepository, pipeline: ItemPipeline) -> None:
+        self._repo = repo
+        self._pipeline = pipeline
 
-    # -------- Creation --------
+    # ── Creation ─────────────────────────────────────────────────────────────
 
     def create_item_with_upload(
         self,
@@ -50,110 +42,104 @@ class ItemService:
         season: str | None = None,
         occasion: str | None = None,
     ) -> Item:
+        """Run the AI pipeline on *file_bytes* and persist the resulting item.
+
+        User-supplied attributes override AI predictions when provided.
+
+        Args:
+            db: Active database session.
+            file_bytes: Raw bytes of the uploaded image.
+            ext: File extension without the leading dot.
+            user_id: Owner of the new item.
+            brand: Optional user-supplied brand (stored lowercased).
+            material: Optional override for AI-predicted material.
+            season: Optional override for AI-inferred season.
+            occasion: Optional override for AI-predicted occasion.
+
+        Returns:
+            The persisted :class:`~app.models.item.Item` instance.
+        """
         result = self._pipeline.process_upload(file_bytes, ext)
-        ai_category = result["category"]
-        ai_material = result.get("material")
-        ai_season = result.get("season")
-        ai_occasion = result.get("occasion")
-        material_value = material or ai_material
-        season_value = season or ai_season
-        occasion_value = occasion or ai_occasion
+        material_value = material or result.material
+        season_value = season or result.season
+        occasion_value = occasion or result.occasion
 
         item = Item(
             user_id=user_id,
-            image_original_name=result["image_original_name"],
-            image_no_bg_name=result["image_no_bg_name"],
-            color_tags=result["color_tags"],
-            category=ai_category,
+            image_original_name=result.image_original_name,
+            image_no_bg_name=result.image_no_bg_name,
+            color_tags=result.color_tags,
+            category=result.category,
             brand=(brand.lower() if brand else None),
             material=(material_value.lower() if material_value else None),
             season=(season_value.lower() if season_value else None),
             occasion=(occasion_value.lower() if occasion_value else None),
             wear_count=0,
         )
-        db.add(item)
+        self._repo.add(item)
         db.commit()
         db.refresh(item)
         return item
 
-    def delete_item(self, db: Session, item_id: int, *, user_id: int) -> None:
-        item = self.get_item_or_404(db, item_id, user_id=user_id)
-        db.delete(item)
-        db.commit()
+    # ── Read ─────────────────────────────────────────────────────────────────
 
-    # -------- Read / list --------
+    def get_item_for_user(self, item_id: int, *, user_id: int) -> Item:
+        """Return the item owned by *user_id*, raising :exc:`NotFoundError` if absent.
 
-    def list_items(
-        self,
-        db: Session,
-        *,
-        user_id: int,
-        category: str | None = None,
-        brand: str | None = None,
-        dominant_color: str | None = None,
-        colors: list[str] | None = None,
-        material: str | None = None,
-        season: str | None = None,
-        occasion: str | None = None,
-        sort_by: str = "created_at",
-        sort_dir: str = "desc",
-        limit: int = 50,
-        offset: int = 0,
-    ) -> Iterable[Item]:
-        query = db.query(Item).filter(Item.user_id == user_id)
-        if category:
-            query = query.filter(Item.category == category)
-        if brand:
-            query = query.filter(Item.brand == brand)
-        if dominant_color:
-            dc = dominant_color.strip().lower()
-            query = query.filter(
-                Item.color_tags.isnot(None),
-                text("(items.color_tags->'dominant'->>0) = :dc").bindparams(dc=dc),
-            )
-        if colors:
-            allowed_colors = set()
-            for c_group in colors:
-                grp = c_group.strip().lower()
-                if grp == "light": allowed_colors.update(["white", "beige", "pink", "yellow", "cyan"])
-                elif grp == "dark": allowed_colors.update(["black", "gray", "burgundy", "brown", "olive", "dark green", "navy"])
-                elif grp == "colorful": allowed_colors.update(["red", "orange", "green", "blue", "purple"])
-            if allowed_colors:
-                in_clause = ", ".join(f"'{c}'" for c in allowed_colors)
-                query = query.filter(
-                    Item.color_tags.isnot(None),
-                    text(f"(items.color_tags->'dominant'->>0) IN ({in_clause})")
-                )
-        if material:
-            query = query.filter(Item.material == material)
-        if season:
-            if "," in season:
-                seasons = [s.strip().lower() for s in season.split(",")]
-                query = query.filter(Item.season.in_(seasons))
-            else:
-                query = query.filter(Item.season == season)
-        if occasion:
-            query = query.filter(Item.occasion == occasion)
-        sort_field_map = {
-            "created_at": Item.created_at,
-            "wear_count": Item.wear_count,
-            "last_worn_at": Item.last_worn_at,
-        }
-        sort_col = sort_field_map.get(sort_by, Item.created_at)
-        if sort_dir == "asc":
-            query = query.order_by(asc(sort_col))
-        else:
-            query = query.order_by(desc(sort_col))
-        return query.offset(offset).limit(limit).all()
+        Args:
+            item_id: Primary key of the requested item.
+            user_id: Owner constraint.
 
-    # -------- Update / mutations --------
+        Returns:
+            The matching :class:`~app.models.item.Item`.
 
-    def get_item_or_404(self, db: Session, item_id: int, *, user_id: int) -> Item:
-        from fastapi import HTTPException
-        item = db.query(Item).filter(Item.id == item_id, Item.user_id == user_id).first()
+        Raises:
+            NotFoundError: If the item does not exist or belongs to another user.
+        """
+        item = self._repo.get_for_user(item_id, user_id)
         if not item:
-            raise HTTPException(status_code=404, detail="Item not found")
+            raise NotFoundError("Item", item_id)
         return item
+
+    def list_items(self, filters: ItemListQuery, *, user_id: int) -> Sequence[Item]:
+        """Return filtered and paginated items for *user_id*.
+
+        Args:
+            filters: Validated query parameters.
+            user_id: Owner constraint.
+
+        Returns:
+            Sequence of matching :class:`~app.models.item.Item` instances.
+        """
+        return self._repo.list_for_user(user_id, filters)
+
+    def get_basic_stats(self, *, user_id: int) -> dict:
+        """Return inventory statistics for *user_id*.
+
+        Args:
+            user_id: User whose stats are requested.
+
+        Returns:
+            Dict with ``total_items`` and ``by_category`` breakdown.
+        """
+        return self._repo.stats_for_user(user_id)
+
+    # ── Mutations ────────────────────────────────────────────────────────────
+
+    def delete_item(self, db: Session, item_id: int, *, user_id: int) -> None:
+        """Delete the item if it exists and is owned by *user_id*.
+
+        Args:
+            db: Active database session.
+            item_id: Primary key of the item to delete.
+            user_id: Owner constraint.
+
+        Raises:
+            NotFoundError: If the item does not exist or belongs to another user.
+        """
+        item = self.get_item_for_user(item_id, user_id=user_id)
+        self._repo.delete(item)
+        db.commit()
 
     def update_item_meta(
         self,
@@ -163,51 +149,44 @@ class ItemService:
         *,
         user_id: int,
     ) -> Item:
-        item = self.get_item_or_404(db, item_id, user_id=user_id)
-        data = payload.model_dump(exclude_unset=True) if hasattr(payload, "model_dump") else payload.dict(exclude_unset=True)
-        for field, value in data.items():
+        """Apply a partial metadata update to an item.
+
+        Args:
+            db: Active database session.
+            item_id: Primary key of the item to update.
+            payload: Fields to update; unset fields are left unchanged.
+            user_id: Owner constraint.
+
+        Returns:
+            The updated :class:`~app.models.item.Item`.
+
+        Raises:
+            NotFoundError: If the item does not exist or belongs to another user.
+        """
+        item = self.get_item_for_user(item_id, user_id=user_id)
+        for field, value in payload.model_dump(exclude_unset=True).items():
             setattr(item, field, value)
         db.commit()
         db.refresh(item)
         return item
 
     def mark_item_worn(self, db: Session, item_id: int, *, user_id: int) -> Item:
-        item = self.get_item_or_404(db, item_id, user_id=user_id)
+        """Increment the wear counter and record the current timestamp.
+
+        Args:
+            db: Active database session.
+            item_id: Primary key of the item worn.
+            user_id: Owner constraint.
+
+        Returns:
+            The updated :class:`~app.models.item.Item`.
+
+        Raises:
+            NotFoundError: If the item does not exist or belongs to another user.
+        """
+        item = self.get_item_for_user(item_id, user_id=user_id)
         item.wear_count += 1
         item.last_worn_at = datetime.utcnow()
         db.commit()
         db.refresh(item)
         return item
-
-    def get_basic_stats(self, db: Session, *, user_id: int) -> dict:
-        query = db.query(Item).filter(Item.user_id == user_id)
-        total = query.count()
-        by_category = (
-            query.with_entities(Item.category, func.count(Item.id))
-            .group_by(Item.category)
-            .all()
-        )
-        return {
-            "total_items": total,
-            "by_category": [{"category": c, "count": n} for c, n in by_category],
-        }
-
-    # def recommend_simple(
-    #     self,
-    #     db: Session,
-    #     *,
-    #     user_id: int,
-    #     occasion: str | None = None,
-    #     season: str | None = None,
-    #     limit: int = 3,
-    # ) -> list[Item]:
-    #     query = db.query(Item).filter(Item.user_id == user_id)
-    #     if occasion:
-    #         query = query.filter(Item.occasion == occasion)
-    #     if season:
-    #         query = query.filter(Item.season == season)
-    #     query = query.order_by(Item.wear_count.asc(), Item.created_at.asc())
-    #     return query.limit(limit).all()
-
-
-item_service = ItemService()

@@ -6,7 +6,6 @@ import com.example.outfitai.data.api.AuthApi
 import com.example.outfitai.data.api.AuthInterceptor
 import com.example.outfitai.data.api.ItemApi
 import com.example.outfitai.data.api.OutfitApi
-import com.example.outfitai.data.api.WardrobeApi
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import dagger.Module
 import dagger.Provides
@@ -57,11 +56,6 @@ object NetworkModule {
     @Singleton
     fun provideAuthApi(retrofit: Retrofit): AuthApi =
         retrofit.create(AuthApi::class.java)
-
-    @Provides
-    @Singleton
-    fun provideWardrobeApi(retrofit: Retrofit): WardrobeApi =
-        retrofit.create(WardrobeApi::class.java)
 
     @Provides
     @Singleton

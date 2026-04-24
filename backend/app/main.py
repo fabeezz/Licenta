@@ -1,14 +1,47 @@
+from __future__ import annotations
+
 import os
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.core.config import settings
+from app.core.exception_handlers import register_exception_handlers
+from app.core.logging import configure_logging
 from app.db.base import Base
 from app.db.session import engine
 from app.routers import api_router
+from app.services.ai.category_classifier import ClipCategoryClassifier
+from app.services.ai.clip_attribute_classifier import ClipAttributeClassifier
+from app.services.ai.config import CATEGORIES_EN, CLIP_MODEL_ID
+from app.services.ai.material_classifier import ClipMaterialClassifier
+from app.services.ai.occasion_classifier import ClipOccasionClassifier
+from app.services.image.color_extractor_colorthief import ColorThiefExtractor
+from app.services.pipeline import ItemPipeline
 
-app = FastAPI(title="Wardrobe API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    configure_logging()
+    base = ClipAttributeClassifier(CLIP_MODEL_ID)
+    app.state.pipeline = ItemPipeline(
+        color_extractor=ColorThiefExtractor(palette_size=5, quality=2),
+        category_classifier=ClipCategoryClassifier(base),
+        material_classifier=ClipMaterialClassifier(base),
+        occasion_classifier=ClipOccasionClassifier(base),
+        categories_en=CATEGORIES_EN,
+    )
+    import logging
+    logging.getLogger(__name__).info("CLIP pipeline loaded and ready")
+    yield
+
+
+app = FastAPI(title="Wardrobe API", lifespan=lifespan)
+
+register_exception_handlers(app)
 
 app.add_middleware(
     CORSMiddleware,
@@ -18,11 +51,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# asigurăm MEDIA_ROOT
 os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
-
-# servim fișierele din MEDIA_ROOT la /media
-# ex: http://localhost:8000/media/<filename>
 app.mount("/media", StaticFiles(directory=settings.MEDIA_ROOT), name="media")
 
 app.include_router(api_router)

@@ -1,19 +1,18 @@
-from fastapi import APIRouter, UploadFile, File, Form, Depends, Query, status
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends, File, Form, Query, UploadFile, status
 from sqlalchemy.orm import Session
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, get_item_service
 from app.db.session import get_db
 from app.models.user import User
-from app.schemas.item import ItemOut, ItemUpdate
-from app.services.item_service import item_service
+from app.schemas.item import ItemListQuery, ItemOut, ItemUpdate
+from app.services.item_service import ItemService
 
-router = APIRouter(
-    prefix="/item",
-    tags=["items"],
-)
+router = APIRouter(prefix="/items", tags=["items"])
 
 
-@router.post("/create", response_model=ItemOut)
+@router.post("", response_model=ItemOut, status_code=status.HTTP_201_CREATED)
 async def create_item(
     image: UploadFile = File(...),
     brand: str | None = Form(None),
@@ -22,6 +21,7 @@ async def create_item(
     occasion: str | None = Form(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    svc: ItemService = Depends(get_item_service),
 ):
     content = await image.read()
     ext = (
@@ -29,7 +29,7 @@ async def create_item(
         if image.filename and "." in image.filename
         else "png"
     )
-    return item_service.create_item_with_upload(
+    return svc.create_item_with_upload(
         db,
         content,
         ext,
@@ -41,39 +41,58 @@ async def create_item(
     )
 
 
-@router.get("/read/{item_id}", response_model=ItemOut)
+@router.get("/stats")
+def get_stats(
+    current_user: User = Depends(get_current_user),
+    svc: ItemService = Depends(get_item_service),
+):
+    return svc.get_basic_stats(user_id=current_user.id)
+
+
+@router.get("", response_model=list[ItemOut])
+def list_items(
+    current_user: User = Depends(get_current_user),
+    svc: ItemService = Depends(get_item_service),
+    filters: ItemListQuery = Depends(),
+):
+    return list(svc.list_items(filters, user_id=current_user.id))
+
+
+@router.get("/{item_id}", response_model=ItemOut)
 def get_item(
     item_id: int,
-    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    svc: ItemService = Depends(get_item_service),
 ):
-    return item_service.get_item_or_404(db, item_id, user_id=current_user.id)
+    return svc.get_item_for_user(item_id, user_id=current_user.id)
 
 
-@router.patch("/update/{item_id}", response_model=ItemOut)
-def update_item_meta(
+@router.patch("/{item_id}", response_model=ItemOut)
+def update_item(
     item_id: int,
     payload: ItemUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    svc: ItemService = Depends(get_item_service),
 ):
-    return item_service.update_item_meta(db, item_id, payload, user_id=current_user.id)
+    return svc.update_item_meta(db, item_id, payload, user_id=current_user.id)
 
 
-@router.delete("/delete/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_item(
     item_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    svc: ItemService = Depends(get_item_service),
 ):
-    item_service.delete_item(db, item_id, user_id=current_user.id)
-    return
+    svc.delete_item(db, item_id, user_id=current_user.id)
 
 
-@router.post("/wear/{item_id}", response_model=ItemOut)
+@router.post("/{item_id}/wear", response_model=ItemOut)
 def mark_item_worn(
     item_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    svc: ItemService = Depends(get_item_service),
 ):
-    return item_service.mark_item_worn(db, item_id, user_id=current_user.id)
+    return svc.mark_item_worn(db, item_id, user_id=current_user.id)

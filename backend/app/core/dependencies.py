@@ -1,10 +1,18 @@
-from fastapi import Depends, HTTPException, status
+from __future__ import annotations
+
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.security import decode_access_token
 from app.db.session import get_db
 from app.models.user import User
+from app.repositories.item_repository import ItemRepository
+from app.repositories.outfit_repository import OutfitRepository
+from app.services.item_service import ItemService
+from app.services.outfit_service import OutfitService
+from app.services.pipeline import ItemPipeline
 
 security = HTTPBearer(auto_error=False)
 
@@ -26,7 +34,7 @@ def get_current_user(
             detail="Invalid or expired token",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    user = db.query(User).filter(User.id == int(subject)).first()
+    user = db.scalars(select(User).where(User.id == int(subject))).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -34,3 +42,33 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     return user
+
+
+def get_pipeline(request: Request) -> ItemPipeline:
+    """Return the shared :class:`~app.services.pipeline.ItemPipeline` from app state."""
+    return request.app.state.pipeline
+
+
+def get_item_repository(db: Session = Depends(get_db)) -> ItemRepository:
+    """Construct an :class:`~app.repositories.item_repository.ItemRepository` for the request."""
+    return ItemRepository(db)
+
+
+def get_outfit_repository(db: Session = Depends(get_db)) -> OutfitRepository:
+    """Construct an :class:`~app.repositories.outfit_repository.OutfitRepository` for the request."""
+    return OutfitRepository(db)
+
+
+def get_item_service(
+    repo: ItemRepository = Depends(get_item_repository),
+    pipeline: ItemPipeline = Depends(get_pipeline),
+) -> ItemService:
+    """Construct an :class:`~app.services.item_service.ItemService` for the request."""
+    return ItemService(repo, pipeline)
+
+
+def get_outfit_service(
+    repo: OutfitRepository = Depends(get_outfit_repository),
+) -> OutfitService:
+    """Construct an :class:`~app.services.outfit_service.OutfitService` for the request."""
+    return OutfitService(repo)
