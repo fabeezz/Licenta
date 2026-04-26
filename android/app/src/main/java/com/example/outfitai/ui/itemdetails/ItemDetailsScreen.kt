@@ -22,6 +22,7 @@ import com.example.outfitai.data.model.ItemConstants
 import com.example.outfitai.ui.components.DropdownSelector
 import com.example.outfitai.core.ui.color.colorNameToComposeColor
 import com.example.outfitai.core.media.mediaUrl
+import com.example.outfitai.util.capitalizeFirst
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.jsonPrimitive
@@ -224,13 +225,13 @@ private fun ItemDetailsScreen(
                         Spacer(Modifier.height(32.dp))
 
                         Text(
-                            text = item.category?.replaceFirstChar { it.uppercaseChar() } ?: "Item",
+                            text = item.category?.capitalizeFirst() ?: "Item",
                             style = MaterialTheme.typography.headlineMedium,
                             color = cs.onSurface
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            text = "${item.brand ?: "—"} • ${item.category ?: "—"}",
+                            text = "${item.brand ?: "—"} • ${item.category?.capitalizeFirst() ?: "—"}",
                             style = MaterialTheme.typography.bodyMedium,
                             color = cs.onSurfaceVariant
                         )
@@ -285,7 +286,7 @@ private fun ItemDetailsScreen(
                                     shape = shapes.large
                                 )
                             } else {
-                                InfoRow(label = "Category", value = item.category ?: "—")
+                                InfoRow(label = "Category", value = item.category?.capitalizeFirst() ?: "—")
                                 Spacer(Modifier.height(12.dp))
                                 InfoRow(label = "Brand", value = item.brand ?: "—")
                             }
@@ -309,7 +310,7 @@ private fun ItemDetailsScreen(
                                     onOptionSelected = onSeason
                                 )
                             } else {
-                                InfoRow(label = "Material", value = item.material ?: "—")
+                                InfoRow(label = "Material", value = item.material?.capitalizeFirst() ?: "—")
                                 Spacer(Modifier.height(12.dp))
                                 Text(
                                     text = "Season",
@@ -318,7 +319,7 @@ private fun ItemDetailsScreen(
                                 )
                                 Spacer(Modifier.height(6.dp))
                                 if (item.season != null) {
-                                    SeasonChip(season = item.season)
+                                    SeasonChip(season = item.season.capitalizeFirst())
                                 } else {
                                     Text("—", style = MaterialTheme.typography.bodyMedium, color = cs.onSurface)
                                 }
@@ -410,7 +411,7 @@ private fun ItemDetailsScreen(
                                 val currentOccasion = if (state.isEditing) state.occasion else item.occasion
                                 ItemConstants.OCCASIONS.forEach { option ->
                                     OccasionChip(
-                                        label = option.replaceFirstChar { it.uppercaseChar() },
+                                        label = option.capitalizeFirst(),
                                         selected = currentOccasion == option,
                                         clickable = state.isEditing,
                                         onClick = { onOccasion(option) }

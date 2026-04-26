@@ -35,9 +35,8 @@ internal fun SegmentedControl(
                     modifier = Modifier.weight(1f),
                 ) {
                     Text(
-                        text = tabOption.name,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                        text = tabOption.name.uppercase(),
+                        style = if (isSelected) MaterialTheme.typography.labelLarge else MaterialTheme.typography.bodyMedium,
                         color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier
                             .fillMaxWidth()

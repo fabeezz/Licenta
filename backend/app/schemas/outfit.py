@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from app.schemas.item import ItemMinimal
 
@@ -32,6 +32,14 @@ class OutfitCreate(BaseModel):
     season: str | None = None
     occasion: str | None = None
 
+    @field_validator("season", "occasion", mode="before")
+    @classmethod
+    def to_lowercase(cls, v: str | None) -> str | None:
+        """Enforce lowercase for classification fields."""
+        if isinstance(v, str):
+            return v.lower()
+        return v
+
 
 class OutfitUpdate(BaseModel):
     """Partial update payload for ``PATCH /outfits/{id}``."""
@@ -39,6 +47,14 @@ class OutfitUpdate(BaseModel):
     name: str | None = None
     season: str | None = None
     occasion: str | None = None
+
+    @field_validator("season", "occasion", mode="before")
+    @classmethod
+    def to_lowercase(cls, v: str | None) -> str | None:
+        """Enforce lowercase for classification fields."""
+        if isinstance(v, str):
+            return v.lower()
+        return v
 
 
 class OutfitResponse(BaseModel):

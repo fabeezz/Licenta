@@ -8,6 +8,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.outfitai.util.capitalizeFirst
 
 @Composable
 fun FormTextField(
@@ -64,7 +65,7 @@ fun FormDropdownSelector(
             onExpandedChange = { expanded = it },
         ) {
             OutlinedTextField(
-                value = selectedOption,
+                value = selectedOption.capitalizeFirst(),
                 onValueChange = {},
                 readOnly = true,
                 singleLine = true,
@@ -86,7 +87,7 @@ fun FormDropdownSelector(
             ) {
                 options.forEach { option ->
                     DropdownMenuItem(
-                        text = { Text(option.ifEmpty { "None" }) },
+                        text = { Text(option.capitalizeFirst().ifEmpty { "None" }) },
                         onClick = {
                             onOptionSelected(option)
                             expanded = false

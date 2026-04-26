@@ -69,9 +69,9 @@ private fun WardrobeScreen(
 ) {
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
+            TopAppBar(
                 title = {
-                    Text("Wardrobe", fontWeight = FontWeight.Bold, letterSpacing = (-0.3).sp)
+                    Text("Wardrobe", style = MaterialTheme.typography.titleLarge)
                 },
                 actions = {
                     IconButton(onClick = onRefresh, enabled = !state.isLoading) {
@@ -81,7 +81,7 @@ private fun WardrobeScreen(
                         Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Logout")
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.Transparent),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
             )
         },
         bottomBar = {

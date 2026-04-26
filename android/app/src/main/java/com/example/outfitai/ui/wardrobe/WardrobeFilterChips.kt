@@ -10,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.outfitai.data.model.ItemConstants
+import com.example.outfitai.util.capitalizeFirst
 
 @Composable
 internal fun FilterChipsRow(
@@ -100,7 +101,7 @@ internal fun DropdownFilterChip(
         FilterChip(
             selected = isActive,
             onClick = { expanded = true },
-            label = { Text(if (isActive) selected!! else "$label ▾") },
+            label = { Text(if (isActive) selected!!.capitalizeFirst() else "$label ▾") },
             shape = RoundedCornerShape(50),
             colors = FilterChipDefaults.filterChipColors(
                 selectedContainerColor = MaterialTheme.colorScheme.primary,
@@ -126,7 +127,7 @@ internal fun DropdownFilterChip(
             }
             options.forEach { option ->
                 DropdownMenuItem(
-                    text = { Text(option) },
+                    text = { Text(option.capitalizeFirst()) },
                     onClick = { onSelect(option); expanded = false },
                 )
             }

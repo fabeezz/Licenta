@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.outfitai.core.ui.color.colorNameToComposeColor
 import com.example.outfitai.data.model.ItemConstants
+import com.example.outfitai.util.capitalizeFirst
 
 @Composable
 fun ColorSelectionDialog(
@@ -106,7 +107,7 @@ private fun ColorOption(name: String, isSelected: Boolean, onClick: () -> Unit) 
         }
         Spacer(Modifier.height(4.dp))
         Text(
-            text = name.replaceFirstChar { it.uppercaseChar() },
+            text = name.capitalizeFirst(),
             style = MaterialTheme.typography.labelMedium,
             color = if (isSelected) cs.onPrimaryContainer else cs.onSurface,
             textAlign = TextAlign.Center,

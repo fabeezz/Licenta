@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class ItemBase(BaseModel):
@@ -38,17 +38,47 @@ class ItemOut(ItemBase):
 
 
 class ItemUpdate(BaseModel):
-    """Partial update payload for ``PATCH /items/{id}``.
-
-    ``color_tags`` is intentionally excluded — it is AI-derived and not
-    user-settable via the API.
-    """
+    """Partial update payload for ``PATCH /items/{id}``."""
 
     category: str | None = None
     brand: str | None = None
     material: str | None = None
     season: str | None = None
     occasion: str | None = None
+    color_tags: dict | None = None
+
+    @field_validator("category", "material", "season", "occasion", mode="before")
+    @classmethod
+    def to_lowercase(cls, v: str | None) -> str | None:
+        """Enforce lowercase for categorical fields."""
+        if isinstance(v, str):
+            return v.lower()
+        return v
+
+    @field_validator("color_tags", mode="before")
+    @classmethod
+    def color_tags_to_lowercase(cls, v: dict | None) -> dict | None:
+        """Enforce lowercase for all color tags."""
+        if not isinstance(v, dict):
+            return v
+        
+        lowered = {}
+        for key, val in v.items():
+            if isinstance(val, list):
+                lowered[key] = [i.lower() if isinstance(i, str) else i for i in val]
+            elif isinstance(val, str):
+                lowered[key] = val.lower()
+            else:
+                lowered[key] = val
+        return lowered
+
+    @field_validator("brand", mode="before")
+    @classmethod
+    def to_title_case(cls, v: str | None) -> str | None:
+        """Convert the brand name to Title Case."""
+        if isinstance(v, str):
+            return v.title()
+        return v
 
 
 class ItemListQuery(BaseModel):
@@ -65,3 +95,27 @@ class ItemListQuery(BaseModel):
     sort_dir: Literal["asc", "desc"] = "desc"
     limit: int = Field(50, ge=1, le=200)
     offset: int = Field(0, ge=0)
+
+    @field_validator("category", "material", "season", "occasion", "dominant_color", mode="before")
+    @classmethod
+    def to_lowercase(cls, v: str | None) -> str | None:
+        """Enforce lowercase for categorical fields."""
+        if isinstance(v, str):
+            return v.lower()
+        return v
+
+    @field_validator("colors", mode="before")
+    @classmethod
+    def list_to_lowercase(cls, v: list[str] | None) -> list[str] | None:
+        """Enforce lowercase for list of strings."""
+        if isinstance(v, list):
+            return [i.lower() if isinstance(i, str) else i for i in v]
+        return v
+
+    @field_validator("brand", mode="before")
+    @classmethod
+    def to_title_case(cls, v: str | None) -> str | None:
+        """Convert the brand name to Title Case."""
+        if isinstance(v, str):
+            return v.title()
+        return v

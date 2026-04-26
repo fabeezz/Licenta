@@ -17,6 +17,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+import com.example.outfitai.util.capitalizeFirst
+
 @Composable
 internal fun InfoCard(
     title: String,
@@ -46,8 +48,8 @@ internal fun InfoCard(
 internal fun InfoRow(label: String, value: String) {
     val cs = MaterialTheme.colorScheme
     Column {
-        Text(text = label, style = MaterialTheme.typography.labelLarge, color = cs.onSurfaceVariant)
-        Text(text = value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = cs.onSurface)
+        Text(text = label.uppercase(), style = MaterialTheme.typography.labelLarge, color = cs.onSurfaceVariant)
+        Text(text = value, style = MaterialTheme.typography.bodyMedium, color = cs.onSurface)
     }
 }
 
@@ -60,7 +62,7 @@ internal fun SeasonChip(season: String) {
         border = BorderStroke(1.dp, cs.outlineVariant.copy(alpha = 0.4f)),
     ) {
         Text(
-            text = season,
+            text = season.capitalizeFirst(),
             style = MaterialTheme.typography.labelLarge,
             color = cs.onSurface,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -93,7 +95,7 @@ internal fun ColorSwatch(
                 .background(color)
                 .border(1.dp, cs.outlineVariant.copy(alpha = 0.5f), CircleShape),
         )
-        Text(text = name.replaceFirstChar { it.uppercaseChar() }, style = MaterialTheme.typography.labelLarge, color = cs.onSurface, maxLines = 1)
+        Text(text = name.capitalizeFirst(), style = MaterialTheme.typography.labelLarge, color = cs.onSurface, maxLines = 1)
         Text(text = role, style = MaterialTheme.typography.bodyMedium.copy(fontSize = 11.sp), color = cs.onSurfaceVariant, maxLines = 1)
     }
 }

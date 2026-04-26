@@ -29,6 +29,7 @@ import com.example.outfitai.data.model.ItemMinimalDto
 import com.example.outfitai.data.model.OutfitSavedDto
 import com.example.outfitai.core.ui.color.colorNameToComposeColor
 import com.example.outfitai.core.media.mediaUrl
+import com.example.outfitai.util.capitalizeFirst
 
 @Composable
 fun OutfitDetailRoute(
@@ -172,7 +173,7 @@ private fun MetadataChip(text: String) {
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
     ) {
         Text(
-            text = text.uppercase(),
+            text = text.capitalizeFirst(),
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,

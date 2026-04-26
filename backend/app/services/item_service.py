@@ -51,7 +51,7 @@ class ItemService:
             file_bytes: Raw bytes of the uploaded image.
             ext: File extension without the leading dot.
             user_id: Owner of the new item.
-            brand: Optional user-supplied brand (stored lowercased).
+            brand: Optional user-supplied brand (stored in Title Case).
             material: Optional override for AI-predicted material.
             season: Optional override for AI-inferred season.
             occasion: Optional override for AI-predicted occasion.
@@ -70,7 +70,7 @@ class ItemService:
             image_no_bg_name=result.image_no_bg_name,
             color_tags=result.color_tags,
             category=result.category,
-            brand=(brand.lower() if brand else None),
+            brand=(brand.title() if brand else None),
             material=(material_value.lower() if material_value else None),
             season=(season_value.lower() if season_value else None),
             occasion=(occasion_value.lower() if occasion_value else None),

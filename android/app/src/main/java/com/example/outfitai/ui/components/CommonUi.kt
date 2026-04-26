@@ -5,6 +5,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 
+import com.example.outfitai.util.capitalizeFirst
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DropdownSelector(
@@ -22,7 +24,7 @@ fun DropdownSelector(
         modifier = modifier
     ) {
         OutlinedTextField(
-            value = selectedOption,
+            value = selectedOption.capitalizeFirst(),
             onValueChange = {},
             readOnly = true,
             label = { Text(label) },
@@ -39,7 +41,7 @@ fun DropdownSelector(
         ) {
             options.forEach { selectionOption ->
                 DropdownMenuItem(
-                    text = { Text(selectionOption) },
+                    text = { Text(selectionOption.capitalizeFirst()) },
                     onClick = {
                         onOptionSelected(selectionOption)
                         expanded = false
