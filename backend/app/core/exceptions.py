@@ -21,6 +21,13 @@ class InvalidItemsError(DomainError):
         super().__init__("One or more items are invalid or not owned by user")
 
 
+class InvalidOutfitsError(DomainError):
+    """Raised when a collection references outfits that don't exist or aren't owned by the user."""
+
+    def __init__(self) -> None:
+        super().__init__("One or more outfits are invalid or not owned by user")
+
+
 class WeatherUnavailableError(DomainError):
     """Raised when the external weather provider cannot be reached."""
 

@@ -41,6 +41,9 @@ fun WardrobeRoute(
         onFilterSeason = vm::setFilterSeason,
         onFilterOccasion = vm::setFilterOccasion,
         onClearFilters = vm::clearFilters,
+        onCreateCollection = vm::createCollection,
+        onRenameCollection = vm::renameCollection,
+        onDeleteCollection = vm::deleteCollection,
     )
 }
 
@@ -60,6 +63,9 @@ private fun WardrobeScreen(
     onFilterSeason: (String?) -> Unit,
     onFilterOccasion: (String?) -> Unit,
     onClearFilters: () -> Unit,
+    onCreateCollection: (String, List<Int>) -> Unit,
+    onRenameCollection: (Int, String) -> Unit,
+    onDeleteCollection: (Int) -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -99,15 +105,17 @@ private fun WardrobeScreen(
             Spacer(Modifier.height(12.dp))
             SegmentedControl(selected = state.selectedTab, onSelect = onTabSelect)
             Spacer(Modifier.height(12.dp))
-            FilterChipsRow(
-                state = state,
-                onFilterCategory = onFilterCategory,
-                onFilterColor = onFilterColor,
-                onFilterSeason = onFilterSeason,
-                onFilterOccasion = onFilterOccasion,
-                onClearFilters = onClearFilters,
-            )
-            Spacer(Modifier.height(16.dp))
+            if (state.selectedTab != WardrobeTab.Collections) {
+                FilterChipsRow(
+                    state = state,
+                    onFilterCategory = onFilterCategory,
+                    onFilterColor = onFilterColor,
+                    onFilterSeason = onFilterSeason,
+                    onFilterOccasion = onFilterOccasion,
+                    onClearFilters = onClearFilters,
+                )
+                Spacer(Modifier.height(16.dp))
+            }
             when (state.selectedTab) {
                 WardrobeTab.Pieces -> PiecesContent(
                     state = state,
@@ -118,6 +126,15 @@ private fun WardrobeScreen(
                 WardrobeTab.Fits -> FitsContent(
                     state = state,
                     onOutfitClick = onOutfitClick,
+                    bottomPadding = pad.calculateBottomPadding(),
+                    modifier = Modifier.weight(1f),
+                )
+                WardrobeTab.Collections -> CollectionsContent(
+                    state = state,
+                    onOutfitClick = onOutfitClick,
+                    onCreateCollection = onCreateCollection,
+                    onRenameCollection = onRenameCollection,
+                    onDeleteCollection = onDeleteCollection,
                     bottomPadding = pad.calculateBottomPadding(),
                     modifier = Modifier.weight(1f),
                 )

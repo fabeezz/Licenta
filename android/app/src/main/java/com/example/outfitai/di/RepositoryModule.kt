@@ -2,6 +2,8 @@ package com.example.outfitai.di
 
 import com.example.outfitai.data.auth.AuthRepository
 import com.example.outfitai.data.auth.AuthRepositoryImpl
+import com.example.outfitai.data.collections.CollectionRepository
+import com.example.outfitai.data.collections.CollectionRepositoryImpl
 import com.example.outfitai.data.item.ItemRepository
 import com.example.outfitai.data.item.ItemRepositoryImpl
 import com.example.outfitai.data.outfits.OutfitRepository
@@ -23,6 +25,10 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindAuthRepository(impl: AuthRepositoryImpl): AuthRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindCollectionRepository(impl: CollectionRepositoryImpl): CollectionRepository
 
     @Binds
     @Singleton

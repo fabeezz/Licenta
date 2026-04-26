@@ -13,3 +13,4 @@ class User(Base):
 
     items: Mapped[list["Item"]] = relationship("Item", back_populates="user")
     outfits: Mapped[list["Outfit"]] = relationship("Outfit", back_populates="user", cascade="all, delete-orphan")
+    collections: Mapped[list["OutfitCollection"]] = relationship("OutfitCollection", back_populates="user", cascade="all, delete-orphan")

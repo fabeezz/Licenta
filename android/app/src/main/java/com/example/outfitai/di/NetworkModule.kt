@@ -4,6 +4,7 @@ import com.example.outfitai.BuildConfig
 import com.example.outfitai.Config
 import com.example.outfitai.data.api.AuthApi
 import com.example.outfitai.data.api.AuthInterceptor
+import com.example.outfitai.data.api.CollectionApi
 import com.example.outfitai.data.api.ItemApi
 import com.example.outfitai.data.api.OutfitApi
 import com.example.outfitai.data.api.WeatherApi
@@ -67,6 +68,11 @@ object NetworkModule {
     @Singleton
     fun provideOutfitApi(retrofit: Retrofit): OutfitApi =
         retrofit.create(OutfitApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideCollectionApi(retrofit: Retrofit): CollectionApi =
+        retrofit.create(CollectionApi::class.java)
 
     @Provides
     @Singleton

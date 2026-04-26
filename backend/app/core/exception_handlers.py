@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from app.core.exceptions import DomainError, InvalidItemsError, NotFoundError, WeatherUnavailableError
+from app.core.exceptions import DomainError, InvalidItemsError, InvalidOutfitsError, NotFoundError, WeatherUnavailableError
 
 
 def register_exception_handlers(app: FastAPI) -> None:
@@ -15,6 +15,10 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(InvalidItemsError)
     async def _invalid_items(request: Request, exc: InvalidItemsError) -> JSONResponse:
+        return JSONResponse(status_code=400, content={"detail": str(exc)})
+
+    @app.exception_handler(InvalidOutfitsError)
+    async def _invalid_outfits(request: Request, exc: InvalidOutfitsError) -> JSONResponse:
         return JSONResponse(status_code=400, content={"detail": str(exc)})
 
     @app.exception_handler(WeatherUnavailableError)

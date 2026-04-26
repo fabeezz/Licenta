@@ -3,6 +3,10 @@ package com.example.outfitai.ui.wardrobe
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.outfitai.core.common.Resource
+import com.example.outfitai.domain.usecase.collections.CreateCollectionUseCase
+import com.example.outfitai.domain.usecase.collections.DeleteCollectionUseCase
+import com.example.outfitai.domain.usecase.collections.GetCollectionsUseCase
+import com.example.outfitai.domain.usecase.collections.RenameCollectionUseCase
 import com.example.outfitai.domain.usecase.wardrobe.GetFilteredWardrobeUseCase
 import com.example.outfitai.domain.usecase.wardrobe.GetWardrobeOutfitsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -37,6 +41,10 @@ private data class ActiveFilters(
 class WardrobeViewModel @Inject constructor(
     private val getFilteredWardrobe: GetFilteredWardrobeUseCase,
     private val getWardrobeOutfits: GetWardrobeOutfitsUseCase,
+    private val getCollections: GetCollectionsUseCase,
+    private val createCollectionUseCase: CreateCollectionUseCase,
+    private val renameCollectionUseCase: RenameCollectionUseCase,
+    private val deleteCollectionUseCase: DeleteCollectionUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(WardrobeUiState())
@@ -67,13 +75,21 @@ class WardrobeViewModel @Inject constructor(
                             is Resource.Error -> reduce { copy(isLoading = false, error = result.message) }
                             Resource.Loading -> Unit
                         }
-                    } else {
+                    } else if (f.tab == WardrobeTab.Fits) {
                         when (val result = getWardrobeOutfits(
                             season = f.season,
                             occasion = f.occasion,
                         )) {
                             is Resource.Success -> reduce {
                                 copy(isLoading = false, outfits = result.data, error = null)
+                            }
+                            is Resource.Error -> reduce { copy(isLoading = false, error = result.message) }
+                            Resource.Loading -> Unit
+                        }
+                    } else {
+                        when (val result = getCollections()) {
+                            is Resource.Success -> reduce {
+                                copy(isLoading = false, collections = result.data, error = null)
                             }
                             is Resource.Error -> reduce { copy(isLoading = false, error = result.message) }
                             Resource.Loading -> Unit
@@ -123,4 +139,34 @@ class WardrobeViewModel @Inject constructor(
     fun setFilterSeason(value: String?) = onIntent(WardrobeIntent.SetSeasonFilter(value))
     fun setFilterOccasion(value: String?) = onIntent(WardrobeIntent.SetOccasionFilter(value))
     fun clearFilters() = onIntent(WardrobeIntent.ClearFilters)
+
+    fun createCollection(name: String, outfitIds: List<Int>) {
+        viewModelScope.launch {
+            when (createCollectionUseCase(name, outfitIds)) {
+                is Resource.Success -> refresh()
+                is Resource.Error -> Unit
+                Resource.Loading -> Unit
+            }
+        }
+    }
+
+    fun renameCollection(id: Int, name: String) {
+        viewModelScope.launch {
+            when (renameCollectionUseCase(id, name)) {
+                is Resource.Success -> refresh()
+                is Resource.Error -> Unit
+                Resource.Loading -> Unit
+            }
+        }
+    }
+
+    fun deleteCollection(id: Int) {
+        viewModelScope.launch {
+            when (deleteCollectionUseCase(id)) {
+                is Resource.Success -> refresh()
+                is Resource.Error -> Unit
+                Resource.Loading -> Unit
+            }
+        }
+    }
 }

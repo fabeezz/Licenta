@@ -11,8 +11,10 @@ from app.core.security import decode_access_token
 from app.db.session import get_db
 from app.models.user import User
 from app.repositories.item_repository import ItemRepository
+from app.repositories.outfit_collection_repository import OutfitCollectionRepository
 from app.repositories.outfit_repository import OutfitRepository
 from app.services.item_service import ItemService
+from app.services.outfit_collection_service import OutfitCollectionService
 from app.services.outfit_service import OutfitService
 from app.services.pipeline import ItemPipeline
 from app.services.weather_service import WeatherService
@@ -75,6 +77,18 @@ def get_outfit_service(
 ) -> OutfitService:
     """Construct an :class:`~app.services.outfit_service.OutfitService` for the request."""
     return OutfitService(repo)
+
+
+def get_collection_repository(db: Session = Depends(get_db)) -> OutfitCollectionRepository:
+    """Construct an :class:`~app.repositories.outfit_collection_repository.OutfitCollectionRepository` for the request."""
+    return OutfitCollectionRepository(db)
+
+
+def get_collection_service(
+    repo: OutfitCollectionRepository = Depends(get_collection_repository),
+) -> OutfitCollectionService:
+    """Construct an :class:`~app.services.outfit_collection_service.OutfitCollectionService` for the request."""
+    return OutfitCollectionService(repo)
 
 
 def get_http_client(request: Request) -> httpx.AsyncClient:
