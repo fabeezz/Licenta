@@ -109,8 +109,9 @@ private fun OutfitDetailScreen(
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            state.outfit.season?.let {
-                                MetadataChip(it)
+                            state.outfit.weather.forEach { tag ->
+                                MetadataChip(tag)
+                                Spacer(Modifier.width(4.dp))
                             }
                             state.outfit.occasion?.let {
                                 Spacer(Modifier.width(8.dp))

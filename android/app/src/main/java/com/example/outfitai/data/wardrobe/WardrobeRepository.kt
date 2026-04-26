@@ -10,7 +10,7 @@ interface WardrobeRepository {
         dominantColor: String? = null,
         colors: List<String>? = null,
         material: String? = null,
-        season: String? = null,
+        weather: String? = null,
         occasion: String? = null,
         sortBy: String = "created_at",
         sortDir: String = "desc",
@@ -19,7 +19,7 @@ interface WardrobeRepository {
     ): List<ItemOutDto>
 
     suspend fun listOutfits(
-        season: String? = null,
+        weather: String? = null,
         occasion: String? = null,
     ): List<OutfitSavedDto>
 }

@@ -10,9 +10,9 @@ class GetWardrobeOutfitsUseCase @Inject constructor(
     private val repo: WardrobeRepository,
 ) {
     suspend operator fun invoke(
-        season: String? = null,
+        weather: String? = null,
         occasion: String? = null,
     ): Resource<List<OutfitSavedDto>> = safeApiCall {
-        repo.listOutfits(season = season, occasion = occasion)
+        repo.listOutfits(weather = weather, occasion = occasion)
     }
 }

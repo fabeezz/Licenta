@@ -13,7 +13,7 @@ interface ItemApi {
         @Part image: MultipartBody.Part,
         @Part("brand") brand: RequestBody? = null,
         @Part("material") material: RequestBody? = null,
-        @Part("season") season: RequestBody? = null,
+        @Part("weather") weather: RequestBody? = null,
         @Part("occasion") occasion: RequestBody? = null,
     ): ItemOutDto
 
@@ -24,7 +24,7 @@ interface ItemApi {
         @Query("dominant_color") dominantColor: String? = null,
         @Query("colors") colors: List<String>? = null,
         @Query("material") material: String? = null,
-        @Query("season") season: String? = null,
+        @Query("weather") weather: String? = null,
         @Query("occasion") occasion: String? = null,
         @Query("sort_by") sortBy: String = "created_at",
         @Query("sort_dir") sortDir: String = "desc",

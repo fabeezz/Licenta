@@ -54,19 +54,23 @@ internal fun InfoRow(label: String, value: String) {
 }
 
 @Composable
-internal fun SeasonChip(season: String) {
+internal fun WeatherChips(tags: List<String>) {
     val cs = MaterialTheme.colorScheme
-    Surface(
-        shape = CircleShape,
-        color = cs.surfaceContainer,
-        border = BorderStroke(1.dp, cs.outlineVariant.copy(alpha = 0.4f)),
-    ) {
-        Text(
-            text = season.capitalizeFirst(),
-            style = MaterialTheme.typography.labelLarge,
-            color = cs.onSurface,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-        )
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        tags.forEach { tag ->
+            Surface(
+                shape = CircleShape,
+                color = cs.surfaceContainer,
+                border = BorderStroke(1.dp, cs.outlineVariant.copy(alpha = 0.4f)),
+            ) {
+                Text(
+                    text = tag.capitalizeFirst(),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = cs.onSurface,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                )
+            }
+        }
     }
 }
 

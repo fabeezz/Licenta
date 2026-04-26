@@ -16,13 +16,13 @@ class ItemRepositoryImpl @Inject constructor(
         uri: Uri,
         brand: String?,
         material: String?,
-        season: String?,
+        weather: List<String>?,
         occasion: String?,
     ): ItemOutDto = api.createItem(
         image = uploader.part(uri, "image"),
         brand = uploader.textPartOrNull(brand),
         material = uploader.textPartOrNull(material),
-        season = uploader.textPartOrNull(season),
+        weather = uploader.textPartOrNull(weather?.joinToString(",")),
         occasion = uploader.textPartOrNull(occasion),
     )
 

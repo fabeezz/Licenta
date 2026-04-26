@@ -10,7 +10,7 @@ data class ItemDetailsUiState(
     val category: String = "",
     val brand: String = "",
     val material: String = "",
-    val season: String = "",
+    val weather: List<String> = emptyList(),
     val occasion: String = "",
     val dominantColors: List<String> = emptyList(),
     val accentColors: List<String> = emptyList(),

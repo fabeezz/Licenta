@@ -50,7 +50,7 @@ fun OutfitStudioRoute(
             onDismiss = vm::closeSaveDialog,
             onSave = vm::save,
             onNameChange = vm::updateOutfitName,
-            onSeasonChange = vm::updateSeason,
+            onWeatherChange = vm::updateWeather,
             onOccasionChange = vm::updateOccasion,
         )
     }

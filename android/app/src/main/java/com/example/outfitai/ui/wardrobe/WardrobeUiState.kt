@@ -15,6 +15,6 @@ data class WardrobeUiState(
     val selectedTab: WardrobeTab = WardrobeTab.Pieces,
     val filterCategory: String? = null,
     val filterColor: String? = null,
-    val filterSeason: String? = null,
+    val filterWeather: String? = null,
     val filterOccasion: String? = null,
 )

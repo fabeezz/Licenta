@@ -13,7 +13,7 @@ from app.services.image.color_extractor_colorthief import ColorThiefExtractor
 from app.services.ai.category_classifier import ClipCategoryClassifier, ClipPrediction
 from app.services.ai.material_classifier import ClipMaterialClassifier
 from app.services.ai.occasion_classifier import ClipOccasionClassifier
-from app.services.ai.season_logic import infer_season
+from app.services.ai.weather_logic import infer_weather
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ class PipelineResult:
         material_confidence: Confidence score for the material prediction.
         occasion: Predicted occasion label.
         occasion_confidence: Confidence score for the occasion prediction.
-        season: Rule-inferred season string.
+        weather: Rule-inferred weather tags.
     """
 
     image_original_name: str
@@ -46,7 +46,7 @@ class PipelineResult:
     material_confidence: float
     occasion: str
     occasion_confidence: float
-    season: str
+    weather: list[str]
 
 
 class ItemPipeline:
@@ -121,8 +121,8 @@ class ItemPipeline:
                 occ_pred = self.occasion_classifier.predict(rgb_img, pred.label)
             logger.info("Predicted occasion: %s (conf=%.3f)", occ_pred.label, occ_pred.confidence)
 
-            season = infer_season(pred.label, mat_pred.label)
-            logger.info("Inferred season: %s", season)
+            weather = infer_weather(pred.label, mat_pred.label)
+            logger.info("Inferred weather: %s", weather)
 
         return PipelineResult(
             image_original_name=original_name,
@@ -135,5 +135,5 @@ class ItemPipeline:
             material_confidence=mat_pred.confidence,
             occasion=occ_pred.label,
             occasion_confidence=occ_pred.confidence,
-            season=season,
+            weather=weather,
         )

@@ -62,17 +62,26 @@ class OutfitStudioViewModel @Inject constructor(
                 val slots = Slot.entries.map { slot ->
                     async {
                         val categories = slotCategories(slot)
-                        var seasonOverride: String? = null
+                        var weatherOverride: String? = null
                         var materialOverride: String? = null
                         var skip = false
 
                         if (fState.climate == "Cold") {
-                            if (slot != Slot.TOP) seasonOverride = "winter,all-season"
+                            weatherOverride = when (slot) {
+                                Slot.OUTER -> "cold"
+                                Slot.TOP -> null
+                                Slot.BOTTOM, Slot.SHOES -> "all-weather,cold"
+                            }
                         } else if (fState.climate == "Warm") {
                             if (slot == Slot.OUTER) skip = true
-                            else seasonOverride = "summer,spring,autumn,all-season"
+                            else weatherOverride = "warm,all-weather"
                         } else if (fState.climate == "Rainy") {
-                            if (slot == Slot.OUTER) materialOverride = "nylon"
+                            when (slot) {
+                                Slot.OUTER -> materialOverride = "nylon"
+                                Slot.TOP -> Unit // no weather filter — warm/cold/rainy/all-weather all valid
+                                Slot.BOTTOM -> weatherOverride = "all-weather,cold"
+                                Slot.SHOES -> weatherOverride = "all-weather"
+                            }
                         }
 
                         if (skip) {
@@ -84,7 +93,7 @@ class OutfitStudioViewModel @Inject constructor(
                                         category = cat,
                                         occasion = occ,
                                         colors = null,
-                                        season = seasonOverride,
+                                        weather = weatherOverride,
                                         material = materialOverride,
                                         limit = 200,
                                     )
@@ -184,13 +193,13 @@ class OutfitStudioViewModel @Inject constructor(
     }
 
     fun openSaveDialog() {
-        _state.update { it.copy(showSaveDialog = true, outfitName = "", selectedSeason = "", selectedOccasion = "") }
+        _state.update { it.copy(showSaveDialog = true, outfitName = "", selectedWeather = emptyList(), selectedOccasion = "") }
     }
 
     fun closeSaveDialog() { _state.update { it.copy(showSaveDialog = false) } }
 
     fun updateOutfitName(name: String) { _state.update { it.copy(outfitName = name) } }
-    fun updateSeason(season: String) { _state.update { it.copy(selectedSeason = season) } }
+    fun updateWeather(tags: List<String>) { _state.update { it.copy(selectedWeather = tags) } }
     fun updateOccasion(occasion: String) { _state.update { it.copy(selectedOccasion = occasion) } }
 
     fun save() {
@@ -214,7 +223,7 @@ class OutfitStudioViewModel @Inject constructor(
                 bottomId = bottom.id,
                 shoeId = shoes.id,
                 outerId = outer?.id,
-                season = s.selectedSeason.takeIf { it.isNotBlank() },
+                weather = s.selectedWeather,
                 occasion = s.selectedOccasion.takeIf { it.isNotBlank() },
             )
             when (val result = createOutfit(dto)) {

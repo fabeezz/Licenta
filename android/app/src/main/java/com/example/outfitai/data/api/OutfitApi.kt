@@ -10,7 +10,7 @@ interface OutfitApi {
 
     @GET("outfits/")
     suspend fun list(
-        @Query("season") season: String? = null,
+        @Query("weather") weather: String? = null,
         @Query("occasion") occasion: String? = null,
     ): List<OutfitSavedDto>
 

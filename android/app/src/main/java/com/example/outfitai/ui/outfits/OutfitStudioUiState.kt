@@ -26,7 +26,7 @@ data class OutfitStudioUiState(
     val isSaving: Boolean = false,
     val showSaveDialog: Boolean = false,
     val outfitName: String = "",
-    val selectedSeason: String = "",
+    val selectedWeather: List<String> = emptyList(),
     val selectedOccasion: String = "",
     val savedOutfitId: Int? = null,
     val snackbarMessage: String? = null,

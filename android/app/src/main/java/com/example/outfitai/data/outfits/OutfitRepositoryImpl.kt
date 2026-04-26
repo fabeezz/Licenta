@@ -11,8 +11,8 @@ class OutfitRepositoryImpl @Inject constructor(
 
     override suspend fun create(dto: OutfitCreateDto): Int = api.create(dto).id
 
-    override suspend fun list(season: String?, occasion: String?): List<OutfitSavedDto> =
-        api.list(season = season, occasion = occasion)
+    override suspend fun list(weather: String?, occasion: String?): List<OutfitSavedDto> =
+        api.list(weather = weather, occasion = occasion)
 
     override suspend fun get(id: Int): OutfitSavedDto = api.get(id)
 

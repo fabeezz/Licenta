@@ -8,7 +8,7 @@ data class ItemUpdateDto(
     val category: String? = null,
     val brand: String? = null,
     val material: String? = null,
-    val season: String? = null,
+    val weather: List<String>? = null,
     val occasion: String? = null,
     @SerialName("color_tags")
     val colorTags: Map<String, List<String>>? = null

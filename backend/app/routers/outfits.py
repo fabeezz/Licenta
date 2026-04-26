@@ -26,14 +26,14 @@ def create_outfit(
 def list_outfits(
     skip: int = 0,
     limit: int = 100,
-    season: str | None = None,
+    weather: str | None = None,
     occasion: str | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
     svc: OutfitService = Depends(get_outfit_service),
 ):
     return svc.list(
-        db, user_id=current_user.id, skip=skip, limit=limit, season=season, occasion=occasion
+        db, user_id=current_user.id, skip=skip, limit=limit, weather=weather, occasion=occasion
     )
 
 

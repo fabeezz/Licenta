@@ -17,13 +17,13 @@ internal fun FilterChipsRow(
     state: WardrobeUiState,
     onFilterCategory: (String?) -> Unit,
     onFilterColor: (String?) -> Unit,
-    onFilterSeason: (String?) -> Unit,
+    onFilterWeather: (String?) -> Unit,
     onFilterOccasion: (String?) -> Unit,
     onClearFilters: () -> Unit,
 ) {
     val allSelected = state.filterCategory == null &&
             state.filterColor == null &&
-            state.filterSeason == null &&
+            state.filterWeather == null &&
             state.filterOccasion == null
 
     Row(
@@ -59,11 +59,11 @@ internal fun FilterChipsRow(
         }
 
         DropdownFilterChip(
-            label = "Season",
-            selected = state.filterSeason,
-            options = ItemConstants.SEASONS,
-            onSelect = { onFilterSeason(it) },
-            onClear = { onFilterSeason(null) },
+            label = "Weather",
+            selected = state.filterWeather,
+            options = ItemConstants.WEATHER_TAGS,
+            onSelect = { onFilterWeather(it) },
+            onClear = { onFilterWeather(null) },
         )
 
         DropdownFilterChip(

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import Integer, String, DateTime, ForeignKey, func
+from sqlalchemy import Integer, String, DateTime, ForeignKey, func, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -24,7 +24,7 @@ class Item(Base):
     color_tags: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     brand: Mapped[str | None] = mapped_column(String, nullable=True)
     material: Mapped[str | None] = mapped_column(String, nullable=True)
-    season: Mapped[str | None] = mapped_column(String, nullable=True)
+    weather: Mapped[list[str]] = mapped_column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
     occasion: Mapped[str | None] = mapped_column(String, nullable=True)
     wear_count: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0, server_default="0"

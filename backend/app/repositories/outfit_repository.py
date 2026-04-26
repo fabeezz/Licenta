@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Sequence
 
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import array
 from sqlalchemy.orm import Session, joinedload
 
 from app.models.item import Item
@@ -92,7 +93,7 @@ class OutfitRepository:
         self,
         user_id: int,
         *,
-        season: str | None = None,
+        weather: str | None = None,
         occasion: str | None = None,
         skip: int = 0,
         limit: int = 100,
@@ -101,7 +102,7 @@ class OutfitRepository:
 
         Args:
             user_id: Only return outfits that belong to this user.
-            season: Optional season filter.
+            weather: Optional comma-separated weather filter.
             occasion: Optional occasion filter.
             skip: Pagination offset.
             limit: Maximum number of results.
@@ -117,8 +118,9 @@ class OutfitRepository:
             .offset(skip)
             .limit(limit)
         )
-        if season:
-            stmt = stmt.where(Outfit.season == season)
+        if weather:
+            tags = [t.strip().lower() for t in weather.split(",")]
+            stmt = stmt.where(Outfit.weather.op("?|")(array(tags)))
         if occasion:
             stmt = stmt.where(Outfit.occasion == occasion)
         return self._db.scalars(stmt).all()

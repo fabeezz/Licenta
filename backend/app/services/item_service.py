@@ -39,7 +39,7 @@ class ItemService:
         user_id: int,
         brand: str | None = None,
         material: str | None = None,
-        season: str | None = None,
+        weather: list[str] | None = None,
         occasion: str | None = None,
     ) -> Item:
         """Run the AI pipeline on *file_bytes* and persist the resulting item.
@@ -53,7 +53,7 @@ class ItemService:
             user_id: Owner of the new item.
             brand: Optional user-supplied brand (stored in Title Case).
             material: Optional override for AI-predicted material.
-            season: Optional override for AI-inferred season.
+            weather: Optional override for AI-inferred weather tags.
             occasion: Optional override for AI-predicted occasion.
 
         Returns:
@@ -61,7 +61,7 @@ class ItemService:
         """
         result = self._pipeline.process_upload(file_bytes, ext)
         material_value = material or result.material
-        season_value = season or result.season
+        weather_value = weather if weather is not None else result.weather
         occasion_value = occasion or result.occasion
 
         item = Item(
@@ -72,7 +72,7 @@ class ItemService:
             category=result.category,
             brand=(brand.title() if brand else None),
             material=(material_value.lower() if material_value else None),
-            season=(season_value.lower() if season_value else None),
+            weather=[t.lower() for t in weather_value],
             occasion=(occasion_value.lower() if occasion_value else None),
             wear_count=0,
         )

@@ -14,9 +14,9 @@ class UploadGarmentUseCase @Inject constructor(
         uri: Uri,
         brand: String?,
         material: String?,
-        season: String?,
+        weather: List<String>?,
         occasion: String?,
     ): Resource<ItemOutDto> = safeApiCall {
-        repo.uploadItem(uri, brand, material, season, occasion)
+        repo.uploadItem(uri, brand, material, weather, occasion)
     }
 }

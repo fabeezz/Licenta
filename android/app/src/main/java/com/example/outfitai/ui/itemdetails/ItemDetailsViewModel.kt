@@ -51,7 +51,7 @@ class ItemDetailsViewModel @Inject constructor(
             category = item.category.orEmpty(),
             brand = item.brand.orEmpty(),
             material = item.material.orEmpty(),
-            season = item.season.orEmpty(),
+            weather = item.weather,
             occasion = item.occasion.orEmpty(),
             dominantColors = extractColorList(item.colorTags, "dominant"),
             accentColors = extractColorList(item.colorTags, "accent"),
@@ -82,7 +82,7 @@ class ItemDetailsViewModel @Inject constructor(
     fun setCategory(v: String) { reduce { copy(category = v) } }
     fun setBrand(v: String) { reduce { copy(brand = v) } }
     fun setMaterial(v: String) { reduce { copy(material = v) } }
-    fun setSeason(v: String) { reduce { copy(season = v) } }
+    fun setWeather(v: List<String>) { reduce { copy(weather = v) } }
     fun setOccasion(v: String) { reduce { copy(occasion = v) } }
 
     fun setDominantColor(color: String) { reduce { copy(dominantColors = listOf(color)) } }
@@ -104,7 +104,7 @@ class ItemDetailsViewModel @Inject constructor(
                 category = s.category.blankToNull(),
                 brand = s.brand.blankToNull(),
                 material = s.material.blankToNull(),
-                season = s.season.blankToNull(),
+                weather = s.weather.ifEmpty { null },
                 occasion = s.occasion.blankToNull(),
                 colorTags = mapOf("dominant" to s.dominantColors, "accent" to s.accentColors),
             )

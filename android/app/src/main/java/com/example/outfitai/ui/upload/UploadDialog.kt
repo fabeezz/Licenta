@@ -30,7 +30,7 @@ fun UploadDialog(
     onUpload: () -> Unit,
     onBrandChange: (String) -> Unit,
     onMaterialChange: (String) -> Unit,
-    onSeasonChange: (String) -> Unit,
+    onWeatherChange: (List<String>) -> Unit,
     onOccasionChange: (String) -> Unit,
 ) {
     Dialog(
@@ -135,22 +135,34 @@ fun UploadDialog(
                     onOptionSelected = onMaterialChange,
                 )
 
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    FormDropdownSelector(
-                        label = "Season",
-                        selectedOption = uploadState.season,
-                        options = ItemConstants.SEASONS,
-                        onOptionSelected = onSeasonChange,
-                        modifier = Modifier.weight(1f),
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "Weather (optional)",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    FormDropdownSelector(
-                        label = "Occasion",
-                        selectedOption = uploadState.occasion,
-                        options = ItemConstants.OCCASIONS,
-                        onOptionSelected = onOccasionChange,
-                        modifier = Modifier.weight(1f),
-                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ItemConstants.WEATHER_TAGS.forEach { tag ->
+                            val selected = tag in uploadState.weather
+                            FilterChip(
+                                selected = selected,
+                                onClick = {
+                                    val updated = if (selected) uploadState.weather - tag
+                                               else uploadState.weather + tag
+                                    onWeatherChange(updated)
+                                },
+                                label = { Text(tag.replaceFirstChar { it.uppercase() }) },
+                            )
+                        }
+                    }
                 }
+
+                FormDropdownSelector(
+                    label = "Occasion",
+                    selectedOption = uploadState.occasion,
+                    options = ItemConstants.OCCASIONS,
+                    onOptionSelected = onOccasionChange,
+                )
 
                 Surface(
                     shape = RoundedCornerShape(20.dp),

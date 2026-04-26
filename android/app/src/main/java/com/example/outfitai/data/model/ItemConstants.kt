@@ -23,12 +23,11 @@ object ItemConstants {
         "sportswear"
     )
 
-    val SEASONS = listOf(
-        "spring",
-        "summer",
-        "autumn",
-        "winter",
-        "all-season"
+    val WEATHER_TAGS = listOf(
+        "cold",
+        "warm",
+        "rainy",
+        "all-weather"
     )
 
     val COLORS = listOf(

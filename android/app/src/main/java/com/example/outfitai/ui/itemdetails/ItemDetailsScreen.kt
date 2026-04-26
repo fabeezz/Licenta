@@ -45,7 +45,7 @@ fun ItemDetailsRoute(
         onCategory = vm::setCategory,
         onBrand = vm::setBrand,
         onMaterial = vm::setMaterial,
-        onSeason = vm::setSeason,
+        onWeather = vm::setWeather,
         onOccasion = vm::setOccasion,
         onDominantColor = vm::setDominantColor,
         onAccentColor = vm::toggleAccentColor,
@@ -70,7 +70,7 @@ private fun ItemDetailsScreen(
     onCategory: (String) -> Unit,
     onBrand: (String) -> Unit,
     onMaterial: (String) -> Unit,
-    onSeason: (String) -> Unit,
+    onWeather: (List<String>) -> Unit,
     onOccasion: (String) -> Unit,
     onDominantColor: (String) -> Unit,
     onAccentColor: (String) -> Unit,
@@ -303,23 +303,38 @@ private fun ItemDetailsScreen(
                                     onOptionSelected = onMaterial
                                 )
                                 Spacer(Modifier.height(8.dp))
-                                DropdownSelector(
-                                    label = "Season",
-                                    selectedOption = state.season,
-                                    options = ItemConstants.SEASONS,
-                                    onOptionSelected = onSeason
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    "Weather",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = cs.onSurfaceVariant,
                                 )
+                                Spacer(Modifier.height(6.dp))
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    ItemConstants.WEATHER_TAGS.forEach { tag ->
+                                        val selected = tag in state.weather
+                                        FilterChip(
+                                            selected = selected,
+                                            onClick = {
+                                                val updated = if (selected) state.weather - tag
+                                                           else state.weather + tag
+                                                onWeather(updated)
+                                            },
+                                            label = { Text(tag.capitalizeFirst()) },
+                                        )
+                                    }
+                                }
                             } else {
                                 InfoRow(label = "Material", value = item.material?.capitalizeFirst() ?: "—")
                                 Spacer(Modifier.height(12.dp))
                                 Text(
-                                    text = "Season",
+                                    text = "Weather",
                                     style = MaterialTheme.typography.labelLarge,
                                     color = cs.onSurfaceVariant
                                 )
                                 Spacer(Modifier.height(6.dp))
-                                if (item.season != null) {
-                                    SeasonChip(season = item.season.capitalizeFirst())
+                                if (item.weather.isNotEmpty()) {
+                                    WeatherChips(tags = item.weather)
                                 } else {
                                     Text("—", style = MaterialTheme.typography.bodyMedium, color = cs.onSurface)
                                 }

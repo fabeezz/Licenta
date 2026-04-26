@@ -39,7 +39,7 @@ fun rememberUploadLauncher(
             onUpload = vm::upload,
             onBrandChange = vm::setBrand,
             onMaterialChange = vm::setMaterial,
-            onSeasonChange = vm::setSeason,
+            onWeatherChange = vm::setWeather,
             onOccasionChange = vm::setOccasion,
         )
     }

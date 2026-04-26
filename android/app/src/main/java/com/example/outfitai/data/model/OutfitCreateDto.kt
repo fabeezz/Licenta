@@ -10,7 +10,7 @@ data class OutfitCreateDto(
     @SerialName("bottom_id") val bottomId: Int,
     @SerialName("shoe_id")  val shoeId: Int,
     @SerialName("outer_id") val outerId: Int? = null,
-    val season: String? = null,
+    val weather: List<String> = emptyList(),
     val occasion: String? = null,
 )
 
@@ -26,7 +26,7 @@ data class ItemMinimalDto(
 data class OutfitSavedDto(
     val id: Int,
     val name: String,
-    val season: String? = null,
+    val weather: List<String> = emptyList(),
     val occasion: String? = null,
     val top: ItemMinimalDto,
     val bottom: ItemMinimalDto,

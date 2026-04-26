@@ -26,7 +26,7 @@ class UploadViewModel @Inject constructor(
     fun setUri(uri: Uri?) { reduce { copy(selectedUri = uri, error = null, done = false) } }
     fun setBrand(v: String) { reduce { copy(brand = v, error = null) } }
     fun setMaterial(v: String) { reduce { copy(material = v, error = null) } }
-    fun setSeason(v: String) { reduce { copy(season = v, error = null) } }
+    fun setWeather(v: List<String>) { reduce { copy(weather = v, error = null) } }
     fun setOccasion(v: String) { reduce { copy(occasion = v, error = null) } }
 
     fun upload() {
@@ -37,7 +37,7 @@ class UploadViewModel @Inject constructor(
         }
         reduce { copy(isUploading = true, error = null, done = false) }
         viewModelScope.launch {
-            when (val result = uploadGarment(uri, s.brand, s.material, s.season, s.occasion)) {
+            when (val result = uploadGarment(uri, s.brand, s.material, s.weather.ifEmpty { null }, s.occasion)) {
                 is Resource.Success -> reduce { copy(isUploading = false, done = true) }
                 is Resource.Error -> reduce { copy(isUploading = false, error = result.message) }
                 Resource.Loading -> Unit

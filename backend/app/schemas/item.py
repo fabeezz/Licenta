@@ -30,7 +30,7 @@ class ItemOut(ItemBase):
     dominant_color: str | None = None
     brand: str | None = None
     material: str | None = None
-    season: str | None = None
+    weather: list[str] = []
     occasion: str | None = None
     wear_count: int
     last_worn_at: datetime | None = None
@@ -43,16 +43,22 @@ class ItemUpdate(BaseModel):
     category: str | None = None
     brand: str | None = None
     material: str | None = None
-    season: str | None = None
+    weather: list[str] | None = None
     occasion: str | None = None
     color_tags: dict | None = None
 
-    @field_validator("category", "material", "season", "occasion", mode="before")
+    @field_validator("category", "material", "occasion", mode="before")
     @classmethod
     def to_lowercase(cls, v: str | None) -> str | None:
-        """Enforce lowercase for categorical fields."""
         if isinstance(v, str):
             return v.lower()
+        return v
+
+    @field_validator("weather", mode="before")
+    @classmethod
+    def weather_to_lowercase(cls, v: list[str] | None) -> list[str] | None:
+        if isinstance(v, list):
+            return [t.lower() if isinstance(t, str) else t for t in v]
         return v
 
     @field_validator("color_tags", mode="before")
@@ -89,17 +95,16 @@ class ItemListQuery(BaseModel):
     dominant_color: str | None = None
     colors: list[str] | None = None
     material: str | None = None
-    season: str | None = None
+    weather: str | None = None
     occasion: str | None = None
     sort_by: Literal["created_at", "wear_count", "last_worn_at"] = "created_at"
     sort_dir: Literal["asc", "desc"] = "desc"
     limit: int = Field(50, ge=1, le=200)
     offset: int = Field(0, ge=0)
 
-    @field_validator("category", "material", "season", "occasion", "dominant_color", mode="before")
+    @field_validator("category", "material", "weather", "occasion", "dominant_color", mode="before")
     @classmethod
     def to_lowercase(cls, v: str | None) -> str | None:
-        """Enforce lowercase for categorical fields."""
         if isinstance(v, str):
             return v.lower()
         return v

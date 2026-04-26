@@ -25,6 +25,8 @@ import com.example.outfitai.data.model.ItemOutDto
 import com.example.outfitai.ui.common.FormDropdownSelector
 import com.example.outfitai.ui.common.FormTextField
 import com.example.outfitai.core.media.mediaUrl
+import androidx.compose.ui.text.capitalize
+import java.util.Locale
 
 @Composable
 fun SaveOutfitDialog(
@@ -32,7 +34,7 @@ fun SaveOutfitDialog(
     onDismiss: () -> Unit,
     onSave: () -> Unit,
     onNameChange: (String) -> Unit,
-    onSeasonChange: (String) -> Unit,
+    onWeatherChange: (List<String>) -> Unit,
     onOccasionChange: (String) -> Unit,
 ) {
     Dialog(
@@ -140,22 +142,34 @@ fun SaveOutfitDialog(
                     onValueChange = onNameChange,
                 )
 
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    FormDropdownSelector(
-                        label = "Season",
-                        selectedOption = state.selectedSeason,
-                        options = listOf("") + ItemConstants.SEASONS,
-                        onOptionSelected = onSeasonChange,
-                        modifier = Modifier.weight(1f),
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "Weather",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
                     )
-                    FormDropdownSelector(
-                        label = "Occasion",
-                        selectedOption = state.selectedOccasion,
-                        options = listOf("") + ItemConstants.OCCASIONS,
-                        onOptionSelected = onOccasionChange,
-                        modifier = Modifier.weight(1f),
-                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ItemConstants.WEATHER_TAGS.forEach { tag ->
+                            val selected = tag in state.selectedWeather
+                            FilterChip(
+                                selected = selected,
+                                onClick = {
+                                    val updated = if (selected) state.selectedWeather - tag
+                                               else state.selectedWeather + tag
+                                    onWeatherChange(updated)
+                                },
+                                label = { Text(tag.replaceFirstChar { it.uppercase() }) },
+                            )
+                        }
+                    }
                 }
+
+                FormDropdownSelector(
+                    label = "Occasion",
+                    selectedOption = state.selectedOccasion,
+                    options = listOf("") + ItemConstants.OCCASIONS,
+                    onOptionSelected = onOccasionChange,
+                )
 
                 Spacer(Modifier.height(16.dp))
             }

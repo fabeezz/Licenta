@@ -29,31 +29,43 @@ class OutfitCreate(BaseModel):
     bottom_id: int
     top_id: int
     outer_id: int | None = None
-    season: str | None = None
+    weather: list[str] = []
     occasion: str | None = None
 
-    @field_validator("season", "occasion", mode="before")
+    @field_validator("occasion", mode="before")
     @classmethod
     def to_lowercase(cls, v: str | None) -> str | None:
-        """Enforce lowercase for classification fields."""
         if isinstance(v, str):
             return v.lower()
         return v
+
+    @field_validator("weather", mode="before")
+    @classmethod
+    def weather_to_lowercase(cls, v: list[str] | None) -> list[str]:
+        if isinstance(v, list):
+            return [t.lower() if isinstance(t, str) else t for t in v]
+        return []
 
 
 class OutfitUpdate(BaseModel):
     """Partial update payload for ``PATCH /outfits/{id}``."""
 
     name: str | None = None
-    season: str | None = None
+    weather: list[str] | None = None
     occasion: str | None = None
 
-    @field_validator("season", "occasion", mode="before")
+    @field_validator("occasion", mode="before")
     @classmethod
     def to_lowercase(cls, v: str | None) -> str | None:
-        """Enforce lowercase for classification fields."""
         if isinstance(v, str):
             return v.lower()
+        return v
+
+    @field_validator("weather", mode="before")
+    @classmethod
+    def weather_to_lowercase(cls, v: list[str] | None) -> list[str] | None:
+        if isinstance(v, list):
+            return [t.lower() if isinstance(t, str) else t for t in v]
         return v
 
 
@@ -65,7 +77,7 @@ class OutfitResponse(BaseModel):
     id: int
     user_id: int
     name: str
-    season: str | None
+    weather: list[str]
     occasion: str | None
     shoe: ItemMinimal
     bottom: ItemMinimal

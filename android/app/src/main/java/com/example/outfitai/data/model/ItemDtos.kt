@@ -13,7 +13,7 @@ data class ItemOutDto(
   @SerialName("color_tags") val colorTags: Map<String, JsonElement>? = null,
   val brand: String? = null,
   val material: String? = null,
-  val season: String? = null,
+  val weather: List<String> = emptyList(),
   val occasion: String? = null,
   @SerialName("dominant_color") val dominantColor: String? = null,
   @SerialName("wear_count") val wearCount: Int,

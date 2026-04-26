@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Sequence
 
 from sqlalchemy import asc, desc, func, select
+from sqlalchemy.dialects.postgresql import array
 from sqlalchemy.orm import Session
 
 from app.models.item import Item
@@ -108,12 +109,9 @@ class ItemRepository:
                 )
         if filters.material:
             stmt = stmt.where(Item.material == filters.material)
-        if filters.season:
-            if "," in filters.season:
-                seasons = [s.strip().lower() for s in filters.season.split(",")]
-                stmt = stmt.where(Item.season.in_(seasons))
-            else:
-                stmt = stmt.where(Item.season == filters.season)
+        if filters.weather:
+            tags = [t.strip().lower() for t in filters.weather.split(",")]
+            stmt = stmt.where(Item.weather.op("?|")(array(tags)))
         if filters.occasion:
             stmt = stmt.where(Item.occasion == filters.occasion)
 

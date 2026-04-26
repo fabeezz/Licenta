@@ -9,7 +9,7 @@ interface ItemRepository {
         uri: Uri,
         brand: String?,
         material: String?,
-        season: String?,
+        weather: List<String>?,
         occasion: String?,
     ): ItemOutDto
 

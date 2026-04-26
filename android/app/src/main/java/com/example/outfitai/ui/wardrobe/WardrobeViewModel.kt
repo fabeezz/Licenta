@@ -22,7 +22,7 @@ sealed interface WardrobeIntent {
     data class SelectTab(val tab: WardrobeTab) : WardrobeIntent
     data class SetCategoryFilter(val value: String?) : WardrobeIntent
     data class SetColorFilter(val value: String?) : WardrobeIntent
-    data class SetSeasonFilter(val value: String?) : WardrobeIntent
+    data class SetWeatherFilter(val value: String?) : WardrobeIntent
     data class SetOccasionFilter(val value: String?) : WardrobeIntent
     data object ClearFilters : WardrobeIntent
     data object Refresh : WardrobeIntent
@@ -32,7 +32,7 @@ private data class ActiveFilters(
     val tab: WardrobeTab = WardrobeTab.Pieces,
     val category: String? = null,
     val color: String? = null,
-    val season: String? = null,
+    val weather: String? = null,
     val occasion: String? = null,
     val nonce: Int = 0, // incremented on Refresh to re-trigger same filters
 )
@@ -66,7 +66,7 @@ class WardrobeViewModel @Inject constructor(
                         when (val result = getFilteredWardrobe(
                             category = f.category,
                             dominantColor = f.color,
-                            season = f.season,
+                            weather = f.weather,
                             occasion = f.occasion,
                         )) {
                             is Resource.Success -> reduce {
@@ -77,7 +77,7 @@ class WardrobeViewModel @Inject constructor(
                         }
                     } else if (f.tab == WardrobeTab.Fits) {
                         when (val result = getWardrobeOutfits(
-                            season = f.season,
+                            weather = f.weather,
                             occasion = f.occasion,
                         )) {
                             is Resource.Success -> reduce {
@@ -113,9 +113,9 @@ class WardrobeViewModel @Inject constructor(
                 reduce { copy(filterColor = intent.value) }
                 _filters.update { it.copy(color = intent.value) }
             }
-            is WardrobeIntent.SetSeasonFilter -> {
-                reduce { copy(filterSeason = intent.value) }
-                _filters.update { it.copy(season = intent.value) }
+            is WardrobeIntent.SetWeatherFilter -> {
+                reduce { copy(filterWeather = intent.value) }
+                _filters.update { it.copy(weather = intent.value) }
             }
             is WardrobeIntent.SetOccasionFilter -> {
                 reduce { copy(filterOccasion = intent.value) }
@@ -123,9 +123,9 @@ class WardrobeViewModel @Inject constructor(
             }
             WardrobeIntent.ClearFilters -> {
                 reduce {
-                    copy(filterCategory = null, filterColor = null, filterSeason = null, filterOccasion = null)
+                    copy(filterCategory = null, filterColor = null, filterWeather = null, filterOccasion = null)
                 }
-                _filters.update { it.copy(category = null, color = null, season = null, occasion = null) }
+                _filters.update { it.copy(category = null, color = null, weather = null, occasion = null) }
             }
             WardrobeIntent.Refresh -> _filters.update { it.copy(nonce = it.nonce + 1) }
         }
@@ -136,7 +136,7 @@ class WardrobeViewModel @Inject constructor(
     fun setTab(tab: WardrobeTab) = onIntent(WardrobeIntent.SelectTab(tab))
     fun setFilterCategory(value: String?) = onIntent(WardrobeIntent.SetCategoryFilter(value))
     fun setFilterColor(value: String?) = onIntent(WardrobeIntent.SetColorFilter(value))
-    fun setFilterSeason(value: String?) = onIntent(WardrobeIntent.SetSeasonFilter(value))
+    fun setFilterWeather(value: String?) = onIntent(WardrobeIntent.SetWeatherFilter(value))
     fun setFilterOccasion(value: String?) = onIntent(WardrobeIntent.SetOccasionFilter(value))
     fun clearFilters() = onIntent(WardrobeIntent.ClearFilters)
 
