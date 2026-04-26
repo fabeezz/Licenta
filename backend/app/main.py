@@ -4,6 +4,7 @@ import os
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
+import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -36,7 +37,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     )
     import logging
     logging.getLogger(__name__).info("CLIP pipeline loaded and ready")
-    yield
+    async with httpx.AsyncClient() as client:
+        app.state.http_client = client
+        yield
 
 
 app = FastAPI(title="Wardrobe API", lifespan=lifespan)

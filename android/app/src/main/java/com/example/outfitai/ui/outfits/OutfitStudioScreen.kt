@@ -63,6 +63,17 @@ fun OutfitStudioRoute(
         )
     }
 
+    if (state.showWeatherSheet) {
+        WeatherForecastSheet(
+            isLoading = state.isFetchingWeather,
+            forecast = state.weatherForecast,
+            error = state.weatherError,
+            onDismiss = vm::closeWeatherSheet,
+            onApply = vm::applyWeatherFilter,
+            onRetry = vm::openWeatherSheet,
+        )
+    }
+
     OutfitStudioScreen(
         state = state,
         snackbarHostState = snackbarHostState,
@@ -73,6 +84,7 @@ fun OutfitStudioRoute(
         onWardrobeClick = onWardrobeClick,
         onAddClick = upload.launch,
         onFilterClick = vm::openFilterDialog,
+        onWeatherClick = vm::openWeatherSheet,
     )
 }
 
@@ -87,6 +99,7 @@ private fun OutfitStudioScreen(
     onWardrobeClick: () -> Unit,
     onAddClick: () -> Unit,
     onFilterClick: () -> Unit,
+    onWeatherClick: () -> Unit,
 ) {
     val canSave = state.top.current != null && state.bottom.current != null && state.shoes.current != null
     val colors = MaterialTheme.colorScheme
@@ -168,6 +181,10 @@ private fun OutfitStudioScreen(
                     .padding(end = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                FloatingControlButton(
+                    onClick = onWeatherClick,
+                    icon = { Icon(Icons.Outlined.WbSunny, contentDescription = "Weather") },
+                )
                 FloatingControlButton(
                     onClick = onToggleLayers,
                     icon = { Icon(Icons.Outlined.Layers, contentDescription = "Toggle layers") },

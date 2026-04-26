@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
 
+    OPEN_METEO_BASE_URL: str = "https://api.open-meteo.com/v1/forecast"
+
     class Config:
         env_file = ".env"
 

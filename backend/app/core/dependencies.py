@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import httpx
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.security import decode_access_token
 from app.db.session import get_db
 from app.models.user import User
@@ -13,6 +15,7 @@ from app.repositories.outfit_repository import OutfitRepository
 from app.services.item_service import ItemService
 from app.services.outfit_service import OutfitService
 from app.services.pipeline import ItemPipeline
+from app.services.weather_service import WeatherService
 
 security = HTTPBearer(auto_error=False)
 
@@ -72,3 +75,13 @@ def get_outfit_service(
 ) -> OutfitService:
     """Construct an :class:`~app.services.outfit_service.OutfitService` for the request."""
     return OutfitService(repo)
+
+
+def get_http_client(request: Request) -> httpx.AsyncClient:
+    return request.app.state.http_client
+
+
+def get_weather_service(
+    client: httpx.AsyncClient = Depends(get_http_client),
+) -> WeatherService:
+    return WeatherService(client, settings.OPEN_METEO_BASE_URL)

@@ -19,3 +19,10 @@ class InvalidItemsError(DomainError):
 
     def __init__(self) -> None:
         super().__init__("One or more items are invalid or not owned by user")
+
+
+class WeatherUnavailableError(DomainError):
+    """Raised when the external weather provider cannot be reached."""
+
+    def __init__(self, reason: str = "") -> None:
+        super().__init__(f"Weather service unavailable{': ' + reason if reason else ''}")

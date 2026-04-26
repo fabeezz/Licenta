@@ -8,6 +8,8 @@ import com.example.outfitai.data.outfits.OutfitRepository
 import com.example.outfitai.data.outfits.OutfitRepositoryImpl
 import com.example.outfitai.data.wardrobe.WardrobeRepository
 import com.example.outfitai.data.wardrobe.WardrobeRepositoryImpl
+import com.example.outfitai.data.weather.WeatherRepository
+import com.example.outfitai.data.weather.WeatherRepositoryImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -33,4 +35,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindOutfitRepository(impl: OutfitRepositoryImpl): OutfitRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindWeatherRepository(impl: WeatherRepositoryImpl): WeatherRepository
 }

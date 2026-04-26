@@ -1,6 +1,7 @@
 package com.example.outfitai.ui.outfits
 
 import com.example.outfitai.data.model.ItemOutDto
+import com.example.outfitai.domain.weather.WeatherForecast
 
 data class SlotItems(
     val items: List<ItemOutDto> = emptyList(),
@@ -32,4 +33,8 @@ data class OutfitStudioUiState(
     val error: String? = null,
     val filterState: OutfitFilterState = OutfitFilterState(),
     val showFilterDialog: Boolean = false,
+    val showWeatherSheet: Boolean = false,
+    val isFetchingWeather: Boolean = false,
+    val weatherForecast: WeatherForecast? = null,
+    val weatherError: String? = null,
 )

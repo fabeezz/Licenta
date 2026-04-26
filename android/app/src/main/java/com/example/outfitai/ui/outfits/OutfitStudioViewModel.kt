@@ -4,9 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.outfitai.core.common.Resource
 import com.example.outfitai.data.model.OutfitCreateDto
+import com.example.outfitai.Config
 import com.example.outfitai.domain.usecase.auth.GetCurrentUserUseCase
 import com.example.outfitai.domain.usecase.outfits.CreateOutfitUseCase
 import com.example.outfitai.domain.usecase.wardrobe.GetFilteredWardrobeUseCase
+import com.example.outfitai.domain.usecase.weather.GetTodayWeatherUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -24,6 +26,7 @@ class OutfitStudioViewModel @Inject constructor(
     private val getFilteredWardrobe: GetFilteredWardrobeUseCase,
     private val createOutfit: CreateOutfitUseCase,
     private val getCurrentUser: GetCurrentUserUseCase,
+    private val getTodayWeather: GetTodayWeatherUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(OutfitStudioUiState())
@@ -118,6 +121,30 @@ class OutfitStudioViewModel @Inject constructor(
 
     fun openFilterDialog() { _state.update { it.copy(showFilterDialog = true) } }
     fun closeFilterDialog() { _state.update { it.copy(showFilterDialog = false) } }
+
+    fun openWeatherSheet() {
+        _state.update { it.copy(showWeatherSheet = true, isFetchingWeather = true, weatherError = null) }
+        viewModelScope.launch {
+            when (val result = getTodayWeather(Config.DEFAULT_LAT, Config.DEFAULT_LON)) {
+                is Resource.Success -> _state.update {
+                    it.copy(isFetchingWeather = false, weatherForecast = result.data)
+                }
+                is Resource.Error -> _state.update {
+                    it.copy(isFetchingWeather = false, weatherError = result.message)
+                }
+                Resource.Loading -> Unit
+            }
+        }
+    }
+
+    fun closeWeatherSheet() { _state.update { it.copy(showWeatherSheet = false) } }
+
+    fun applyWeatherFilter() {
+        val forecast = _state.value.weatherForecast ?: return
+        val style = _state.value.filterState.style
+        applyFilters(style, forecast.toClimate())
+        _state.update { it.copy(showWeatherSheet = false) }
+    }
 
     fun applyFilters(style: String?, climate: String?) {
         _state.update { it.copy(filterState = OutfitFilterState(style, climate), showFilterDialog = false) }
