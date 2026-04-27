@@ -11,8 +11,8 @@ class GetWardrobeOutfitsUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(
         weather: String? = null,
-        occasion: String? = null,
+        style: String? = null,
     ): Resource<List<OutfitSavedDto>> = safeApiCall {
-        repo.listOutfits(weather = weather, occasion = occasion)
+        repo.listOutfits(weather = weather, style = style)
     }
 }

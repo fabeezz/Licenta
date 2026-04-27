@@ -16,5 +16,5 @@ data class WardrobeUiState(
     val filterCategory: String? = null,
     val filterColor: String? = null,
     val filterWeather: String? = null,
-    val filterOccasion: String? = null,
+    val filterStyle: String? = null,
 )

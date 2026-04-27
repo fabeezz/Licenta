@@ -16,16 +16,16 @@ MATERIAL_LABELS = [
     "nylon"
 ]
 
-OCCASION_LABELS = [
+STYLE_LABELS = [
     "casual",
     "formal",
-    "sportswear"
+    "sporty",
 ]
 
 CLIP_MODEL_ID = "Marqo/marqo-fashionSigLIP"
 
 CONFIDENCE_THRESHOLDS: Dict[str, float] = {
     "category": 0.30,
-    "material": 0.40,
-    "occasion": 0.30,
+    "material": 0.35,
+    "style": 0.30,
 }

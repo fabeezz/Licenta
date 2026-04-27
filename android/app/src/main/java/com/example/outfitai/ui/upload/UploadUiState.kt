@@ -7,7 +7,7 @@ data class UploadUiState(
     val brand: String = "",
     val material: String = "",
     val weather: List<String> = emptyList(),
-    val occasion: String = "",
+    val style: List<String> = emptyList(),
     val isUploading: Boolean = false,
     val error: String? = null,
     val done: Boolean = false,

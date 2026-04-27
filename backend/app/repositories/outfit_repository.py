@@ -94,7 +94,7 @@ class OutfitRepository:
         user_id: int,
         *,
         weather: str | None = None,
-        occasion: str | None = None,
+        style: str | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> Sequence[Outfit]:
@@ -103,7 +103,7 @@ class OutfitRepository:
         Args:
             user_id: Only return outfits that belong to this user.
             weather: Optional comma-separated weather filter.
-            occasion: Optional occasion filter.
+            style: Optional style filter.
             skip: Pagination offset.
             limit: Maximum number of results.
 
@@ -121,8 +121,8 @@ class OutfitRepository:
         if weather:
             tags = [t.strip().lower() for t in weather.split(",")]
             stmt = stmt.where(Outfit.weather.op("?|")(array(tags)))
-        if occasion:
-            stmt = stmt.where(Outfit.occasion == occasion)
+        if style:
+            stmt = stmt.where(Outfit.style == style)
         return self._db.scalars(stmt).all()
 
     def verify_items_owned(self, user_id: int, item_ids: set[int]) -> set[int]:

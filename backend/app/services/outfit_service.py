@@ -50,7 +50,7 @@ class OutfitService:
             user_id=user_id,
             name=payload.name,
             weather=payload.weather,
-            occasion=payload.occasion,
+            style=payload.style,
             shoe_id=payload.shoe_id,
             bottom_id=payload.bottom_id,
             top_id=payload.top_id,
@@ -71,7 +71,7 @@ class OutfitService:
         *,
         user_id: int,
         weather: str | None = None,
-        occasion: str | None = None,
+        style: str | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> Sequence[Outfit]:
@@ -81,7 +81,7 @@ class OutfitService:
             db: Active database session (unused directly; passed for symmetry).
             user_id: Owner constraint.
             weather: Optional comma-separated weather filter.
-            occasion: Optional occasion filter.
+            style: Optional style filter.
             skip: Pagination offset.
             limit: Maximum number of results.
 
@@ -89,7 +89,7 @@ class OutfitService:
             Sequence of :class:`~app.models.outfit.Outfit` instances.
         """
         return self._repo.list_for_user(
-            user_id, weather=weather, occasion=occasion, skip=skip, limit=limit
+            user_id, weather=weather, style=style, skip=skip, limit=limit
         )
 
     def get_or_404(self, db: Session, outfit_id: int, *, user_id: int) -> Outfit:

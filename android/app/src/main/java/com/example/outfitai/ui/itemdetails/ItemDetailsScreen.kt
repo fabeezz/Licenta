@@ -46,7 +46,7 @@ fun ItemDetailsRoute(
         onBrand = vm::setBrand,
         onMaterial = vm::setMaterial,
         onWeather = vm::setWeather,
-        onOccasion = vm::setOccasion,
+        onStyle = vm::setStyle,
         onDominantColor = vm::setDominantColor,
         onAccentColor = vm::toggleAccentColor,
     )
@@ -71,7 +71,7 @@ private fun ItemDetailsScreen(
     onBrand: (String) -> Unit,
     onMaterial: (String) -> Unit,
     onWeather: (List<String>) -> Unit,
-    onOccasion: (String) -> Unit,
+    onStyle: (List<String>) -> Unit,
     onDominantColor: (String) -> Unit,
     onAccentColor: (String) -> Unit,
 ) {
@@ -418,18 +418,23 @@ private fun ItemDetailsScreen(
 
                         Spacer(Modifier.height(12.dp))
 
-                        InfoCard(title = "Occasion", modifier = Modifier.fillMaxWidth()) {
+                        InfoCard(title = "Style", modifier = Modifier.fillMaxWidth()) {
                             FlowRow(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                val currentOccasion = if (state.isEditing) state.occasion else item.occasion
-                                ItemConstants.OCCASIONS.forEach { option ->
+                                val currentStyle = if (state.isEditing) state.style else item.style
+                                ItemConstants.STYLES.forEach { option ->
                                     OccasionChip(
                                         label = option.capitalizeFirst(),
-                                        selected = currentOccasion == option,
+                                        selected = option in currentStyle,
                                         clickable = state.isEditing,
-                                        onClick = { onOccasion(option) }
+                                        onClick = {
+                                            val updated = currentStyle.toMutableList().apply {
+                                                if (contains(option)) remove(option) else add(option)
+                                            }
+                                            onStyle(updated)
+                                        }
                                     )
                                 }
                             }

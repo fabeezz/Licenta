@@ -30,9 +30,9 @@ class OutfitCreate(BaseModel):
     top_id: int
     outer_id: int | None = None
     weather: list[str] = []
-    occasion: str | None = None
+    style: str | None = None
 
-    @field_validator("occasion", mode="before")
+    @field_validator("style", mode="before")
     @classmethod
     def to_lowercase(cls, v: str | None) -> str | None:
         if isinstance(v, str):
@@ -52,9 +52,9 @@ class OutfitUpdate(BaseModel):
 
     name: str | None = None
     weather: list[str] | None = None
-    occasion: str | None = None
+    style: str | None = None
 
-    @field_validator("occasion", mode="before")
+    @field_validator("style", mode="before")
     @classmethod
     def to_lowercase(cls, v: str | None) -> str | None:
         if isinstance(v, str):
@@ -78,7 +78,7 @@ class OutfitResponse(BaseModel):
     user_id: int
     name: str
     weather: list[str]
-    occasion: str | None
+    style: str | None
     shoe: ItemMinimal
     bottom: ItemMinimal
     top: ItemMinimal

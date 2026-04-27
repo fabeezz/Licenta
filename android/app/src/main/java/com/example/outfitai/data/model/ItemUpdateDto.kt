@@ -9,7 +9,7 @@ data class ItemUpdateDto(
     val brand: String? = null,
     val material: String? = null,
     val weather: List<String>? = null,
-    val occasion: String? = null,
+    val style: List<String>? = null,
     @SerialName("color_tags")
     val colorTags: Map<String, List<String>>? = null
 )

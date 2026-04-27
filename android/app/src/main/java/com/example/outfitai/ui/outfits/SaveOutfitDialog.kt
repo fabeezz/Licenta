@@ -35,7 +35,7 @@ fun SaveOutfitDialog(
     onSave: () -> Unit,
     onNameChange: (String) -> Unit,
     onWeatherChange: (List<String>) -> Unit,
-    onOccasionChange: (String) -> Unit,
+    onStyleChange: (String) -> Unit,
 ) {
     Dialog(
         onDismissRequest = onDismiss,
@@ -165,10 +165,10 @@ fun SaveOutfitDialog(
                 }
 
                 FormDropdownSelector(
-                    label = "Occasion",
-                    selectedOption = state.selectedOccasion,
-                    options = listOf("") + ItemConstants.OCCASIONS,
-                    onOptionSelected = onOccasionChange,
+                    label = "Style",
+                    selectedOption = state.selectedStyle,
+                    options = listOf("") + ItemConstants.STYLES,
+                    onOptionSelected = onStyleChange,
                 )
 
                 Spacer(Modifier.height(16.dp))

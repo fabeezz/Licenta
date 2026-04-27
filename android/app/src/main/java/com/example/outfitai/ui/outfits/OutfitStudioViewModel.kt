@@ -53,7 +53,7 @@ class OutfitStudioViewModel @Inject constructor(
 
             val occ = when (fState.style) {
                 "Casual" -> "casual"
-                "Athleisure" -> "sportswear"
+                "Sporty" -> "sporty"
                 "Formal" -> "formal"
                 else -> null
             }
@@ -91,7 +91,7 @@ class OutfitStudioViewModel @Inject constructor(
                                 async {
                                     val result = getFilteredWardrobe(
                                         category = cat,
-                                        occasion = occ,
+                                        style = occ,
                                         colors = null,
                                         weather = weatherOverride,
                                         material = materialOverride,
@@ -193,14 +193,14 @@ class OutfitStudioViewModel @Inject constructor(
     }
 
     fun openSaveDialog() {
-        _state.update { it.copy(showSaveDialog = true, outfitName = "", selectedWeather = emptyList(), selectedOccasion = "") }
+        _state.update { it.copy(showSaveDialog = true, outfitName = "", selectedWeather = emptyList(), selectedStyle = "") }
     }
 
     fun closeSaveDialog() { _state.update { it.copy(showSaveDialog = false) } }
 
     fun updateOutfitName(name: String) { _state.update { it.copy(outfitName = name) } }
     fun updateWeather(tags: List<String>) { _state.update { it.copy(selectedWeather = tags) } }
-    fun updateOccasion(occasion: String) { _state.update { it.copy(selectedOccasion = occasion) } }
+    fun updateStyle(style: String) { _state.update { it.copy(selectedStyle = style) } }
 
     fun save() {
         val s = _state.value
@@ -224,7 +224,7 @@ class OutfitStudioViewModel @Inject constructor(
                 shoeId = shoes.id,
                 outerId = outer?.id,
                 weather = s.selectedWeather,
-                occasion = s.selectedOccasion.takeIf { it.isNotBlank() },
+                style = s.selectedStyle.takeIf { it.isNotBlank() },
             )
             when (val result = createOutfit(dto)) {
                 is Resource.Success -> _state.update {

@@ -13,7 +13,7 @@ from app.services.image.color_extractor_colorthief import ColorThiefExtractor
 from app.services.ai.clip_attribute_classifier import ClipAttributeClassifier, AttributePrediction
 from app.services.ai.category_classifier import ClipCategoryClassifier
 from app.services.ai.material_classifier import ClipMaterialClassifier
-from app.services.ai.occasion_classifier import ClipOccasionClassifier
+from app.services.ai.style_classifier import ClipStyleClassifier
 from app.services.ai.config import CONFIDENCE_THRESHOLDS
 from app.services.ai.weather_logic import infer_weather
 
@@ -30,8 +30,7 @@ class PipelineResult:
     category_topk: list[Any]
     material: Optional[str]
     material_confidence: Optional[float]
-    occasion: Optional[str]
-    occasion_confidence: Optional[float]
+    style: list[str]
     weather: list[str]
 
 
@@ -48,7 +47,7 @@ class ItemPipeline:
         base_classifier: ClipAttributeClassifier,
         category_classifier: ClipCategoryClassifier,
         material_classifier: ClipMaterialClassifier,
-        occasion_classifier: ClipOccasionClassifier,
+        style_classifier: ClipStyleClassifier,
         categories_en: list[str],
         prep_cfg: ImagePrepConfig | None = None,
     ) -> None:
@@ -56,7 +55,7 @@ class ItemPipeline:
         self.base_classifier = base_classifier
         self.category_classifier = category_classifier
         self.material_classifier = material_classifier
-        self.occasion_classifier = occasion_classifier
+        self.style_classifier = style_classifier
         self.categories_en = categories_en
         self.prep_cfg = prep_cfg or ImagePrepConfig(max_size=400, crop_to_alpha=True)
 
@@ -89,9 +88,10 @@ class ItemPipeline:
                 mat_pred = self.material_classifier.score(image_embed, cat_pred.label)
             logger.info("Predicted material: %s (conf=%.3f)", mat_pred.label, mat_pred.confidence)
 
-            with log_latency("pipeline.occasion", logger):
-                occ_pred = self.occasion_classifier.score(image_embed, cat_pred.label)
-            logger.info("Predicted occasion: %s (conf=%.3f)", occ_pred.label, occ_pred.confidence)
+            with log_latency("pipeline.style", logger):
+                style_threshold = CONFIDENCE_THRESHOLDS.get("style", 0.30)
+                style_results = self.style_classifier.score_multi(image_embed, cat_pred.label, threshold=style_threshold)
+            logger.info("Predicted style: %s", style_results)
 
             # Use raw (pre-threshold) category/material for weather — rule-based, doesn't need confidence
             weather = infer_weather(cat_pred.label, mat_pred.label)
@@ -99,7 +99,7 @@ class ItemPipeline:
 
             category, category_confidence = _threshold(cat_pred, "category")
             material, material_confidence = _threshold(mat_pred, "material")
-            occasion, occasion_confidence = _threshold(occ_pred, "occasion")
+            style = [lbl for lbl, _ in style_results]
 
         return PipelineResult(
             image_original_name=original_name,
@@ -110,7 +110,6 @@ class ItemPipeline:
             category_topk=cat_pred.topk,
             material=material,
             material_confidence=material_confidence,
-            occasion=occasion,
-            occasion_confidence=occasion_confidence,
+            style=style,
             weather=weather,
         )

@@ -18,7 +18,7 @@ class WardrobeRepositoryImpl @Inject constructor(
         colors: List<String>?,
         material: String?,
         weather: String?,
-        occasion: String?,
+        style: String?,
         sortBy: String,
         sortDir: String,
         limit: Int,
@@ -30,7 +30,7 @@ class WardrobeRepositoryImpl @Inject constructor(
         colors = colors,
         material = material,
         weather = weather,
-        occasion = occasion,
+        style = style,
         sortBy = sortBy,
         sortDir = sortDir,
         limit = limit,
@@ -39,9 +39,9 @@ class WardrobeRepositoryImpl @Inject constructor(
 
     override suspend fun listOutfits(
         weather: String?,
-        occasion: String?,
+        style: String?,
     ): List<OutfitSavedDto> = outfitApi.list(
         weather = weather,
-        occasion = occasion,
+        style = style,
     )
 }

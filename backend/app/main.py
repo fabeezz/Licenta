@@ -19,7 +19,7 @@ from app.services.ai.category_classifier import ClipCategoryClassifier
 from app.services.ai.clip_attribute_classifier import ClipAttributeClassifier
 from app.services.ai.config import CATEGORIES_EN, CLIP_MODEL_ID
 from app.services.ai.material_classifier import ClipMaterialClassifier
-from app.services.ai.occasion_classifier import ClipOccasionClassifier
+from app.services.ai.style_classifier import ClipStyleClassifier
 from app.services.image.color_extractor_colorthief import ColorThiefExtractor
 from app.services.pipeline import ItemPipeline
 
@@ -33,7 +33,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         base_classifier=base,
         category_classifier=ClipCategoryClassifier(base),
         material_classifier=ClipMaterialClassifier(base),
-        occasion_classifier=ClipOccasionClassifier(base),
+        style_classifier=ClipStyleClassifier(base),
         categories_en=CATEGORIES_EN,
     )
     import logging
