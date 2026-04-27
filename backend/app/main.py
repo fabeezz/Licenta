@@ -30,6 +30,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     base = ClipAttributeClassifier(CLIP_MODEL_ID)
     app.state.pipeline = ItemPipeline(
         color_extractor=ColorThiefExtractor(palette_size=5, quality=2),
+        base_classifier=base,
         category_classifier=ClipCategoryClassifier(base),
         material_classifier=ClipMaterialClassifier(base),
         occasion_classifier=ClipOccasionClassifier(base),

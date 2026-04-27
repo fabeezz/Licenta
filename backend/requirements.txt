@@ -12,6 +12,8 @@ colorthief
 alembic
 torch
 transformers
+open_clip_torch
+ftfy
 Pillow
 bcrypt
 python-jose[cryptography]

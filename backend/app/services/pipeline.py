@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 from PIL import Image
 
 from app.core.logging import log_latency
@@ -10,9 +10,11 @@ from app.services.storage import save_upload
 from app.services.image.bg_removal import remove_background
 from app.services.image.preprocess import ImagePrepConfig, load_prepared_rgb
 from app.services.image.color_extractor_colorthief import ColorThiefExtractor
-from app.services.ai.category_classifier import ClipCategoryClassifier, ClipPrediction
+from app.services.ai.clip_attribute_classifier import ClipAttributeClassifier, AttributePrediction
+from app.services.ai.category_classifier import ClipCategoryClassifier
 from app.services.ai.material_classifier import ClipMaterialClassifier
 from app.services.ai.occasion_classifier import ClipOccasionClassifier
+from app.services.ai.config import CONFIDENCE_THRESHOLDS
 from app.services.ai.weather_logic import infer_weather
 
 logger = logging.getLogger(__name__)
@@ -20,53 +22,30 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class PipelineResult:
-    """Typed output of :meth:`ItemPipeline.process_upload`.
-
-    Attributes:
-        image_original_name: Filename of the saved original upload.
-        image_no_bg_name: Filename of the background-removed image.
-        color_tags: Color analysis dict (``dominant``, ``palette``, …).
-        category: Predicted clothing category label.
-        category_confidence: Confidence score for the category prediction.
-        category_topk: Top-k category predictions.
-        material: Predicted material label.
-        material_confidence: Confidence score for the material prediction.
-        occasion: Predicted occasion label.
-        occasion_confidence: Confidence score for the occasion prediction.
-        weather: Rule-inferred weather tags.
-    """
-
     image_original_name: str
     image_no_bg_name: str
     color_tags: dict[str, Any]
-    category: str
-    category_confidence: float
+    category: Optional[str]
+    category_confidence: Optional[float]
     category_topk: list[Any]
-    material: str
-    material_confidence: float
-    occasion: str
-    occasion_confidence: float
+    material: Optional[str]
+    material_confidence: Optional[float]
+    occasion: Optional[str]
+    occasion_confidence: Optional[float]
     weather: list[str]
 
 
+def _threshold(pred: AttributePrediction, attr: str) -> tuple[Optional[str], Optional[float]]:
+    if pred.confidence < CONFIDENCE_THRESHOLDS.get(attr, 0.0):
+        return None, None
+    return pred.label, pred.confidence
+
+
 class ItemPipeline:
-    """Orchestrates the full item-processing pipeline.
-
-    Accepts all collaborators via constructor injection so they can be
-    replaced in tests without touching service code.
-
-    Args:
-        color_extractor: Extracts dominant and palette colors from an image.
-        category_classifier: CLIP-based clothing category predictor.
-        material_classifier: CLIP-based material predictor.
-        occasion_classifier: CLIP-based occasion predictor.
-        categories_en: List of category label strings for CLIP prompts.
-        prep_cfg: Image pre-processing configuration.
-    """
-
     def __init__(
         self,
         color_extractor: ColorThiefExtractor,
+        base_classifier: ClipAttributeClassifier,
         category_classifier: ClipCategoryClassifier,
         material_classifier: ClipMaterialClassifier,
         occasion_classifier: ClipOccasionClassifier,
@@ -74,6 +53,7 @@ class ItemPipeline:
         prep_cfg: ImagePrepConfig | None = None,
     ) -> None:
         self.color_extractor = color_extractor
+        self.base_classifier = base_classifier
         self.category_classifier = category_classifier
         self.material_classifier = material_classifier
         self.occasion_classifier = occasion_classifier
@@ -81,15 +61,6 @@ class ItemPipeline:
         self.prep_cfg = prep_cfg or ImagePrepConfig(max_size=400, crop_to_alpha=True)
 
     def process_upload(self, file_bytes: bytes, ext: str) -> PipelineResult:
-        """Run the full pipeline on a raw upload and return a typed result.
-
-        Args:
-            file_bytes: Raw bytes of the uploaded image file.
-            ext: File extension without the leading dot (e.g. ``"png"``).
-
-        Returns:
-            :class:`PipelineResult` containing predictions and image filenames.
-        """
         with log_latency("pipeline.process_upload", logger):
             logger.info("Starting pipeline for upload (ext=%s)", ext)
 
@@ -107,33 +78,39 @@ class ItemPipeline:
                 colors = self.color_extractor.extract(rgb_img)
             logger.debug("Extracted colors: %s", colors)
 
+            with log_latency("pipeline.encode_image", logger):
+                image_embed = self.base_classifier.encode_image(rgb_img)
+
             with log_latency("pipeline.category", logger):
-                pred: ClipPrediction = self.category_classifier.predict(
-                    rgb_img, self.categories_en, top_k=3
-                )
-            logger.info("Predicted category: %s (conf=%.3f)", pred.label, pred.confidence)
+                cat_pred = self.category_classifier.score(image_embed, self.categories_en, top_k=3)
+            logger.info("Predicted category: %s (conf=%.3f)", cat_pred.label, cat_pred.confidence)
 
             with log_latency("pipeline.material", logger):
-                mat_pred = self.material_classifier.predict(rgb_img, pred.label)
+                mat_pred = self.material_classifier.score(image_embed, cat_pred.label)
             logger.info("Predicted material: %s (conf=%.3f)", mat_pred.label, mat_pred.confidence)
 
             with log_latency("pipeline.occasion", logger):
-                occ_pred = self.occasion_classifier.predict(rgb_img, pred.label)
+                occ_pred = self.occasion_classifier.score(image_embed, cat_pred.label)
             logger.info("Predicted occasion: %s (conf=%.3f)", occ_pred.label, occ_pred.confidence)
 
-            weather = infer_weather(pred.label, mat_pred.label)
+            # Use raw (pre-threshold) category/material for weather — rule-based, doesn't need confidence
+            weather = infer_weather(cat_pred.label, mat_pred.label)
             logger.info("Inferred weather: %s", weather)
+
+            category, category_confidence = _threshold(cat_pred, "category")
+            material, material_confidence = _threshold(mat_pred, "material")
+            occasion, occasion_confidence = _threshold(occ_pred, "occasion")
 
         return PipelineResult(
             image_original_name=original_name,
             image_no_bg_name=nobg_name,
             color_tags=colors,
-            category=pred.label,
-            category_confidence=pred.confidence,
-            category_topk=pred.topk,
-            material=mat_pred.label,
-            material_confidence=mat_pred.confidence,
-            occasion=occ_pred.label,
-            occasion_confidence=occ_pred.confidence,
+            category=category,
+            category_confidence=category_confidence,
+            category_topk=cat_pred.topk,
+            material=material,
+            material_confidence=material_confidence,
+            occasion=occasion,
+            occasion_confidence=occasion_confidence,
             weather=weather,
         )
