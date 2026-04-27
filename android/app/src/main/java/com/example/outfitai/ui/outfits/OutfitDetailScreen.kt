@@ -113,7 +113,7 @@ private fun OutfitDetailScreen(
                                 MetadataChip(tag)
                                 Spacer(Modifier.width(4.dp))
                             }
-                            state.outfit.occasion?.let {
+                            state.outfit.style?.let {
                                 Spacer(Modifier.width(8.dp))
                                 MetadataChip(it)
                             }

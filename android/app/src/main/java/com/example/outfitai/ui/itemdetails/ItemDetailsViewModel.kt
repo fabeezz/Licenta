@@ -52,7 +52,7 @@ class ItemDetailsViewModel @Inject constructor(
             brand = item.brand.orEmpty(),
             material = item.material.orEmpty(),
             weather = item.weather,
-            occasion = item.occasion.orEmpty(),
+            style = item.style,
             dominantColors = extractColorList(item.colorTags, "dominant"),
             accentColors = extractColorList(item.colorTags, "accent"),
         )
@@ -83,7 +83,7 @@ class ItemDetailsViewModel @Inject constructor(
     fun setBrand(v: String) { reduce { copy(brand = v) } }
     fun setMaterial(v: String) { reduce { copy(material = v) } }
     fun setWeather(v: List<String>) { reduce { copy(weather = v) } }
-    fun setOccasion(v: String) { reduce { copy(occasion = v) } }
+    fun setStyle(v: List<String>) { reduce { copy(style = v) } }
 
     fun setDominantColor(color: String) { reduce { copy(dominantColors = listOf(color)) } }
 
@@ -105,7 +105,7 @@ class ItemDetailsViewModel @Inject constructor(
                 brand = s.brand.blankToNull(),
                 material = s.material.blankToNull(),
                 weather = s.weather.ifEmpty { null },
-                occasion = s.occasion.blankToNull(),
+                style = s.style.ifEmpty { null },
                 colorTags = mapOf("dominant" to s.dominantColors, "accent" to s.accentColors),
             )
             when (val result = updateItem(itemId, body)) {

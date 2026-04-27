@@ -31,7 +31,7 @@ class ItemOut(ItemBase):
     brand: str | None = None
     material: str | None = None
     weather: list[str] = []
-    occasion: str | None = None
+    style: list[str] = []
     wear_count: int
     last_worn_at: datetime | None = None
     created_at: datetime
@@ -44,17 +44,17 @@ class ItemUpdate(BaseModel):
     brand: str | None = None
     material: str | None = None
     weather: list[str] | None = None
-    occasion: str | None = None
+    style: list[str] | None = None
     color_tags: dict | None = None
 
-    @field_validator("category", "material", "occasion", mode="before")
+    @field_validator("category", "material", mode="before")
     @classmethod
     def to_lowercase(cls, v: str | None) -> str | None:
         if isinstance(v, str):
             return v.lower()
         return v
 
-    @field_validator("weather", mode="before")
+    @field_validator("weather", "style", mode="before")
     @classmethod
     def weather_to_lowercase(cls, v: list[str] | None) -> list[str] | None:
         if isinstance(v, list):
@@ -96,13 +96,13 @@ class ItemListQuery(BaseModel):
     colors: list[str] | None = None
     material: str | None = None
     weather: str | None = None
-    occasion: str | None = None
+    style: str | None = None
     sort_by: Literal["created_at", "wear_count", "last_worn_at"] = "created_at"
     sort_dir: Literal["asc", "desc"] = "desc"
     limit: int = Field(50, ge=1, le=200)
     offset: int = Field(0, ge=0)
 
-    @field_validator("category", "material", "weather", "occasion", "dominant_color", mode="before")
+    @field_validator("category", "material", "weather", "style", "dominant_color", mode="before")
     @classmethod
     def to_lowercase(cls, v: str | None) -> str | None:
         if isinstance(v, str):

@@ -112,8 +112,9 @@ class ItemRepository:
         if filters.weather:
             tags = [t.strip().lower() for t in filters.weather.split(",")]
             stmt = stmt.where(Item.weather.op("?|")(array(tags)))
-        if filters.occasion:
-            stmt = stmt.where(Item.occasion == filters.occasion)
+        if filters.style:
+            tags = [t.strip().lower() for t in filters.style.split(",")]
+            stmt = stmt.where(Item.style.op("?|")(array(tags)))
 
         sort_col = _SORT_FIELDS.get(filters.sort_by, Item.created_at)
         order_fn = asc if filters.sort_dir == "asc" else desc

@@ -51,7 +51,7 @@ fun OutfitStudioRoute(
             onSave = vm::save,
             onNameChange = vm::updateOutfitName,
             onWeatherChange = vm::updateWeather,
-            onOccasionChange = vm::updateOccasion,
+            onStyleChange = vm::updateStyle,
         )
     }
 

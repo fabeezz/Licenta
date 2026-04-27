@@ -1,3 +1,5 @@
+from typing import Dict
+
 CATEGORIES_EN = [
     "t-shirt", "shirt", "hoodie", "sweater",
     "jacket", "coat", "jeans", "pants", "shorts",
@@ -6,19 +8,24 @@ CATEGORIES_EN = [
     "bag", "hat"
 ]
 
-# The absolute basics. If CLIP gets it wrong here, it's an edge case.
 MATERIAL_LABELS = [
-    "cotton",   # Tees, hoodies, casual pants
-    "denim",    # Jeans, jean jackets
-    "leather",  # Leather jackets, boots, bags
-    "knit",     # Sweaters, beanies
-    "nylon"     # Rain jackets, windbreakers, sporty stuff
+    "cotton",
+    "denim",
+    "leather",
+    "knit",
+    "nylon"
 ]
 
-OCCASION_LABELS = [
-    "casual", 
-    "formal", 
-    "sportswear" 
+STYLE_LABELS = [
+    "casual",
+    "formal",
+    "sporty",
 ]
 
-CLIP_MODEL_ID = "openai/clip-vit-base-patch32"
+CLIP_MODEL_ID = "Marqo/marqo-fashionSigLIP"
+
+CONFIDENCE_THRESHOLDS: Dict[str, float] = {
+    "category": 0.30,
+    "material": 0.35,
+    "style": 0.30,
+}

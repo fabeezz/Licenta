@@ -11,7 +11,7 @@ data class ItemDetailsUiState(
     val brand: String = "",
     val material: String = "",
     val weather: List<String> = emptyList(),
-    val occasion: String = "",
+    val style: List<String> = emptyList(),
     val dominantColors: List<String> = emptyList(),
     val accentColors: List<String> = emptyList(),
 

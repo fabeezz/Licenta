@@ -17,10 +17,10 @@ object ItemConstants {
         "nylon"
     )
 
-    val OCCASIONS = listOf(
+    val STYLES = listOf(
         "casual",
         "formal",
-        "sportswear"
+        "sporty"
     )
 
     val WEATHER_TAGS = listOf(

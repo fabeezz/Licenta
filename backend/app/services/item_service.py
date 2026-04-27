@@ -40,7 +40,7 @@ class ItemService:
         brand: str | None = None,
         material: str | None = None,
         weather: list[str] | None = None,
-        occasion: str | None = None,
+        style: list[str] | None = None,
     ) -> Item:
         """Run the AI pipeline on *file_bytes* and persist the resulting item.
 
@@ -54,7 +54,7 @@ class ItemService:
             brand: Optional user-supplied brand (stored in Title Case).
             material: Optional override for AI-predicted material.
             weather: Optional override for AI-inferred weather tags.
-            occasion: Optional override for AI-predicted occasion.
+            style: Optional override for AI-predicted style tags.
 
         Returns:
             The persisted :class:`~app.models.item.Item` instance.
@@ -62,7 +62,7 @@ class ItemService:
         result = self._pipeline.process_upload(file_bytes, ext)
         material_value = material or result.material
         weather_value = weather if weather is not None else result.weather
-        occasion_value = occasion or result.occasion
+        style_value = style if style is not None else result.style
 
         item = Item(
             user_id=user_id,
@@ -73,7 +73,7 @@ class ItemService:
             brand=(brand.title() if brand else None),
             material=(material_value.lower() if material_value else None),
             weather=[t.lower() for t in weather_value],
-            occasion=(occasion_value.lower() if occasion_value else None),
+            style=[t.lower() for t in style_value],
             wear_count=0,
         )
         self._repo.add(item)

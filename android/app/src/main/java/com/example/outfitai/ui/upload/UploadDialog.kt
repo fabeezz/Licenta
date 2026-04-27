@@ -31,7 +31,7 @@ fun UploadDialog(
     onBrandChange: (String) -> Unit,
     onMaterialChange: (String) -> Unit,
     onWeatherChange: (List<String>) -> Unit,
-    onOccasionChange: (String) -> Unit,
+    onStyleChange: (List<String>) -> Unit,
 ) {
     Dialog(
         onDismissRequest = onDismiss,
@@ -157,12 +157,27 @@ fun UploadDialog(
                     }
                 }
 
-                FormDropdownSelector(
-                    label = "Occasion",
-                    selectedOption = uploadState.occasion,
-                    options = ItemConstants.OCCASIONS,
-                    onOptionSelected = onOccasionChange,
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "Style (optional)",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ItemConstants.STYLES.forEach { tag ->
+                            val selected = tag in uploadState.style
+                            FilterChip(
+                                selected = selected,
+                                onClick = {
+                                    val updated = if (selected) uploadState.style - tag
+                                               else uploadState.style + tag
+                                    onStyleChange(updated)
+                                },
+                                label = { Text(tag.replaceFirstChar { it.uppercase() }) },
+                            )
+                        }
+                    }
+                }
 
                 Surface(
                     shape = RoundedCornerShape(20.dp),

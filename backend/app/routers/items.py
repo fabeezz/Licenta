@@ -18,7 +18,7 @@ async def create_item(
     brand: str | None = Form(None),
     material: str | None = Form(None),
     weather: str | None = Form(None),
-    occasion: str | None = Form(None),
+    style: str | None = Form(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
     svc: ItemService = Depends(get_item_service),
@@ -30,6 +30,7 @@ async def create_item(
         else "png"
     )
     weather_tags = [t.strip().lower() for t in weather.split(",")] if weather else None
+    style_tags = [t.strip().lower() for t in style.split(",")] if style else None
     return svc.create_item_with_upload(
         db,
         content,
@@ -38,7 +39,7 @@ async def create_item(
         brand=brand,
         material=material,
         weather=weather_tags,
-        occasion=occasion,
+        style=style_tags,
     )
 
 

@@ -11,7 +11,7 @@ interface OutfitApi {
     @GET("outfits/")
     suspend fun list(
         @Query("weather") weather: String? = null,
-        @Query("occasion") occasion: String? = null,
+        @Query("style") style: String? = null,
     ): List<OutfitSavedDto>
 
     @GET("outfits/{id}")

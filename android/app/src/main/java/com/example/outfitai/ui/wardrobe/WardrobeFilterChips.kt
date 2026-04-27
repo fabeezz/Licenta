@@ -18,13 +18,13 @@ internal fun FilterChipsRow(
     onFilterCategory: (String?) -> Unit,
     onFilterColor: (String?) -> Unit,
     onFilterWeather: (String?) -> Unit,
-    onFilterOccasion: (String?) -> Unit,
+    onFilterStyle: (String?) -> Unit,
     onClearFilters: () -> Unit,
 ) {
     val allSelected = state.filterCategory == null &&
             state.filterColor == null &&
             state.filterWeather == null &&
-            state.filterOccasion == null
+            state.filterStyle == null
 
     Row(
         modifier = Modifier.horizontalScroll(rememberScrollState()),
@@ -67,11 +67,11 @@ internal fun FilterChipsRow(
         )
 
         DropdownFilterChip(
-            label = "Occasion",
-            selected = state.filterOccasion,
-            options = ItemConstants.OCCASIONS,
-            onSelect = { onFilterOccasion(it) },
-            onClear = { onFilterOccasion(null) },
+            label = "Style",
+            selected = state.filterStyle,
+            options = ItemConstants.STYLES,
+            onSelect = { onFilterStyle(it) },
+            onClear = { onFilterStyle(null) },
         )
 
         if (state.selectedTab == WardrobeTab.Pieces) {

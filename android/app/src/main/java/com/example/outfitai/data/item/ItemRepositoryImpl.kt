@@ -17,13 +17,13 @@ class ItemRepositoryImpl @Inject constructor(
         brand: String?,
         material: String?,
         weather: List<String>?,
-        occasion: String?,
+        style: List<String>?,
     ): ItemOutDto = api.createItem(
         image = uploader.part(uri, "image"),
         brand = uploader.textPartOrNull(brand),
         material = uploader.textPartOrNull(material),
         weather = uploader.textPartOrNull(weather?.joinToString(",")),
-        occasion = uploader.textPartOrNull(occasion),
+        style = uploader.textPartOrNull(style?.joinToString(",")),
     )
 
     override suspend fun getItem(id: Int): ItemOutDto = api.read(id)

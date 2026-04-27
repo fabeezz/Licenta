@@ -25,7 +25,7 @@ class Item(Base):
     brand: Mapped[str | None] = mapped_column(String, nullable=True)
     material: Mapped[str | None] = mapped_column(String, nullable=True)
     weather: Mapped[list[str]] = mapped_column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
-    occasion: Mapped[str | None] = mapped_column(String, nullable=True)
+    style: Mapped[list[str]] = mapped_column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
     wear_count: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0, server_default="0"
     )

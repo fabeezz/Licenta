@@ -39,7 +39,7 @@ fun WardrobeRoute(
         onFilterCategory = vm::setFilterCategory,
         onFilterColor = vm::setFilterColor,
         onFilterWeather = vm::setFilterWeather,
-        onFilterOccasion = vm::setFilterOccasion,
+        onFilterStyle = vm::setFilterStyle,
         onClearFilters = vm::clearFilters,
         onCreateCollection = vm::createCollection,
         onRenameCollection = vm::renameCollection,
@@ -61,7 +61,7 @@ private fun WardrobeScreen(
     onFilterCategory: (String?) -> Unit,
     onFilterColor: (String?) -> Unit,
     onFilterWeather: (String?) -> Unit,
-    onFilterOccasion: (String?) -> Unit,
+    onFilterStyle: (String?) -> Unit,
     onClearFilters: () -> Unit,
     onCreateCollection: (String, List<Int>) -> Unit,
     onRenameCollection: (Int, String) -> Unit,
@@ -111,7 +111,7 @@ private fun WardrobeScreen(
                     onFilterCategory = onFilterCategory,
                     onFilterColor = onFilterColor,
                     onFilterWeather = onFilterWeather,
-                    onFilterOccasion = onFilterOccasion,
+                    onFilterStyle = onFilterStyle,
                     onClearFilters = onClearFilters,
                 )
                 Spacer(Modifier.height(16.dp))

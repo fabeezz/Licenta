@@ -10,7 +10,7 @@ interface ItemRepository {
         brand: String?,
         material: String?,
         weather: List<String>?,
-        occasion: String?,
+        style: List<String>?,
     ): ItemOutDto
 
     suspend fun getItem(id: Int): ItemOutDto
