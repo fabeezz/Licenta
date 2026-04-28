@@ -111,6 +111,7 @@ private fun OutfitStudioScreen(
             Box(modifier = Modifier.padding(bottom = 24.dp)) {
                 AppBottomBar(
                     active = BottomBarDest.STUDIO,
+                    onTrip = {},
                     onStudio = {},
                     onAdd = onAddClick,
                     onWardrobe = onWardrobeClick,

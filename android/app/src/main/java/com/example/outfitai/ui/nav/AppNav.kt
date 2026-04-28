@@ -13,12 +13,14 @@ import androidx.navigation.navArgument
 import com.example.outfitai.ui.itemdetails.ItemDetailsRoute
 import com.example.outfitai.ui.outfits.OutfitDetailRoute
 import com.example.outfitai.ui.outfits.OutfitStudioRoute
+import com.example.outfitai.ui.trips.TripPlannerRoute
 import com.example.outfitai.ui.wardrobe.WardrobeRoute
 import com.example.outfitai.ui.wardrobe.WardrobeViewModel
 
 object Routes {
     const val Wardrobe = "wardrobe"
     const val OutfitStudio = "outfit-studio"
+    const val TripPlanner = "trip-planner"
     const val ItemDetails = "item/{itemId}"
     fun itemDetails(id: Int) = "item/$id"
 
@@ -36,6 +38,18 @@ fun AppNav(
         navController = navController,
         startDestination = Routes.Wardrobe
     ) {
+        composable(Routes.TripPlanner) {
+            TripPlannerRoute(
+                onClose = { navController.popBackStack() },
+                onSaved = {
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("wardrobe_refresh", true)
+                    navController.popBackStack()
+                },
+            )
+        }
+
         composable(Routes.OutfitStudio) {
             OutfitStudioRoute(
                 onBack = { navController.popBackStack() },
@@ -62,6 +76,7 @@ fun AppNav(
             WardrobeRoute(
                 onLogout = onLogout,
                 onStudioClick = { navController.navigate(Routes.OutfitStudio) },
+                onTripClick = { navController.navigate(Routes.TripPlanner) },
                 vm = vm,
                 onItemClick = { id -> navController.navigate(Routes.itemDetails(id)) },
                 onOutfitClick = { id -> navController.navigate(Routes.outfitDetail(id)) }

@@ -1,0 +1,533 @@
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Trip Dates Selection</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-container": "#ededf2",
+              "tertiary-container": "#001b3c",
+              "surface-dim": "#d9dade",
+              "secondary-fixed": "#e4e2e4",
+              "surface-container-highest": "#e2e2e7",
+              "on-tertiary-fixed-variant": "#1f477b",
+              "on-error-container": "#93000a",
+              "on-error": "#ffffff",
+              "inverse-primary": "#c6c6c6",
+              "tertiary-fixed": "#d5e3ff",
+              "primary-fixed": "#e2e2e2",
+              "on-tertiary-fixed": "#001b3c",
+              background: "#f9f9fe",
+              "surface-container-low": "#f3f3f8",
+              "primary-fixed-dim": "#c6c6c6",
+              "on-primary-container": "#848484",
+              "on-primary": "#ffffff",
+              "surface-container-high": "#e8e8ed",
+              "primary-container": "#1b1b1b",
+              primary: "#000000",
+              "outline-variant": "#cfc4c5",
+              "secondary-fixed-dim": "#c8c6c8",
+              "on-secondary-fixed-variant": "#474649",
+              tertiary: "#000000",
+              "on-secondary": "#ffffff",
+              "on-surface-variant": "#4c4546",
+              "on-background": "#1a1c1f",
+              "on-secondary-fixed": "#1b1b1d",
+              "on-tertiary": "#ffffff",
+              "tertiary-fixed-dim": "#a7c8ff",
+              "surface-bright": "#f9f9fe",
+              surface: "#f9f9fe",
+              "on-surface": "#1a1c1f",
+              "on-secondary-container": "#636264",
+              "surface-variant": "#e2e2e7",
+              "on-tertiary-container": "#6185bd",
+              "error-container": "#ffdad6",
+              secondary: "#5f5e60",
+              outline: "#7e7576",
+              "on-primary-fixed": "#1b1b1b",
+              error: "#ba1a1a",
+              "on-primary-fixed-variant": "#474747",
+              "surface-tint": "#5e5e5e",
+              "surface-container-lowest": "#ffffff",
+              "secondary-container": "#e2dfe1",
+              "inverse-surface": "#2e3034",
+              "inverse-on-surface": "#f0f0f5",
+            },
+            borderRadius: {
+              DEFAULT: "0.25rem",
+              lg: "0.5rem",
+              xl: "0.75rem",
+              full: "9999px",
+            },
+            spacing: {
+              "stack-lg": "32px",
+              "stack-md": "16px",
+              "margin-page": "20px",
+              "stack-sm": "8px",
+              "safe-bottom": "34px",
+              "gutter-grid": "12px",
+            },
+            fontFamily: {
+              "label-caps": ["Inter"],
+              "nav-title": ["Inter"],
+              "headline-md": ["Inter"],
+              "body-lg": ["Inter"],
+              "body-md": ["Inter"],
+            },
+            fontSize: {
+              "label-caps": [
+                "12px",
+                {
+                  lineHeight: "16px",
+                  letterSpacing: "0.5px",
+                  fontWeight: "600",
+                },
+              ],
+              "nav-title": [
+                "34px",
+                {
+                  lineHeight: "41px",
+                  letterSpacing: "-0.5px",
+                  fontWeight: "700",
+                },
+              ],
+              "headline-md": [
+                "22px",
+                {
+                  lineHeight: "28px",
+                  letterSpacing: "-0.3px",
+                  fontWeight: "600",
+                },
+              ],
+              "body-lg": ["17px", { lineHeight: "22px", fontWeight: "400" }],
+              "body-md": ["15px", { lineHeight: "20px", fontWeight: "400" }],
+            },
+          },
+        },
+      }
+    </script>
+    <style>
+      .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
+    <style>
+      body {
+        min-height: max(884px, 100dvh);
+      }
+    </style>
+  </head>
+  <body
+    class="bg-background text-on-background font-body-md antialiased min-h-screen relative flex flex-col"
+  >
+    <!-- TopAppBar from Shared Components JSON -->
+    <header
+      class="bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl docked full-width top-0 sticky z-50 border-b border-zinc-100 dark:border-zinc-800 shadow-none flex items-center justify-between px-5 h-16 w-full max-w-7xl mx-auto"
+    >
+      <button
+        aria-label="Close"
+        class="hover:opacity-70 transition-opacity Active: scale-95 transition-transform duration-150 flex items-center justify-center text-zinc-900 dark:text-zinc-50"
+      >
+        <span
+          class="material-symbols-outlined"
+          style="font-variation-settings: &quot;FILL&quot; 0"
+          >close</span
+        >
+      </button>
+      <div
+        class="text-zinc-900 dark:text-zinc-50 font-['Inter'] font-semibold tracking-tight text-[17px]"
+      >
+        Trip Planning
+      </div>
+      <button
+        aria-label="More options"
+        class="hover:opacity-70 transition-opacity Active: scale-95 transition-transform duration-150 flex items-center justify-center text-zinc-900 dark:text-zinc-50"
+      >
+        <span
+          class="material-symbols-outlined"
+          style="font-variation-settings: &quot;FILL&quot; 0"
+          >more_horiz</span
+        >
+      </button>
+    </header>
+    <main class="flex-1 pb-32">
+      <!-- Progress Bar -->
+      <div class="px-margin-page mt-stack-md flex gap-2">
+        <div class="flex-1 h-1.5 bg-primary rounded-full"></div>
+        <div class="flex-1 h-1.5 bg-primary rounded-full"></div>
+        <div class="flex-1 h-1.5 bg-surface-variant rounded-full"></div>
+        <div class="flex-1 h-1.5 bg-surface-variant rounded-full"></div>
+      </div>
+      <!-- Header Titles -->
+      <div class="px-margin-page mt-stack-lg">
+        <h1 class="font-nav-title text-nav-title text-primary">Trip dates</h1>
+        <p
+          class="font-body-md text-body-md text-on-surface-variant mt-stack-sm"
+        >
+          Tap a day to set your start date
+        </p>
+      </div>
+      <!-- Start/End Selection Cards -->
+      <div class="px-margin-page mt-stack-lg flex gap-gutter-grid">
+        <!-- Active START Card -->
+        <div
+          class="flex-1 bg-surface-container-lowest border-2 border-primary rounded-xl p-4 flex flex-col justify-center"
+        >
+          <div class="flex items-center gap-3">
+            <span
+              class="material-symbols-outlined text-primary text-[20px]"
+              style="font-variation-settings: &quot;FILL&quot; 0"
+              >calendar_today</span
+            >
+            <div>
+              <div class="font-label-caps text-label-caps text-primary">
+                START
+              </div>
+              <div
+                class="font-headline-md text-headline-md text-primary mt-1 leading-none"
+              >
+                -
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Inactive END Card -->
+        <div
+          class="flex-1 bg-surface-container-low border border-transparent rounded-xl p-4 flex flex-col justify-center"
+        >
+          <div class="flex items-center gap-3">
+            <span
+              class="material-symbols-outlined text-on-surface-variant text-[20px]"
+              style="font-variation-settings: &quot;FILL&quot; 0"
+              >calendar_today</span
+            >
+            <div>
+              <div
+                class="font-label-caps text-label-caps text-on-surface-variant"
+              >
+                END
+              </div>
+              <div
+                class="font-headline-md text-headline-md text-on-surface-variant mt-1 leading-none"
+              >
+                -
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Calendar View -->
+      <div class="px-margin-page mt-stack-lg pb-stack-lg">
+        <!-- Month Header -->
+        <div class="flex items-center justify-between mb-stack-md">
+          <h2 class="font-headline-md text-headline-md text-primary">
+            April 2026
+          </h2>
+          <div class="flex gap-4">
+            <button
+              class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container transition-colors"
+            >
+              <span
+                class="material-symbols-outlined text-primary"
+                style="font-variation-settings: &quot;FILL&quot; 0"
+                >chevron_left</span
+              >
+            </button>
+            <button
+              class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container transition-colors"
+            >
+              <span
+                class="material-symbols-outlined text-primary"
+                style="font-variation-settings: &quot;FILL&quot; 0"
+                >chevron_right</span
+              >
+            </button>
+          </div>
+        </div>
+        <!-- Weekdays -->
+        <div class="grid grid-cols-7 mb-4">
+          <div class="font-label-caps text-label-caps text-outline text-center">
+            S
+          </div>
+          <div class="font-label-caps text-label-caps text-outline text-center">
+            M
+          </div>
+          <div class="font-label-caps text-label-caps text-outline text-center">
+            T
+          </div>
+          <div class="font-label-caps text-label-caps text-outline text-center">
+            W
+          </div>
+          <div class="font-label-caps text-label-caps text-outline text-center">
+            T
+          </div>
+          <div class="font-label-caps text-label-caps text-outline text-center">
+            F
+          </div>
+          <div class="font-label-caps text-label-caps text-outline text-center">
+            S
+          </div>
+        </div>
+        <!-- Dates Grid (Placeholder layout for April 2026 starting on Wednesday) -->
+        <div class="grid grid-cols-7 gap-y-4">
+          <!-- Empty slots -->
+          <div></div>
+          <div></div>
+          <div></div>
+          <!-- Past/Dimmed Dates -->
+          <div class="flex justify-center">
+            <div
+              class="w-10 h-10 flex items-center justify-center rounded-full font-body-lg text-body-lg text-inverse-primary"
+            >
+              1
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <div
+              class="w-10 h-10 flex items-center justify-center rounded-full font-body-lg text-body-lg text-inverse-primary"
+            >
+              2
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <div
+              class="w-10 h-10 flex items-center justify-center rounded-full font-body-lg text-body-lg text-inverse-primary"
+            >
+              3
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <div
+              class="w-10 h-10 flex items-center justify-center rounded-full font-body-lg text-body-lg text-inverse-primary"
+            >
+              4
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <div
+              class="w-10 h-10 flex items-center justify-center rounded-full font-body-lg text-body-lg text-inverse-primary"
+            >
+              5
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <div
+              class="w-10 h-10 flex items-center justify-center rounded-full font-body-lg text-body-lg text-inverse-primary"
+            >
+              6
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <div
+              class="w-10 h-10 flex items-center justify-center rounded-full font-body-lg text-body-lg text-inverse-primary"
+            >
+              7
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <div
+              class="w-10 h-10 flex items-center justify-center rounded-full font-body-lg text-body-lg text-inverse-primary"
+            >
+              8
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <div
+              class="w-10 h-10 flex items-center justify-center rounded-full font-body-lg text-body-lg text-inverse-primary"
+            >
+              9
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <div
+              class="w-10 h-10 flex items-center justify-center rounded-full font-body-lg text-body-lg text-inverse-primary"
+            >
+              10
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <div
+              class="w-10 h-10 flex items-center justify-center rounded-full font-body-lg text-body-lg text-inverse-primary"
+            >
+              11
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <div
+              class="w-10 h-10 flex items-center justify-center rounded-full font-body-lg text-body-lg text-inverse-primary"
+            >
+              12
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <div
+              class="w-10 h-10 flex items-center justify-center rounded-full font-body-lg text-body-lg text-inverse-primary"
+            >
+              13
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <div
+              class="w-10 h-10 flex items-center justify-center rounded-full font-body-lg text-body-lg text-inverse-primary"
+            >
+              14
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <div
+              class="w-10 h-10 flex items-center justify-center rounded-full font-body-lg text-body-lg text-inverse-primary"
+            >
+              15
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <div
+              class="w-10 h-10 flex items-center justify-center rounded-full font-body-lg text-body-lg text-inverse-primary"
+            >
+              16
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <div
+              class="w-10 h-10 flex items-center justify-center rounded-full font-body-lg text-body-lg text-inverse-primary"
+            >
+              17
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <div
+              class="w-10 h-10 flex items-center justify-center rounded-full font-body-lg text-body-lg text-inverse-primary"
+            >
+              18
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <div
+              class="w-10 h-10 flex items-center justify-center rounded-full font-body-lg text-body-lg text-inverse-primary"
+            >
+              19
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <div
+              class="w-10 h-10 flex items-center justify-center rounded-full font-body-lg text-body-lg text-inverse-primary"
+            >
+              20
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <div
+              class="w-10 h-10 flex items-center justify-center rounded-full font-body-lg text-body-lg text-inverse-primary"
+            >
+              21
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <div
+              class="w-10 h-10 flex items-center justify-center rounded-full font-body-lg text-body-lg text-inverse-primary"
+            >
+              22
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <div
+              class="w-10 h-10 flex items-center justify-center rounded-full font-body-lg text-body-lg text-inverse-primary"
+            >
+              23
+            </div>
+          </div>
+          <!-- Selected Date -->
+          <div class="flex justify-center">
+            <div
+              class="w-10 h-10 flex items-center justify-center rounded-full bg-primary text-on-primary font-body-lg text-body-lg shadow-sm"
+            >
+              24
+            </div>
+          </div>
+          <!-- Future Dates -->
+          <div class="flex justify-center">
+            <div
+              class="w-10 h-10 flex items-center justify-center rounded-full font-body-lg text-body-lg text-primary"
+            >
+              25
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <div
+              class="w-10 h-10 flex items-center justify-center rounded-full font-body-lg text-body-lg text-primary"
+            >
+              26
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <div
+              class="w-10 h-10 flex items-center justify-center rounded-full font-body-lg text-body-lg text-primary"
+            >
+              27
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <div
+              class="w-10 h-10 flex items-center justify-center rounded-full font-body-lg text-body-lg text-primary"
+            >
+              28
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <div
+              class="w-10 h-10 flex items-center justify-center rounded-full font-body-lg text-body-lg text-primary"
+            >
+              29
+            </div>
+          </div>
+          <div class="flex justify-center">
+            <div
+              class="w-10 h-10 flex items-center justify-center rounded-full font-body-lg text-body-lg text-primary"
+            >
+              30
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <!-- Fixed Bottom Bar -->
+    <div
+      class="fixed bottom-0 w-full px-margin-page py-4 pb-safe-bottom bg-background/90 backdrop-blur-xl border-t border-surface-container z-50"
+    >
+      <!-- Disabled State Button -->
+      <button
+        class="w-full h-[56px] rounded-full flex items-center justify-center gap-2 bg-surface-container-highest text-on-surface-variant font-label-caps text-label-caps opacity-60 cursor-not-allowed"
+      >
+        <span
+          class="material-symbols-outlined text-[20px]"
+          style="font-variation-settings: &quot;FILL&quot; 0"
+          >check</span
+        >
+        Save dates
+      </button>
+    </div>
+  </body>
+</html>

@@ -22,6 +22,7 @@ fun WardrobeRoute(
     onItemClick: (Int) -> Unit,
     onOutfitClick: (Int) -> Unit,
     onStudioClick: () -> Unit,
+    onTripClick: () -> Unit = {},
     vm: WardrobeViewModel = hiltViewModel(),
 ) {
     val state by vm.state.collectAsState()
@@ -34,6 +35,7 @@ fun WardrobeRoute(
         onItemClick = onItemClick,
         onOutfitClick = onOutfitClick,
         onStudioClick = onStudioClick,
+        onTripClick = onTripClick,
         onAddClick = upload.launch,
         onTabSelect = vm::setTab,
         onFilterCategory = vm::setFilterCategory,
@@ -56,6 +58,7 @@ private fun WardrobeScreen(
     onItemClick: (Int) -> Unit,
     onOutfitClick: (Int) -> Unit,
     onStudioClick: () -> Unit,
+    onTripClick: () -> Unit,
     onAddClick: () -> Unit,
     onTabSelect: (WardrobeTab) -> Unit,
     onFilterCategory: (String?) -> Unit,
@@ -88,6 +91,7 @@ private fun WardrobeScreen(
             Box(modifier = Modifier.padding(bottom = 24.dp)) {
                 AppBottomBar(
                     active = BottomBarDest.WARDROBE,
+                    onTrip = onTripClick,
                     onStudio = onStudioClick,
                     onAdd = onAddClick,
                     onWardrobe = {},

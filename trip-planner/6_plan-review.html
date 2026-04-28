@@ -1,0 +1,450 @@
+<!doctype html>
+
+<html class="light" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Paris Trip - OutfitAI</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-error-container": "#93000a",
+              "surface-bright": "#f9f9fe",
+              "on-tertiary-fixed-variant": "#1f477b",
+              "primary-fixed-dim": "#c6c6c6",
+              "on-surface-variant": "#4c4546",
+              "surface-container": "#ededf2",
+              "tertiary-container": "#001b3c",
+              "on-secondary-fixed-variant": "#474649",
+              "tertiary-fixed-dim": "#a7c8ff",
+              tertiary: "#000000",
+              "on-secondary-fixed": "#1b1b1d",
+              outline: "#7e7576",
+              "on-tertiary": "#ffffff",
+              error: "#ba1a1a",
+              "surface-dim": "#d9dade",
+              "surface-container-low": "#f3f3f8",
+              surface: "#f9f9fe",
+              "primary-container": "#1b1b1b",
+              background: "#f9f9fe",
+              "on-primary-fixed-variant": "#474747",
+              secondary: "#5f5e60",
+              primary: "#000000",
+              "on-background": "#1a1c1f",
+              "secondary-fixed-dim": "#c8c6c8",
+              "on-primary-fixed": "#1b1b1b",
+              "tertiary-fixed": "#d5e3ff",
+              "on-primary-container": "#848484",
+              "surface-container-high": "#e8e8ed",
+              "surface-variant": "#e2e2e7",
+              "on-primary": "#ffffff",
+              "inverse-primary": "#c6c6c6",
+              "outline-variant": "#cfc4c5",
+              "on-surface": "#1a1c1f",
+              "on-error": "#ffffff",
+              "inverse-surface": "#2e3034",
+              "inverse-on-surface": "#f0f0f5",
+              "secondary-container": "#e2dfe1",
+              "surface-container-lowest": "#ffffff",
+              "primary-fixed": "#e2e2e2",
+              "on-tertiary-container": "#6185bd",
+              "error-container": "#ffdad6",
+              "surface-tint": "#5e5e5e",
+              "on-tertiary-fixed": "#001b3c",
+              "surface-container-highest": "#e2e2e7",
+              "on-secondary-container": "#636264",
+              "secondary-fixed": "#e4e2e4",
+              "on-secondary": "#ffffff",
+            },
+            borderRadius: {
+              DEFAULT: "0.25rem",
+              lg: "0.5rem",
+              xl: "0.75rem",
+              "2xl": "1.5rem",
+              full: "9999px",
+            },
+            spacing: {
+              "stack-lg": "32px",
+              "margin-page": "20px",
+              "safe-bottom": "34px",
+              "stack-sm": "8px",
+              "stack-md": "16px",
+              "gutter-grid": "12px",
+            },
+            fontFamily: {
+              "label-caps": ["Inter"],
+              "body-lg": ["Inter"],
+              "nav-title": ["Inter"],
+              "headline-md": ["Inter"],
+              "body-md": ["Inter"],
+            },
+            fontSize: {
+              "label-caps": [
+                "12px",
+                {
+                  lineHeight: "16px",
+                  letterSpacing: "0.5px",
+                  fontWeight: "600",
+                },
+              ],
+              "body-lg": ["17px", { lineHeight: "22px", fontWeight: "400" }],
+              "nav-title": [
+                "34px",
+                {
+                  lineHeight: "41px",
+                  letterSpacing: "-0.5px",
+                  fontWeight: "700",
+                },
+              ],
+              "headline-md": [
+                "22px",
+                {
+                  lineHeight: "28px",
+                  letterSpacing: "-0.3px",
+                  fontWeight: "600",
+                },
+              ],
+              "body-md": ["15px", { lineHeight: "20px", fontWeight: "400" }],
+            },
+          },
+        },
+      }
+    </script>
+    <style>
+      body {
+        min-height: max(884px, 100dvh);
+      }
+    </style>
+  </head>
+  <body
+    class="bg-background text-on-background antialiased pb-safe-bottom overflow-x-hidden"
+  >
+    <!-- TopAppBar -->
+    <header
+      class="fixed top-0 w-full z-50 flex justify-between items-center px-5 h-16 bg-surface-container-lowest/80 backdrop-blur-xl border-b border-surface-variant transition-transform duration-200"
+    >
+      <button
+        class="text-primary hover:opacity-70 transition-opacity flex items-center justify-center p-2 rounded-full active:scale-95 duration-200"
+      >
+        <span
+          class="material-symbols-outlined"
+          style="font-variation-settings: &quot;FILL&quot; 0"
+          >close</span
+        >
+      </button>
+      <div
+        class="font-headline-md text-headline-md text-primary truncate px-4 text-center absolute left-1/2 -translate-x-1/2"
+      >
+        Trip Planner
+      </div>
+      <button
+        class="text-primary font-body-md text-body-md font-semibold hover:opacity-70 transition-opacity active:scale-95 duration-200"
+      >
+        Edit
+      </button>
+    </header>
+    <main
+      class="pt-[88px] px-margin-page max-w-2xl mx-auto space-y-stack-lg pb-[180px]"
+    >
+      <!-- Header Content -->
+      <section class="space-y-stack-sm text-center">
+        <h1 class="font-nav-title text-nav-title text-primary">Paris Trip</h1>
+        <div
+          class="flex items-center justify-center gap-2 font-body-md text-body-md text-secondary"
+        >
+          <span>3 days · Apr 27 – Apr 29 · Carry on</span>
+          <span class="w-1 h-1 bg-outline-variant rounded-full"></span>
+          <div class="flex items-center gap-1">
+            <span class="material-symbols-outlined text-[16px]"
+              >light_mode</span
+            >
+            <span>65°F</span>
+          </div>
+        </div>
+      </section>
+      <!-- Forecast Section -->
+      <section>
+        <h2 class="font-headline-md text-headline-md text-primary mb-stack-md">
+          Forecast
+        </h2>
+        <div
+          class="bg-surface-container-lowest rounded-2xl border border-surface-variant p-4 overflow-x-auto no-scrollbar"
+        >
+          <div class="flex justify-between items-center min-w-[300px] gap-4">
+            <!-- Fri -->
+            <div class="flex flex-col items-center gap-2">
+              <span class="font-body-md text-[13px] text-secondary">Fri</span>
+              <span class="material-symbols-outlined text-[24px] text-primary"
+                >light_mode</span
+              >
+              <div class="flex flex-col items-center">
+                <span class="font-body-md text-body-md font-medium text-primary"
+                  >66°</span
+                >
+                <span class="font-body-md text-[13px] text-secondary">48°</span>
+              </div>
+            </div>
+            <!-- Sat -->
+            <div class="flex flex-col items-center gap-2">
+              <span class="font-body-md text-[13px] text-secondary">Sat</span>
+              <span class="material-symbols-outlined text-[24px] text-primary"
+                >partly_cloudy_day</span
+              >
+              <div class="flex flex-col items-center">
+                <span class="font-body-md text-body-md font-medium text-primary"
+                  >68°</span
+                >
+                <span class="font-body-md text-[13px] text-secondary">50°</span>
+              </div>
+            </div>
+            <!-- Sun -->
+            <div class="flex flex-col items-center gap-2">
+              <span class="font-body-md text-[13px] text-primary font-semibold"
+                >Sun</span
+              >
+              <span class="material-symbols-outlined text-[24px] text-primary"
+                >light_mode</span
+              >
+              <div class="flex flex-col items-center">
+                <span class="font-body-md text-body-md font-medium text-primary"
+                  >72°</span
+                >
+                <span class="font-body-md text-[13px] text-secondary">52°</span>
+              </div>
+            </div>
+            <!-- Mon -->
+            <div class="flex flex-col items-center gap-2">
+              <span class="font-body-md text-[13px] text-secondary">Mon</span>
+              <span class="material-symbols-outlined text-[24px] text-primary"
+                >cloud</span
+              >
+              <div class="flex flex-col items-center">
+                <span class="font-body-md text-body-md font-medium text-primary"
+                  >69°</span
+                >
+                <span class="font-body-md text-[13px] text-secondary">55°</span>
+              </div>
+            </div>
+            <!-- Tue -->
+            <div class="flex flex-col items-center gap-2">
+              <span class="font-body-md text-[13px] text-secondary">Tue</span>
+              <span class="material-symbols-outlined text-[24px] text-primary"
+                >light_mode</span
+              >
+              <div class="flex flex-col items-center">
+                <span class="font-body-md text-body-md font-medium text-primary"
+                  >70°</span
+                >
+                <span class="font-body-md text-[13px] text-secondary">51°</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- Your Outfits Section -->
+      <section class="space-y-stack-md">
+        <h2 class="font-headline-md text-headline-md text-primary">
+          Your Outfits
+        </h2>
+        <!-- Travel Day Card -->
+        <div
+          class="bg-surface-container-lowest rounded-2xl border border-surface-variant p-4"
+        >
+          <div class="flex items-center gap-2 mb-4">
+            <span class="material-symbols-outlined text-[20px] text-primary"
+              >flight</span
+            >
+            <span class="font-body-md text-body-md font-semibold text-primary"
+              >Travel</span
+            >
+          </div>
+          <div class="grid grid-cols-2 gap-gutter-grid mb-4">
+            <div
+              class="aspect-[3/4] bg-surface-container-low rounded-xl overflow-hidden relative"
+            >
+              <img
+                alt="Pair of classic khaki trousers laid flat on a neutral background, high quality fashion photography"
+                class="w-full h-full object-cover mix-blend-multiply opacity-90"
+                data-alt="Pair of classic khaki trousers laid flat on a neutral background, high quality fashion photography"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuChr4sdvGGBW8Rxhb_vNvLvmZG1wANJnJ5GLQyXqy0QJ9tvQYTkuiRDda-4KpLyX3Nphbk3W1NwXlGmTnkTKS7TnXk1Jq7kAUdWcV2KNRLmcxcbib6gPPwLmUU_AI3lrMTp5FKaKkMeIbDg5fFnKCB5n0IumykJW99oSw2Ne7VL5TIT-co4-3-SJS_AMb77JeB_b4ixk9zqmc1nwjpybTn1Dypvz39B7t5jID5fy73SI-AwXHNgNVVETP8A6DhP_gAKOu9FJ7gixgE"
+              />
+            </div>
+            <div
+              class="aspect-[3/4] bg-surface-container-low rounded-xl overflow-hidden relative flex items-center justify-center"
+            >
+              <img
+                alt="Sleek black low-top sneakers on clean white background, minimalist product photography"
+                class="w-4/5 h-4/5 object-contain mix-blend-multiply opacity-90"
+                data-alt="Sleek black low-top sneakers on clean white background, minimalist product photography"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDw43wBtvTK8cXlwyN07uVPj-puaOMp4s0iR4uKANNv7OEzrT_OpJ3Wgb5wilb3Jt35gMqCTWdq3uivs-JPYqQA5YxC_ehszJooAPOY--i343AY0gmM5EwyoQOvlvR1aUYfIBY_dH3yeb_6-Imbd5P-twcPCRzVTOwRbFM2HwvqdMZVIPK_HZrl-ZvX5kKEa3reAIDsFBO0-dMDHtUWjwtg8lJAQo8Kox20QcLh2np1M0RICIIiaOf5g6wZ-zU26pxO5oSEtzxkJAk"
+              />
+            </div>
+          </div>
+        </div>
+        <!-- Day 1 Card -->
+        <div
+          class="bg-surface-container-lowest rounded-2xl border border-surface-variant p-4"
+        >
+          <div class="flex items-center justify-between mb-4">
+            <span class="font-body-md text-body-md font-semibold text-primary"
+              >Day 1</span
+            >
+            <div class="flex items-center gap-1 text-secondary">
+              <span class="material-symbols-outlined text-[16px]"
+                >light_mode</span
+              >
+              <span class="font-body-md text-[13px]">72°F</span>
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-gutter-grid">
+            <div
+              class="aspect-[3/4] bg-surface-container-low rounded-xl overflow-hidden relative"
+            >
+              <img
+                alt="Crisp light blue button-down shirt folded neatly, premium fashion product shot"
+                class="w-full h-full object-cover mix-blend-multiply opacity-90"
+                data-alt="Crisp light blue button-down shirt folded neatly, premium fashion product shot"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAV450KpueyPCBiL_61OERHlq6H4qeQBobBZ23HvlM5-4l-fGHF9maTjsov9rIrTI8Fo3P4SOB67W5Ajqk091X51S6HY7gaQJr_xN894w41aoxtzvwRmrwRqn0Bjv7RYrtYTRhqlJ2tNBl5V1OVxrLguT6WPzaEr9n-TqVZNKGJKgVYs2AMUlLqHodEFNAOJU7_VmdRqtDy6MkezbCGum636uGBgV02-AyBcOmp1HXyGc7lzkjLzjij2sWN-RODGTPZuW5AGwgtQjg"
+              />
+            </div>
+            <div
+              class="aspect-[3/4] bg-surface-container-low rounded-xl overflow-hidden relative"
+            >
+              <img
+                alt="Tailored black trousers flat lay, elegant minimal lighting"
+                class="w-full h-full object-cover mix-blend-multiply opacity-90"
+                data-alt="Tailored black trousers flat lay, elegant minimal lighting"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsGO2YKeLqM-MIv_n3CPoLZbvUeyVgosl2jEaWhepgJqS29OwYhncoBtVhzHEBssJNH3RYUJ1iYEKCvIcrEA7nMx2WGFwNh85jLtc7k-soX_biI5nKuQ4Yd8xBSNKmaZAYI478gCLGOINwHFbusUo1419D-PlOPM5K1WhPRdU49feybGu92t_uDBamKxSXXNRwIkCSDP8GLPnUWjVx_kVsJheoxN5GVpuiWCM0wyOxVsbec9nCDeoTy1QbYOrHKRs8At6IH09aPro"
+              />
+            </div>
+            <div
+              class="aspect-[3/4] bg-surface-container-low rounded-xl overflow-hidden relative flex items-center justify-center"
+            >
+              <img
+                alt="Clean white leather sneakers, modern footwear product photography"
+                class="w-4/5 h-4/5 object-contain mix-blend-multiply opacity-90"
+                data-alt="Clean white leather sneakers, modern footwear product photography"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvpqAEpFCk3_xfKGhrwGfNN8ryCLA3HWYSQBA4nXkmjttUOKykMhwr96VGXiuSrV3-3gUBBhO0ghWhuQthuGVLiRnLMJiBWYWmCfSpyJv_voO2D2qwbmt-yNN3dzRpAKEHFeY6iMxfvXTjo9X1Tw5_AEkPS71CiMR56dGSAaEJOqC0myBHwt8GO4TwTi0v-FFDVoF6qk_Iw_oDpsBt00UBLUkOFNO8u4A6kMWMo7RSPN_jf-jtC0Z-TpTzpA2IzbptloSp3nUeSRw"
+              />
+            </div>
+          </div>
+        </div>
+        <!-- Day 2 Card -->
+        <div
+          class="bg-surface-container-lowest rounded-2xl border border-surface-variant p-4"
+        >
+          <div class="flex items-center justify-between mb-4">
+            <span class="font-body-md text-body-md font-semibold text-primary"
+              >Day 2</span
+            >
+            <div class="flex items-center gap-1 text-secondary">
+              <span class="material-symbols-outlined text-[16px]"
+                >light_mode</span
+              >
+              <span class="font-body-md text-[13px]">69°F</span>
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-gutter-grid">
+            <div
+              class="aspect-[3/4] bg-surface-container-low rounded-xl overflow-hidden relative"
+            >
+              <img
+                alt="Pair of classic khaki trousers laid flat on a neutral background, high quality fashion photography"
+                class="w-full h-full object-cover mix-blend-multiply opacity-90"
+                data-alt="Pair of classic khaki trousers laid flat on a neutral background, high quality fashion photography"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAfgmB0mVjZ_W3kWnTgRBQx8GptLE4OiUZFhiXMy_7R4pWrUInLDoNnTyy7WlyKjdF9RME7K5gWx1Vg6I2cOnCC-i09anjZevarz4eZWSw934U0JGXK3RQXpCNavVz48AG0_UOpu5blh9ovwW4fCMPaLSOzmhyEMj4NkwxNME5-QxpBrD57ki68RNxd7_M7W-hMtnay1_mqCOwfdVImyRwtgqo_XFOETPIhrhgBpDFTl03TKDmwxxEVWT9-FbNYjgoZHBzAOkmMw4k"
+              />
+            </div>
+            <div
+              class="aspect-[3/4] bg-surface-container-low rounded-xl overflow-hidden relative flex items-center justify-center"
+            >
+              <img
+                alt="Sleek black low-top sneakers on clean white background, minimalist product photography"
+                class="w-4/5 h-4/5 object-contain mix-blend-multiply opacity-90"
+                data-alt="Sleek black low-top sneakers on clean white background, minimalist product photography"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDBYtnq0nIy0LOMqCrHTiJPv4i0B_kMois5ittiEtPABxCDpFOHaDuP6toY_eXUxz_074ogjFZqLbc1shwFa93njGTWIQOBLhEqhHuo6mc1MMsUAkQHnrK5LA8oD7cobUE4jDO3Xh4WJNARP32A9Z_gdTsiKByLszTzdBU7vcJPIUBup1ZzD3irqcLExNegTRneFptLKo-ZBI3UhMrxtjx7ZDVyZB550kqH0FSmNKANxaO0WdA0fRSAddzRZYlLz6-ICrxRU_n9t7g"
+              />
+            </div>
+            <div
+              class="aspect-[3/4] bg-surface-container-low rounded-xl overflow-hidden relative"
+            >
+              <img
+                alt="Classic blue denim jacket, flat lay against light background, detailed texture"
+                class="w-full h-full object-cover mix-blend-multiply opacity-90"
+                data-alt="Classic blue denim jacket, flat lay against light background, detailed texture"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-hLrePhGX_C2smlcxAjTQxAs3fGWCN6mG95smn0HI9VfDjjEC43yp2UMFbDvDlA9BI78Fc5wvOnOlpjn7l9uNTyxSfAKwfsWY8Sat2fEGD_fUw6fS2vJMaBVJrRllKu_4KiNJPRaGWbWHLBdP6oi3w75X6rXraFdPHw5hykAayaHUaKszItJ5faCFZQxk8s3VwgBuQ_FY7QPlBPQQzX4eRLYLYZMY_7jEHfV0bAXGchKagx85CVHl78_lLUvtiUoVUg2vOCun0gk"
+              />
+            </div>
+          </div>
+        </div>
+        <!-- Day 3 Card -->
+        <div
+          class="bg-surface-container-lowest rounded-2xl border border-surface-variant p-4"
+        >
+          <div class="flex items-center justify-between mb-4">
+            <span class="font-body-md text-body-md font-semibold text-primary"
+              >Day 3</span
+            >
+            <div class="flex items-center gap-1 text-secondary">
+              <span class="material-symbols-outlined text-[16px]"
+                >light_mode</span
+              >
+              <span class="font-body-md text-[13px]">70°F</span>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-gutter-grid">
+            <div
+              class="aspect-[3/4] bg-surface-container-low rounded-xl overflow-hidden relative"
+            >
+              <img
+                alt="Tailored black trousers flat lay, elegant minimal lighting"
+                class="w-full h-full object-cover mix-blend-multiply opacity-90"
+                data-alt="Tailored black trousers flat lay, elegant minimal lighting"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDbMCIicKQWc8kazs9FndoGDymePZyqSnMr-iYM96hEz3eWstHrHMdf0rCWoncdRWc7hdH6Z1kpsj9kgRF9nezy6f0u1zcz3LJFeTieGgExuEbds_IkbG2u9ikp-biFdaxcawZ44ZVcHHsoW6hJIL52y0a-S3qHjx5VoQrM_TFvzl_VmZEPHjtk_2OjakGHASyH-unVFKMIal6YO5hBBHrZKaYCFcjni3aMzy--xc-FHOnveLZnaTbDUE2MfJsIPuxG7i2L0hwObrk"
+              />
+            </div>
+            <div
+              class="aspect-[3/4] bg-surface-container-low rounded-xl overflow-hidden relative flex items-center justify-center"
+            >
+              <img
+                alt="Clean white leather sneakers, modern footwear product photography"
+                class="w-4/5 h-4/5 object-contain mix-blend-multiply opacity-90"
+                data-alt="Clean white leather sneakers, modern footwear product photography"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-vJseu4il9WebgVs52YD8Wb6TDDcMYO3F4_7LzuTW4cYMdeXdqFBn2tjC35_uZ9cUNa0KZUxu9SYynDWsyzzzBbjq7uiScL3gWhSPUbq5kEQtmG5Xf1V3hSpZrhhO22G_sNBbR36Niq9MlenO0Plhy9uTQ4-Ni1APSxYTiqoGShufO9nnFAjkyTXW6mpvB8wgfq_tyMXzsFMXL5wsw7eN4dovxpthyHTN7hJ14hM4RGp1dzVDFrTSzY9G9w5aEk4fLz-ksgGfG7g"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <!-- Bottom Action Pill -->
+    <div
+      class="fixed bottom-safe-bottom left-0 w-full px-margin-page flex justify-center z-50 pointer-events-none"
+    >
+      <button
+        class="pointer-events-auto bg-primary text-on-primary rounded-full px-8 py-4 flex items-center gap-2 shadow-[0_8px_30px_rgb(0,0,0,0.15)] hover:scale-[1.02] active:scale-95 transition-transform duration-300 w-full max-w-sm justify-center"
+      >
+        <span class="material-symbols-outlined text-[20px]">check</span>
+        <span class="font-body-md text-[17px] font-semibold"
+          >Save Collection</span
+        >
+      </button>
+    </div>
+  </body>
+</html>
