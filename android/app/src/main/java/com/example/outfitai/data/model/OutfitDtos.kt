@@ -20,3 +20,18 @@ data class OutfitOutDto(
     val shoes: OutfitItemRefDto,
     val score: Double,
 )
+
+@Serializable
+data class OutfitSuggestRequest(
+    val style: String? = null,
+    val weather: String? = null,
+    val modes: List<String>? = null,
+)
+
+@Serializable
+data class OutfitSuggestResponse(
+    val top: Int? = null,
+    val bottom: Int? = null,
+    val outer: Int? = null,
+    val shoes: Int? = null,
+)

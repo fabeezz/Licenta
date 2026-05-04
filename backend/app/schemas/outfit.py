@@ -83,3 +83,20 @@ class OutfitResponse(BaseModel):
     bottom: ItemMinimal
     top: ItemMinimal
     outer: ItemMinimal | None
+
+
+class OutfitSuggestRequest(BaseModel):
+    """Body for ``POST /outfits/suggest``."""
+
+    style: str | None = None
+    weather: str | None = None
+    modes: list[str] | None = None
+
+
+class OutfitSuggestResponse(BaseModel):
+    """Suggested item IDs per slot; ``None`` means no suitable item found for that slot."""
+
+    top: int | None = None
+    bottom: int | None = None
+    outer: int | None = None
+    shoes: int | None = None

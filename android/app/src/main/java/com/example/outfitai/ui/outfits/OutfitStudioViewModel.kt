@@ -7,6 +7,7 @@ import com.example.outfitai.data.model.OutfitCreateDto
 import com.example.outfitai.Config
 import com.example.outfitai.domain.usecase.auth.GetCurrentUserUseCase
 import com.example.outfitai.domain.usecase.outfits.CreateOutfitUseCase
+import com.example.outfitai.domain.usecase.outfits.SuggestOutfitUseCase
 import com.example.outfitai.domain.usecase.wardrobe.GetFilteredWardrobeUseCase
 import com.example.outfitai.domain.usecase.weather.GetTodayWeatherUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,6 +28,7 @@ class OutfitStudioViewModel @Inject constructor(
     private val createOutfit: CreateOutfitUseCase,
     private val getCurrentUser: GetCurrentUserUseCase,
     private val getTodayWeather: GetTodayWeatherUseCase,
+    private val suggestOutfit: SuggestOutfitUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(OutfitStudioUiState())
@@ -179,16 +181,61 @@ class OutfitStudioViewModel @Inject constructor(
     }
 
     fun shuffle() {
-        _state.update { s ->
-            var next = s
-            for (slot in Slot.entries) {
-                val items = s.slotOf(slot)
-                if (slot == Slot.OUTER && !s.includeOuter) continue
-                if (items.items.size > 1) {
-                    next = next.withSlot(slot, items.copy(index = Random.nextInt(items.items.size)))
+        val s = _state.value
+        val fState = s.filterState
+        val style = when (fState.style) {
+            "Casual"     -> "casual"
+            "Athleisure" -> "sporty"
+            "Formal"     -> "formal"
+            else         -> null
+        }
+        val weather = when (fState.climate) {
+            "Cold"  -> "cold"
+            "Warm"  -> "warm"
+            "Rainy" -> "rainy"
+            else    -> null
+        }
+
+        viewModelScope.launch {
+            val result = suggestOutfit(style = style, weather = weather)
+            if (result is Resource.Success) {
+                val suggestion = result.data
+                _state.update { current ->
+                    var next = current
+                    fun applySlot(slot: Slot, suggestedId: Int?) {
+                        val slotItems = current.slotOf(slot)
+                        if (suggestedId != null) {
+                            val idx = slotItems.items.indexOfFirst { it.id == suggestedId }
+                            if (idx >= 0) {
+                                next = next.withSlot(slot, slotItems.copy(index = idx))
+                                return
+                            }
+                        }
+                        // Fallback: random pick within slot
+                        if (slotItems.items.size > 1) {
+                            next = next.withSlot(slot, slotItems.copy(index = Random.nextInt(slotItems.items.size)))
+                        }
+                    }
+                    applySlot(Slot.TOP, suggestion?.top)
+                    applySlot(Slot.BOTTOM, suggestion?.bottom)
+                    applySlot(Slot.SHOES, suggestion?.shoes)
+                    if (current.includeOuter) applySlot(Slot.OUTER, suggestion?.outer)
+                    next
+                }
+            } else {
+                // Network error — fall back to per-slot random
+                _state.update { current ->
+                    var next = current
+                    for (slot in Slot.entries) {
+                        val items = current.slotOf(slot)
+                        if (slot == Slot.OUTER && !current.includeOuter) continue
+                        if (items.items.size > 1) {
+                            next = next.withSlot(slot, items.copy(index = Random.nextInt(items.items.size)))
+                        }
+                    }
+                    next
                 }
             }
-            next
         }
     }
 

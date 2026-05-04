@@ -2,6 +2,8 @@ package com.example.outfitai.data.api
 
 import com.example.outfitai.data.model.OutfitCreateDto
 import com.example.outfitai.data.model.OutfitSavedDto
+import com.example.outfitai.data.model.OutfitSuggestRequest
+import com.example.outfitai.data.model.OutfitSuggestResponse
 import retrofit2.http.*
 
 interface OutfitApi {
@@ -19,4 +21,7 @@ interface OutfitApi {
 
     @DELETE("outfits/{id}")
     suspend fun delete(@Path("id") id: Int)
+
+    @POST("outfits/suggest")
+    suspend fun suggest(@Body body: OutfitSuggestRequest): OutfitSuggestResponse
 }

@@ -25,6 +25,8 @@ from app.schemas.trip import (
     TripSaveRequest,
 )
 from app.schemas.weather import DayForecast
+from app.services.outfits.filters import item_matches_style, item_matches_weather, prefer_explicit_style
+from app.services.outfits.harmony import suggest_outfit
 from app.services.trip.activity_map import style_for_day
 from app.services.trip.destinations import DESTINATIONS
 from app.services.weather_service import WeatherService
@@ -60,18 +62,6 @@ def _day_weather_tags(forecast: DayForecast) -> list[str]:
     return tags or ["warm"]
 
 
-def _item_matches_weather(item: Item, required_tags: list[str]) -> bool:
-    """Item matches if its weather list intersects required tags OR includes 'all-weather'."""
-    item_tags = set(item.weather or [])
-    if "all-weather" in item_tags:
-        return True
-    return bool(item_tags.intersection(required_tags))
-
-
-def _item_matches_style(item: Item, style: str) -> bool:
-    return not item.style or style in item.style
-
-
 def _to_minimal(item: Item) -> ItemMinimal:
     return ItemMinimal(
         id=item.id,
@@ -87,6 +77,36 @@ def _pool_size(bag_size: BagSize, num_days: int) -> int:
     if bag_size == "checked":
         return num_days
     return num_days  # both: unique per day
+
+
+def _pool_valid_candidates(
+    candidates: list[Item],
+    pool: list[Item],
+    pool_limit: int,
+    bag_size: BagSize,
+) -> list[Item]:
+    """Return candidates that are valid given current pool state (no mutation)."""
+    if not candidates:
+        return []
+    if bag_size == "carry_on":
+        in_pool = [c for c in candidates if c in pool]
+        if in_pool:
+            return in_pool
+        if len(pool) < pool_limit:
+            return candidates
+        pool_cands = [c for c in pool if c in candidates]
+        return pool_cands if pool_cands else list(pool[:pool_limit])
+    fresh = [c for c in candidates if c not in pool]
+    return fresh if fresh else candidates
+
+
+def _pool_add(chosen: Item, pool: list[Item], pool_limit: int, bag_size: BagSize) -> None:
+    """Update pool after an item was chosen (mirrors _pick_with_pool semantics)."""
+    if bag_size == "carry_on":
+        if chosen not in pool and len(pool) < pool_limit:
+            pool.append(chosen)
+    else:
+        pool.append(chosen)
 
 
 def _pick_with_pool(
@@ -289,16 +309,16 @@ class TripService:
         def filtered(items: list[Item], match_style: bool = True) -> list[Item]:
             return [
                 i for i in items
-                if _item_matches_weather(i, clothing_weather_tags)
-                and (not match_style or _item_matches_style(i, style))
+                if item_matches_weather(i, clothing_weather_tags)
+                and (not match_style or item_matches_style(i, style))
             ]
 
         def filtered_outer(items: list[Item], match_style: bool = True) -> list[Item]:
             # Outers match against full weather tags (including rainy) since that's why we add them.
             return [
                 i for i in items
-                if _item_matches_weather(i, weather_tags)
-                and (not match_style or _item_matches_style(i, style))
+                if item_matches_weather(i, weather_tags)
+                and (not match_style or item_matches_style(i, style))
             ]
 
         # Top: when layering, restrict to thin pieces (t-shirt/shirt) so hoodie+jacket is avoided.
@@ -333,15 +353,53 @@ class TripService:
         else:
             outer_cands = []
 
-        top = _pick_with_pool(top_cands, top_pool, pool_limit, bag_size)
-        shoe = _pick_with_pool(shoe_cands_final, shoe_pool, pool_limit, bag_size)
-        outer = _pick_with_pool(outer_cands, outer_pool, pool_limit, bag_size) if needs_outer else None
+        # ── Prefer items that explicitly carry the day's style ───────────────
+        top_cands      = prefer_explicit_style(top_cands,       style)
+        bottom_cands   = prefer_explicit_style(bottom_cands,    style)
+        shoe_cands_final = prefer_explicit_style(shoe_cands_final, style)
+        # Outer: skip — its fallback chain already degrades style gracefully.
+
+        # ── Harmony-aware combo selection ────────────────────────────────────
+        h_top_cands    = _pool_valid_candidates(top_cands,       top_pool,   pool_limit, bag_size)
+        h_bottom_cands = _pool_valid_candidates(bottom_cands,    bottom_pool, pool_limit, bag_size)
+        h_shoe_cands   = _pool_valid_candidates(shoe_cands_final, shoe_pool, pool_limit, bag_size)
+        h_outer_cands  = _pool_valid_candidates(outer_cands,     outer_pool, pool_limit, bag_size) if needs_outer else []
+
+        harmony_candidates: dict[str, list[Item]] = {}
+        if h_top_cands:
+            harmony_candidates["top"] = h_top_cands
+        if h_bottom_cands:
+            harmony_candidates["bottom"] = h_bottom_cands
+        if h_shoe_cands:
+            harmony_candidates["shoes"] = h_shoe_cands
+        if h_outer_cands:
+            harmony_candidates["outer"] = h_outer_cands
+
+        harmony_result = suggest_outfit(harmony_candidates) if harmony_candidates else None
+
+        if harmony_result:
+            top   = harmony_result.get("top")
+            bottom = harmony_result.get("bottom")
+            shoe  = harmony_result.get("shoes")
+            outer = harmony_result.get("outer") if needs_outer else None
+            if top:   _pool_add(top,    top_pool,    pool_limit, bag_size)
+            if bottom: _pool_add(bottom, bottom_pool, pool_limit, bag_size)
+            if shoe:  _pool_add(shoe,   shoe_pool,   pool_limit, bag_size)
+            if outer: _pool_add(outer,  outer_pool,  pool_limit, bag_size)
+        else:
+            # Fallback: original per-slot random picks
+            top   = _pick_with_pool(top_cands,        top_pool,   pool_limit, bag_size)
+            shoe  = _pick_with_pool(shoe_cands_final, shoe_pool,  pool_limit, bag_size)
+            outer = _pick_with_pool(outer_cands,      outer_pool, pool_limit, bag_size) if needs_outer else None
+            bottom = None  # set below after dress check
 
         # Dress skips bottom — if a dress was chosen as the top, no separate bottom is needed.
         if top is not None and top.category == "dress":
             bottom = None
         else:
-            bottom = _pick_with_pool(bottom_cands, bottom_pool, pool_limit, bag_size)
+            # If harmony didn't provide a bottom (sparse pool edge case or no candidates), fallback pick.
+            if bottom is None and (harmony_result is None or "bottom" not in harmony_result):
+                bottom = _pick_with_pool(bottom_cands, bottom_pool, pool_limit, bag_size)
             if bottom is None:
                 warnings.append(f"No {style} bottom found for {day_label}")
 

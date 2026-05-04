@@ -3,6 +3,8 @@ package com.example.outfitai.data.outfits
 import com.example.outfitai.data.api.OutfitApi
 import com.example.outfitai.data.model.OutfitCreateDto
 import com.example.outfitai.data.model.OutfitSavedDto
+import com.example.outfitai.data.model.OutfitSuggestRequest
+import com.example.outfitai.data.model.OutfitSuggestResponse
 import javax.inject.Inject
 
 class OutfitRepositoryImpl @Inject constructor(
@@ -17,4 +19,7 @@ class OutfitRepositoryImpl @Inject constructor(
     override suspend fun get(id: Int): OutfitSavedDto = api.get(id)
 
     override suspend fun delete(id: Int) { api.delete(id) }
+
+    override suspend fun suggest(request: OutfitSuggestRequest): OutfitSuggestResponse =
+        api.suggest(request)
 }
