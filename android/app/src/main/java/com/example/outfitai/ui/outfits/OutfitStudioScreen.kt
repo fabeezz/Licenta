@@ -31,6 +31,7 @@ import com.example.outfitai.core.media.mediaUrl
 fun OutfitStudioRoute(
     onBack: () -> Unit,
     onWardrobeClick: () -> Unit,
+    onTripClick: () -> Unit,
     vm: OutfitStudioViewModel = hiltViewModel(),
 ) {
     val state by vm.state.collectAsState()
@@ -82,6 +83,7 @@ fun OutfitStudioRoute(
         onShuffle = vm::shuffle,
         onSave = vm::openSaveDialog,
         onWardrobeClick = onWardrobeClick,
+        onTripClick = onTripClick,
         onAddClick = upload.launch,
         onFilterClick = vm::openFilterDialog,
         onWeatherClick = vm::openWeatherSheet,
@@ -97,6 +99,7 @@ private fun OutfitStudioScreen(
     onShuffle: () -> Unit,
     onSave: () -> Unit,
     onWardrobeClick: () -> Unit,
+    onTripClick: () -> Unit,
     onAddClick: () -> Unit,
     onFilterClick: () -> Unit,
     onWeatherClick: () -> Unit,
@@ -111,7 +114,7 @@ private fun OutfitStudioScreen(
             Box(modifier = Modifier.padding(bottom = 24.dp)) {
                 AppBottomBar(
                     active = BottomBarDest.STUDIO,
-                    onTrip = {},
+                    onTrip = onTripClick,
                     onStudio = {},
                     onAdd = onAddClick,
                     onWardrobe = onWardrobeClick,

@@ -42,11 +42,8 @@ ACTIVITIES: list[Activity] = [
 ACTIVITY_BY_KEY: dict[str, Activity] = {a.key: a for a in ACTIVITIES}
 
 
-def dominant_style(activity_keys: list[str]) -> str:
-    """Return the dominant style for a list of activity keys.
-
-    Priority: formal > sporty > casual.
-    """
+def style_for_day(activity_keys: list[str]) -> str:
+    """Return the outfit style for a set of activities (formal > sporty > casual). Empty → casual."""
     styles = {ACTIVITY_BY_KEY[k].style for k in activity_keys if k in ACTIVITY_BY_KEY}
     if "formal" in styles:
         return "formal"

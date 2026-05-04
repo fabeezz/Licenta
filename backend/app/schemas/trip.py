@@ -13,12 +13,18 @@ BagSize = Literal["carry_on", "checked", "both"]
 
 # ── Request schemas ──────────────────────────────────────────────────────────
 
+class DayActivities(BaseModel):
+    date: date
+    activities: list[str] = []
+
+
 class TripGenerateRequest(BaseModel):
     city_key: str
     start_date: date
     end_date: date
     bag_size: BagSize
     activities: list[str]
+    day_activities: list[DayActivities] | None = None
 
 
 class TripSaveRequest(BaseModel):
@@ -41,6 +47,7 @@ class GeneratedOutfitIn(BaseModel):
     bottom_id: int | None = None
     shoe_id: int | None = None
     outer_id: int | None = None
+    bag_id: int | None = None
     style: str | None = None
     weather_tags: list[str] = []
 
@@ -50,6 +57,7 @@ class GeneratedOutfitSlots(BaseModel):
     bottom: ItemMinimal | None = None
     shoes: ItemMinimal | None = None
     outer: ItemMinimal | None = None
+    bag: ItemMinimal | None = None
 
 
 class GeneratedOutfit(BaseModel):

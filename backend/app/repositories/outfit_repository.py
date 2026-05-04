@@ -112,7 +112,7 @@ class OutfitRepository:
         """
         stmt = (
             select(Outfit)
-            .where(Outfit.user_id == user_id)
+            .where(Outfit.user_id == user_id, Outfit.is_trip.is_(False))
             .options(*_item_loads())
             .order_by(Outfit.id.desc())
             .offset(skip)

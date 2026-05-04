@@ -54,6 +54,7 @@ fun AppNav(
             OutfitStudioRoute(
                 onBack = { navController.popBackStack() },
                 onWardrobeClick = { navController.popBackStack() },
+                onTripClick = { navController.navigate(Routes.TripPlanner) },
             )
         }
 

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.outfitai.core.common.Resource
 import com.example.outfitai.data.model.DestinationDto
+import com.example.outfitai.data.model.DayActivitiesDto
 import com.example.outfitai.data.model.GeneratedOutfitInDto
 import com.example.outfitai.data.model.TripGenerateRequestDto
 import com.example.outfitai.data.model.TripSaveRequestDto
@@ -58,12 +59,29 @@ class TripPlannerViewModel @Inject constructor(
     fun setStartDate(date: LocalDate) {
         _state.update { state ->
             val endDate = if (state.endDate != null && date > state.endDate) null else state.endDate
-            state.copy(startDate = date, endDate = endDate)
+            val pruned = state.dayActivities.filterKeys { k ->
+                k >= date && (endDate == null || k <= endDate)
+            }
+            state.copy(startDate = date, endDate = endDate, dayActivities = pruned)
         }
     }
 
     fun setEndDate(date: LocalDate) {
-        _state.update { it.copy(endDate = date) }
+        _state.update { state ->
+            val start = state.startDate
+            val pruned = state.dayActivities.filterKeys { k ->
+                k <= date && (start == null || k >= start)
+            }
+            state.copy(endDate = date, dayActivities = pruned)
+        }
+    }
+
+    fun toggleActivityForDay(date: LocalDate, activityKey: String) {
+        _state.update { state ->
+            val current = state.dayActivities[date]?.toMutableSet() ?: mutableSetOf()
+            if (activityKey in current) current.remove(activityKey) else current.add(activityKey)
+            state.copy(dayActivities = state.dayActivities + (date to current))
+        }
     }
 
     fun setBagSize(size: BagSize) {
@@ -87,12 +105,17 @@ class TripPlannerViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(step = TripStep.LOADING, isLoading = true, error = null) }
 
+            val dayActivitiesList = s.dayActivities
+                .takeIf { it.isNotEmpty() }
+                ?.map { (date, acts) -> DayActivitiesDto(date = date.toString(), activities = acts.toList()) }
+
             val request = TripGenerateRequestDto(
                 cityKey = dest.key,
                 startDate = start.toString(),
                 endDate = end.toString(),
                 bagSize = s.bagSize.key,
                 activities = s.selectedActivities.toList(),
+                dayActivities = dayActivitiesList,
             )
 
             when (val result = generatePlan(request)) {
@@ -100,7 +123,7 @@ class TripPlannerViewModel @Inject constructor(
                     it.copy(plan = result.data, isLoading = false, step = TripStep.REVIEW)
                 }
                 is Resource.Error -> _state.update {
-                    it.copy(error = result.message, isLoading = false, step = TripStep.ACTIVITIES)
+                    it.copy(error = result.message, isLoading = false, step = TripStep.ASSIGN_ACTIVITIES)
                 }
                 is Resource.Loading -> Unit
             }
@@ -122,6 +145,7 @@ class TripPlannerViewModel @Inject constructor(
                 bottomId = o.slots.bottom?.id,
                 shoeId = o.slots.shoes?.id,
                 outerId = o.slots.outer?.id,
+                bagId = o.slots.bag?.id,
                 style = o.style,
                 weatherTags = o.weatherTags,
             )

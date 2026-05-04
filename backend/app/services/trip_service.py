@@ -25,19 +25,22 @@ from app.schemas.trip import (
     TripSaveRequest,
 )
 from app.schemas.weather import DayForecast
-from app.services.trip.activity_map import ACTIVITIES, dominant_style
+from app.services.trip.activity_map import style_for_day
 from app.services.trip.destinations import DESTINATIONS
 from app.services.weather_service import WeatherService
 
 # ── Category → slot mapping ───────────────────────────────────────────────────
 
 _TOP_CATS = {"t-shirt", "shirt", "hoodie", "sweater", "dress"}
+_THIN_TOP_CATS = {"t-shirt", "shirt"}        # used when an outer layer is added
 _BOTTOM_CATS = {"jeans", "pants", "shorts", "skirt"}
 _SHOE_CATS = {"sneakers", "shoes", "boots"}
 _OUTER_CATS = {"jacket", "coat", "blazer"}
+_BAG_CATS = {"bag", "backpack"}
 
 # ── Weather-tag thresholds (Celsius) ─────────────────────────────────────────
 
+_SNOW_THRESHOLD = 0.0
 _COLD_THRESHOLD = 15.0
 _RAINY_THRESHOLD = 1.0  # mm precipitation
 
@@ -45,14 +48,15 @@ _RAINY_THRESHOLD = 1.0  # mm precipitation
 def _day_weather_tags(forecast: DayForecast) -> list[str]:
     tags: list[str] = []
     avg = (forecast.temp_max_c + forecast.temp_min_c) / 2
-    if avg < _COLD_THRESHOLD:
+    if avg <= _SNOW_THRESHOLD:
+        tags.append("snow")
+        tags.append("cold")
+    elif avg < _COLD_THRESHOLD:
         tags.append("cold")
     else:
         tags.append("warm")
     if forecast.precip_mm >= _RAINY_THRESHOLD:
         tags.append("rainy")
-    if not tags or tags == ["warm"]:
-        pass  # already handled
     return tags or ["warm"]
 
 
@@ -164,6 +168,7 @@ class TripService:
         bottoms = [i for i in all_items if i.category in _BOTTOM_CATS]
         shoes_all = [i for i in all_items if i.category in _SHOE_CATS]
         outers = [i for i in all_items if i.category in _OUTER_CATS]
+        bags = [i for i in all_items if i.category in _BAG_CATS]
 
         num_days = len(forecast)
         limit = _pool_size(req.bag_size, num_days)
@@ -189,6 +194,7 @@ class TripService:
             bottoms=bottoms,
             shoes=shoes_all,
             outers=outers,
+            bags=bags,
             top_pool=[],
             bottom_pool=[],
             shoe_pool=[],
@@ -198,10 +204,17 @@ class TripService:
         )
         outfits.append(travel_outfit)
 
+        # Build per-day activity lookup (keyed by ISO date string — DayForecast.date is a string)
+        day_act_map: dict[str, list[str]] = {}
+        if req.day_activities:
+            for da in req.day_activities:
+                day_act_map[da.date.isoformat()] = da.activities
+
         # ── Per-day outfits ──────────────────────────────────────────────────
         for i, day in enumerate(forecast):
             weather_tags = _day_weather_tags(day)
-            style = dominant_style(req.activities) if req.activities else "casual"
+            day_acts = day_act_map.get(day.date, req.activities if not req.day_activities else [])
+            style = style_for_day(day_acts)
             label = f"Day {i + 1}"
 
             day_outfit = self._build_outfit(
@@ -213,6 +226,7 @@ class TripService:
                 bottoms=bottoms,
                 shoes=shoes_all,
                 outers=outers,
+                bags=bags,
                 top_pool=top_pool,
                 bottom_pool=bottom_pool,
                 shoe_pool=shoe_pool,
@@ -254,6 +268,7 @@ class TripService:
         bottoms: list[Item],
         shoes: list[Item],
         outers: list[Item],
+        bags: list[Item],
         top_pool: list[Item],
         bottom_pool: list[Item],
         shoe_pool: list[Item],
@@ -262,36 +277,101 @@ class TripService:
         pool_limit: int,
     ) -> GeneratedOutfit:
         warnings: list[str] = []
-        needs_outer = "cold" in weather_tags or "rainy" in weather_tags
+        is_snowy = "snow" in weather_tags
+        is_cold = "cold" in weather_tags
+        is_rainy = "rainy" in weather_tags
+        needs_outer = is_cold or is_rainy or is_snowy
 
-        def filtered(items: list[Item]) -> list[Item]:
+        # Rain is additive for clothing — strip it from top/bottom/shoe matching so sporty/formal
+        # items aren't excluded just because it's raining. Outers use full tags (rainy IS the reason).
+        clothing_weather_tags = [t for t in weather_tags if t != "rainy"]
+
+        def filtered(items: list[Item], match_style: bool = True) -> list[Item]:
             return [
                 i for i in items
-                if _item_matches_weather(i, weather_tags) and _item_matches_style(i, style)
+                if _item_matches_weather(i, clothing_weather_tags)
+                and (not match_style or _item_matches_style(i, style))
             ]
 
-        top_cands = filtered(tops)
+        def filtered_outer(items: list[Item], match_style: bool = True) -> list[Item]:
+            # Outers match against full weather tags (including rainy) since that's why we add them.
+            return [
+                i for i in items
+                if _item_matches_weather(i, weather_tags)
+                and (not match_style or _item_matches_style(i, style))
+            ]
+
+        # Top: when layering, restrict to thin pieces (t-shirt/shirt) so hoodie+jacket is avoided.
+        if needs_outer:
+            thin_tops = [t for t in tops if t.category in _THIN_TOP_CATS]
+            top_cands = filtered(thin_tops) or filtered(tops)  # fall back to all tops if thin unavailable
+        else:
+            top_cands = filtered(tops)
+
         bottom_cands = filtered(bottoms)
         shoe_cands = filtered(shoes)
-        outer_cands = filtered(outers) if needs_outer else []
+
+        # Snow: prefer boots
+        if is_snowy:
+            boot_cands = [s for s in shoe_cands if s.category == "boots"]
+            shoe_cands_final = boot_cands if boot_cands else shoe_cands
+        else:
+            shoe_cands_final = shoe_cands
+
+        # Outer: prefer style match + weather match; fall back progressively so a weather-appropriate
+        # outer is always preferred over nothing, even if the style doesn't align.
+        if needs_outer:
+            styled_weather = filtered_outer(outers, match_style=True)    # style + weather
+            any_weather   = filtered_outer(outers, match_style=False)    # weather, any style
+            any_outer     = filtered(outers, match_style=False)          # last resort: ignore weather tag
+            outer_cands_all = styled_weather or any_weather or any_outer
+            if is_snowy:
+                coat_cands = [o for o in outer_cands_all if o.category == "coat"]
+                outer_cands = coat_cands if coat_cands else outer_cands_all
+            else:
+                outer_cands = outer_cands_all
+        else:
+            outer_cands = []
 
         top = _pick_with_pool(top_cands, top_pool, pool_limit, bag_size)
-        bottom = _pick_with_pool(bottom_cands, bottom_pool, pool_limit, bag_size)
-        shoe = _pick_with_pool(shoe_cands, shoe_pool, pool_limit, bag_size)
+        shoe = _pick_with_pool(shoe_cands_final, shoe_pool, pool_limit, bag_size)
         outer = _pick_with_pool(outer_cands, outer_pool, pool_limit, bag_size) if needs_outer else None
+
+        # Dress skips bottom — if a dress was chosen as the top, no separate bottom is needed.
+        if top is not None and top.category == "dress":
+            bottom = None
+        else:
+            bottom = _pick_with_pool(bottom_cands, bottom_pool, pool_limit, bag_size)
+            if bottom is None:
+                warnings.append(f"No {style} bottom found for {day_label}")
+
+        # Bag — only for travel day; picked from user's bags if available.
+        bag: Item | None = None
+        if is_travel and bags:
+            bag = random.choice(bags)
 
         if top is None:
             warnings.append(f"No {style} top found for {day_label}")
-        if bottom is None:
-            warnings.append(f"No {style} bottom found for {day_label}")
         if shoe is None:
             warnings.append(f"No suitable shoes found for {day_label}")
         if needs_outer and outer is None:
-            tag = "warm outer" if "cold" in weather_tags else "rain layer"
-            warnings.append(f"No {tag} found for {day_label}")
+            if is_snowy:
+                warnings.append(f"No heavy coat found for {day_label} — pack your warmest layer")
+            elif is_cold:
+                warnings.append(f"No outer layer found for {day_label}")
+            else:
+                warnings.append(f"No rain layer found for {day_label} — consider a light jacket")
 
-        cond_label = "Rainy" if "rainy" in weather_tags else ("Cold" if "cold" in weather_tags else "Sunny")
-        temp_note = ""
+        if is_snowy:
+            cond_label = "Snowy"
+        elif is_rainy and is_cold:
+            cond_label = "Cold & Rainy"
+        elif is_rainy:
+            cond_label = "Rainy"
+        elif is_cold:
+            cond_label = "Cold"
+        else:
+            cond_label = "Sunny"
         weather_note = cond_label
 
         return GeneratedOutfit(
@@ -302,6 +382,7 @@ class TripService:
                 bottom=_to_minimal(bottom) if bottom else None,
                 shoes=_to_minimal(shoe) if shoe else None,
                 outer=_to_minimal(outer) if outer else None,
+                bag=_to_minimal(bag) if bag else None,
             ),
             style=style,
             weather_note=weather_note,
@@ -335,6 +416,7 @@ class TripService:
                 outer_id=o.outer_id,
                 weather=o.weather_tags,
                 style=o.style,
+                is_trip=True,
             )
             self._db.add(outfit)
             self._db.flush()

@@ -48,7 +48,7 @@ private val SECTIONS = ALL_ACTIVITIES.map { it.section }.distinct()
 fun ActivitiesStep(
     selected: Set<String>,
     onToggle: (String) -> Unit,
-    onGenerate: () -> Unit,
+    onContinue: () -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
@@ -101,11 +101,16 @@ fun ActivitiesStep(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth(),
-            color = MaterialTheme.colorScheme.background.copy(alpha = 0.95f),
+            color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.85f),
         ) {
             Button(
-                onClick = onGenerate,
-                shape = CircleShape,
+                onClick = onContinue,
+                enabled = selected.isNotEmpty(),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = androidx.compose.ui.graphics.Color.Black,
+                    contentColor = androidx.compose.ui.graphics.Color.White,
+                ),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp, vertical = 16.dp)
@@ -113,7 +118,7 @@ fun ActivitiesStep(
                     .height(56.dp),
             ) {
                 Text(
-                    "Help Me Pack",
+                    "Next: Assign to days",
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold,
                 )

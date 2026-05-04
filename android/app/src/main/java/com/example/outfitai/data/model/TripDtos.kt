@@ -18,12 +18,19 @@ data class DestinationDto(
 // ── Request bodies ────────────────────────────────────────────────────────────
 
 @Serializable
+data class DayActivitiesDto(
+    val date: String,
+    val activities: List<String> = emptyList(),
+)
+
+@Serializable
 data class TripGenerateRequestDto(
     @SerialName("city_key") val cityKey: String,
     @SerialName("start_date") val startDate: String,
     @SerialName("end_date") val endDate: String,
     @SerialName("bag_size") val bagSize: String,
     val activities: List<String>,
+    @SerialName("day_activities") val dayActivities: List<DayActivitiesDto>? = null,
 )
 
 @Serializable
@@ -34,6 +41,7 @@ data class GeneratedOutfitInDto(
     @SerialName("bottom_id") val bottomId: Int? = null,
     @SerialName("shoe_id") val shoeId: Int? = null,
     @SerialName("outer_id") val outerId: Int? = null,
+    @SerialName("bag_id") val bagId: Int? = null,
     val style: String? = null,
     @SerialName("weather_tags") val weatherTags: List<String> = emptyList(),
 )
@@ -66,6 +74,7 @@ data class GeneratedOutfitSlotsDto(
     val bottom: ItemMinimalDto? = null,
     val shoes: ItemMinimalDto? = null,
     val outer: ItemMinimalDto? = null,
+    val bag: ItemMinimalDto? = null,
 )
 
 @Serializable

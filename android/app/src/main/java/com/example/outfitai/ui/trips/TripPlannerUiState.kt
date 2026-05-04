@@ -9,6 +9,7 @@ enum class TripStep {
     DATES,
     BAG_TYPE,
     ACTIVITIES,
+    ASSIGN_ACTIVITIES,
     LOADING,
     REVIEW,
 }
@@ -28,6 +29,8 @@ data class TripPlannerUiState(
     val endDate: LocalDate? = null,
     val bagSize: BagSize = BagSize.CARRY_ON,
     val selectedActivities: Set<String> = emptySet(),
+    /** Maps each trip date to the activities assigned to that day. */
+    val dayActivities: Map<LocalDate, Set<String>> = emptyMap(),
     val plan: TripPlanResponseDto? = null,
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,

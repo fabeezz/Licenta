@@ -34,6 +34,8 @@ fun TripPlannerRoute(
         onBagSize = vm::setBagSize,
         onContinueFromBag = { vm.goToStep(TripStep.ACTIVITIES) },
         onToggleActivity = vm::toggleActivity,
+        onContinueFromActivities = { vm.goToStep(TripStep.ASSIGN_ACTIVITIES) },
+        onToggleActivityForDay = vm::toggleActivityForDay,
         onGenerate = vm::generateTrip,
         onSave = vm::saveTrip,
         onBack = { vm.goToStep(it) },
@@ -53,6 +55,8 @@ private fun TripPlannerScreen(
     onBagSize: (BagSize) -> Unit,
     onContinueFromBag: () -> Unit,
     onToggleActivity: (String) -> Unit,
+    onContinueFromActivities: () -> Unit,
+    onToggleActivityForDay: (java.time.LocalDate, String) -> Unit,
     onGenerate: () -> Unit,
     onSave: (String) -> Unit,
     onBack: (TripStep) -> Unit,
@@ -95,6 +99,14 @@ private fun TripPlannerScreen(
                 TripStep.ACTIVITIES -> ActivitiesStep(
                     selected = state.selectedActivities,
                     onToggle = onToggleActivity,
+                    onContinue = onContinueFromActivities,
+                )
+                TripStep.ASSIGN_ACTIVITIES -> AssignActivitiesStep(
+                    startDate = state.startDate,
+                    endDate = state.endDate,
+                    selectedActivities = state.selectedActivities,
+                    dayActivities = state.dayActivities,
+                    onToggleActivityForDay = onToggleActivityForDay,
                     onGenerate = onGenerate,
                 )
                 TripStep.LOADING -> LoadingStep(
@@ -119,13 +131,14 @@ private fun TripTopBar(
     onClose: () -> Unit,
     onBack: (TripStep) -> Unit,
 ) {
-    val totalSteps = 4
+    val totalSteps = 5
     val currentStep = when (step) {
         TripStep.WHERE_TO -> 1
         TripStep.DATES -> 2
         TripStep.BAG_TYPE -> 3
         TripStep.ACTIVITIES -> 4
-        TripStep.LOADING, TripStep.REVIEW -> 4
+        TripStep.ASSIGN_ACTIVITIES -> 5
+        TripStep.LOADING, TripStep.REVIEW -> 5
     }
 
     Column {
