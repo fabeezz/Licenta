@@ -13,10 +13,12 @@ from app.models.user import User
 from app.repositories.item_repository import ItemRepository
 from app.repositories.outfit_collection_repository import OutfitCollectionRepository
 from app.repositories.outfit_repository import OutfitRepository
+from app.repositories.trip_repository import TripRepository
 from app.services.item_service import ItemService
 from app.services.outfit_collection_service import OutfitCollectionService
 from app.services.outfit_service import OutfitService
 from app.services.pipeline import ItemPipeline
+from app.services.trip_service import TripService
 from app.services.weather_service import WeatherService
 
 security = HTTPBearer(auto_error=False)
@@ -99,3 +101,17 @@ def get_weather_service(
     client: httpx.AsyncClient = Depends(get_http_client),
 ) -> WeatherService:
     return WeatherService(client, settings.OPEN_METEO_BASE_URL)
+
+
+def get_trip_repository(db: Session = Depends(get_db)) -> TripRepository:
+    return TripRepository(db)
+
+
+def get_trip_service(
+    item_repo: ItemRepository = Depends(get_item_repository),
+    collection_repo: OutfitCollectionRepository = Depends(get_collection_repository),
+    trip_repo: TripRepository = Depends(get_trip_repository),
+    weather_svc: WeatherService = Depends(get_weather_service),
+    db: Session = Depends(get_db),
+) -> TripService:
+    return TripService(item_repo, collection_repo, trip_repo, weather_svc, db)

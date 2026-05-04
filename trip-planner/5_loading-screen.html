@@ -1,0 +1,201 @@
+<!doctype html>
+
+<html class="light" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+      name="viewport"
+    />
+    <title>OutfitAI Loading</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "inverse-on-surface": "#f0f0f5",
+              "on-secondary-fixed": "#1b1b1d",
+              "primary-fixed-dim": "#c6c6c6",
+              "on-surface-variant": "#4c4546",
+              "on-secondary-fixed-variant": "#474649",
+              "primary-fixed": "#e2e2e2",
+              "inverse-primary": "#c6c6c6",
+              secondary: "#5f5e60",
+              "surface-tint": "#5e5e5e",
+              "on-tertiary-fixed-variant": "#1f477b",
+              "surface-container-highest": "#e2e2e7",
+              "tertiary-fixed-dim": "#a7c8ff",
+              "on-primary-fixed": "#1b1b1b",
+              background: "#f9f9fe",
+              "on-secondary": "#ffffff",
+              "surface-container-low": "#f3f3f8",
+              "surface-dim": "#d9dade",
+              "on-tertiary-container": "#6185bd",
+              "on-background": "#1a1c1f",
+              error: "#ba1a1a",
+              "on-primary-container": "#848484",
+              "on-error": "#ffffff",
+              "surface-variant": "#e2e2e7",
+              "secondary-fixed-dim": "#c8c6c8",
+              "tertiary-container": "#001b3c",
+              "tertiary-fixed": "#d5e3ff",
+              "on-primary": "#ffffff",
+              "on-error-container": "#93000a",
+              tertiary: "#000000",
+              "surface-container": "#ededf2",
+              surface: "#f9f9fe",
+              "secondary-fixed": "#e4e2e4",
+              "on-tertiary-fixed": "#001b3c",
+              "error-container": "#ffdad6",
+              "on-primary-fixed-variant": "#474747",
+              primary: "#000000",
+              "on-tertiary": "#ffffff",
+              "secondary-container": "#e2dfe1",
+              "surface-container-high": "#e8e8ed",
+              "surface-bright": "#f9f9fe",
+              "outline-variant": "#cfc4c5",
+              outline: "#7e7576",
+              "on-secondary-container": "#636264",
+              "primary-container": "#1b1b1b",
+              "inverse-surface": "#2e3034",
+              "surface-container-lowest": "#ffffff",
+              "on-surface": "#1a1c1f",
+            },
+            borderRadius: {
+              DEFAULT: "0.25rem",
+              lg: "0.5rem",
+              xl: "0.75rem",
+              full: "9999px",
+              "2xl": "24px",
+            },
+            spacing: {
+              "stack-sm": "8px",
+              "safe-bottom": "34px",
+              "margin-page": "20px",
+              "gutter-grid": "12px",
+              "stack-lg": "32px",
+              "stack-md": "16px",
+            },
+            fontFamily: {
+              "label-caps": ["Inter"],
+              "headline-md": ["Inter"],
+              "nav-title": ["Inter"],
+              "body-lg": ["Inter"],
+              "body-md": ["Inter"],
+            },
+            fontSize: {
+              "label-caps": [
+                "12px",
+                {
+                  lineHeight: "16px",
+                  letterSpacing: "0.5px",
+                  fontWeight: "600",
+                },
+              ],
+              "headline-md": [
+                "22px",
+                {
+                  lineHeight: "28px",
+                  letterSpacing: "-0.3px",
+                  fontWeight: "600",
+                },
+              ],
+              "nav-title": [
+                "34px",
+                {
+                  lineHeight: "41px",
+                  letterSpacing: "-0.5px",
+                  fontWeight: "700",
+                },
+              ],
+              "body-lg": ["17px", { lineHeight: "22px", fontWeight: "400" }],
+              "body-md": ["15px", { lineHeight: "20px", fontWeight: "400" }],
+            },
+          },
+        },
+      }
+    </script>
+    <style>
+      .progress-ring__circle {
+        transition: stroke-dashoffset 0.35s;
+        transform: rotate(-90deg);
+        transform-origin: 50% 50%;
+      }
+    </style>
+    <style>
+      body {
+        min-height: max(884px, 100dvh);
+      }
+    </style>
+  </head>
+  <body
+    class="bg-background text-on-background min-h-screen flex flex-col items-center justify-center relative px-margin-page overflow-hidden"
+  >
+    <!-- Main Content Area -->
+    <main
+      class="flex-1 flex flex-col items-center justify-center w-full max-w-md mx-auto z-10 space-y-stack-lg"
+    >
+      <!-- Central Graphic (Progress Ring + Emoji) -->
+      <div class="relative w-48 h-48 flex items-center justify-center">
+        <!-- SVG Progress Ring Track -->
+        <svg class="absolute inset-0 w-full h-full" viewbox="0 0 120 120">
+          <circle
+            class="text-surface-container-high"
+            cx="60"
+            cy="60"
+            fill="none"
+            r="54"
+            stroke="currentColor"
+            stroke-width="6"
+          ></circle>
+        </svg>
+        <!-- SVG Progress Ring Active (Simulated 65% progress) -->
+        <svg class="absolute inset-0 w-full h-full" viewbox="0 0 120 120">
+          <circle
+            class="text-primary progress-ring__circle"
+            cx="60"
+            cy="60"
+            fill="none"
+            r="54"
+            stroke="currentColor"
+            stroke-dasharray="339.292"
+            stroke-dashoffset="118.75"
+            stroke-width="6"
+          ></circle>
+        </svg>
+        <!-- Center Emoji -->
+        <div class="text-6xl z-10">🧳</div>
+      </div>
+      <!-- Typography Section -->
+      <div class="text-center space-y-stack-sm w-full max-w-xs mx-auto">
+        <h1 class="font-nav-title text-nav-title text-primary">
+          Building your wardrobe
+        </h1>
+        <p class="font-body-lg text-body-lg text-secondary">
+          Analyzing your closet and creating perfect outfits for Paris...
+        </p>
+      </div>
+    </main>
+    <!-- Pagination Dots -->
+    <div
+      class="absolute bottom-safe-bottom left-0 right-0 flex justify-center items-center space-x-2 z-10"
+    >
+      <div class="w-2 h-2 rounded-full bg-primary"></div>
+      <div class="w-2 h-2 rounded-full bg-surface-container-highest"></div>
+    </div>
+  </body>
+</html>

@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.FlightTakeoff
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -17,11 +18,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 
-enum class BottomBarDest { STUDIO, WARDROBE }
+enum class BottomBarDest { TRIP, STUDIO, WARDROBE }
 
 @Composable
 fun AppBottomBar(
     active: BottomBarDest,
+    onTrip: () -> Unit,
     onStudio: () -> Unit,
     onAdd: () -> Unit,
     onWardrobe: () -> Unit,
@@ -39,7 +41,7 @@ fun AppBottomBar(
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
             shadowElevation = 16.dp,
             modifier = Modifier
-                .width(280.dp)
+                .width(340.dp)
                 .height(64.dp),
         ) {
             Row(
@@ -49,6 +51,11 @@ fun AppBottomBar(
                     .fillMaxSize()
                     .padding(horizontal = 8.dp),
             ) {
+                BarItem(
+                    icon = { Icon(Icons.Default.FlightTakeoff, contentDescription = "Trip Planner") },
+                    active = active == BottomBarDest.TRIP,
+                    onClick = onTrip,
+                )
                 BarItem(
                     icon = { Icon(Icons.Default.AutoAwesome, contentDescription = "Outfit Studio") },
                     active = active == BottomBarDest.STUDIO,

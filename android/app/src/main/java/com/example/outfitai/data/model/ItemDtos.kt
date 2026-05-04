@@ -20,3 +20,11 @@ data class ItemOutDto(
   @SerialName("last_worn_at") val lastWornAt: String? = null,
   @SerialName("created_at") val createdAt: String
 )
+
+@Serializable
+data class ItemMinimalDto(
+    val id: Int,
+    @SerialName("image_original_name") val imageOriginalName: String,
+    @SerialName("image_no_bg_name") val imageNoBgName: String? = null,
+    @SerialName("dominant_color") val dominantColor: String? = null,
+)

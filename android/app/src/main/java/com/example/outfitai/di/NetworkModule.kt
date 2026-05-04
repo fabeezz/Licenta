@@ -7,6 +7,7 @@ import com.example.outfitai.data.api.AuthInterceptor
 import com.example.outfitai.data.api.CollectionApi
 import com.example.outfitai.data.api.ItemApi
 import com.example.outfitai.data.api.OutfitApi
+import com.example.outfitai.data.api.TripApi
 import com.example.outfitai.data.api.WeatherApi
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import dagger.Module
@@ -78,4 +79,9 @@ object NetworkModule {
     @Singleton
     fun provideWeatherApi(retrofit: Retrofit): WeatherApi =
         retrofit.create(WeatherApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideTripApi(retrofit: Retrofit): TripApi =
+        retrofit.create(TripApi::class.java)
 }
