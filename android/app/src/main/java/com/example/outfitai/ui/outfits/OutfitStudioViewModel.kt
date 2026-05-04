@@ -52,10 +52,10 @@ class OutfitStudioViewModel @Inject constructor(
             val fState = _state.value.filterState
 
             val occ = when (fState.style) {
-                "Casual" -> "casual"
-                "Sporty" -> "sporty"
-                "Formal" -> "formal"
-                else -> null
+                "Casual"     -> "casual"
+                "Athleisure" -> "sporty"
+                "Formal"     -> "formal"
+                else         -> null
             }
 
             runCatching {
