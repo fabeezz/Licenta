@@ -338,13 +338,34 @@ class TripService:
         else:
             shoe_cands_final = shoe_cands
 
-        # Outer: prefer style match + weather match; fall back progressively so a weather-appropriate
-        # outer is always preferred over nothing, even if the style doesn't align.
+        # ── Outer selection (style-aware fallback chain) ─────────────────────
         if needs_outer:
-            styled_weather = filtered_outer(outers, match_style=True)    # style + weather
-            any_weather   = filtered_outer(outers, match_style=False)    # weather, any style
-            any_outer     = filtered(outers, match_style=False)          # last resort: ignore weather tag
-            outer_cands_all = styled_weather or any_weather or any_outer
+            def _outer_w(s: str | None) -> list[Item]:
+                """Outers matching weather and, if s given, that style (or any-style)."""
+                return [
+                    o for o in outers
+                    if item_matches_weather(o, weather_tags)
+                    and (s is None or item_matches_style(o, s))
+                ]
+
+            def _outer_any_w(s: str) -> list[Item]:
+                """Outers matching style (or any-style) regardless of weather tag."""
+                return [o for o in outers if item_matches_style(o, s)]
+
+            if style in ("sporty", "formal"):
+                # Strict: stay within the requested style; ignore-weather is the only fallback.
+                # Never cross into a different style just because the weather tag matches.
+                outer_cands_all = _outer_w(style) or _outer_any_w(style)
+            else:
+                # Casual: prefer casual → sporty → formal → any-style+weather → anything.
+                outer_cands_all = (
+                    _outer_w("casual")
+                    or _outer_w("sporty")
+                    or _outer_w("formal")
+                    or _outer_w(None)
+                    or list(outers)
+                )
+
             if is_snowy:
                 coat_cands = [o for o in outer_cands_all if o.category == "coat"]
                 outer_cands = coat_cands if coat_cands else outer_cands_all
@@ -354,10 +375,10 @@ class TripService:
             outer_cands = []
 
         # ── Prefer items that explicitly carry the day's style ───────────────
-        top_cands      = prefer_explicit_style(top_cands,       style)
-        bottom_cands   = prefer_explicit_style(bottom_cands,    style)
+        top_cands        = prefer_explicit_style(top_cands,        style)
+        bottom_cands     = prefer_explicit_style(bottom_cands,     style)
         shoe_cands_final = prefer_explicit_style(shoe_cands_final, style)
-        # Outer: skip — its fallback chain already degrades style gracefully.
+        outer_cands      = prefer_explicit_style(outer_cands,      style) if outer_cands else []
 
         # ── Harmony-aware combo selection ────────────────────────────────────
         h_top_cands    = _pool_valid_candidates(top_cands,       top_pool,   pool_limit, bag_size)

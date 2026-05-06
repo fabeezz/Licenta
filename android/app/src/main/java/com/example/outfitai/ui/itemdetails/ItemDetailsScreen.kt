@@ -26,21 +26,24 @@ import com.example.outfitai.util.capitalizeFirst
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.jsonPrimitive
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 
 @Composable
 fun ItemDetailsRoute(
     onBack: () -> Unit,
     onItemChanged: () -> Unit,
+    onItemMutatedInPlace: () -> Unit,
     vm: ItemDetailsViewModel = hiltViewModel(),
 ) {
     val state by vm.state.collectAsState()
     ItemDetailsScreen(
         state = state,
         onBack = onBack,
-        onRefresh = vm::load,
         onToggleEdit = vm::toggleEdit,
         onSave = { vm.save(onItemChanged) },
-        onWear = { vm.wear(onItemChanged) },
+        onWear = { vm.wear(onItemMutatedInPlace) },
         onDelete = { vm.delete(onItemChanged) },
         onCategory = vm::setCategory,
         onBrand = vm::setBrand,
@@ -57,12 +60,27 @@ private fun extractColorList(colorTags: Map<String, JsonElement>?, key: String):
     return arr.mapNotNull { runCatching { it.jsonPrimitive.content }.getOrNull() }
 }
 
+private fun relativeTime(isoString: String?): String {
+    if (isoString == null) return "never"
+    val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).apply {
+        timeZone = TimeZone.getTimeZone("UTC")
+    }
+    val date = try { sdf.parse(isoString) } catch (e: Exception) { return "—" } ?: return "—"
+    val days = (System.currentTimeMillis() - date.time) / (1000L * 60 * 60 * 24)
+    return when {
+        days < 1   -> "today"
+        days == 1L -> "yesterday"
+        days < 7   -> "${days}d ago"
+        days < 30  -> "${days / 7}w ago"
+        else       -> "${days / 30}mo ago"
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun ItemDetailsScreen(
     state: ItemDetailsUiState,
     onBack: () -> Unit,
-    onRefresh: () -> Unit,
     onToggleEdit: () -> Unit,
     onSave: () -> Unit,
     onWear: () -> Unit,
@@ -76,6 +94,7 @@ private fun ItemDetailsScreen(
     onAccentColor: (String) -> Unit,
 ) {
     var confirmDelete by remember { mutableStateOf(false) }
+    var showOverflow by remember { mutableStateOf(false) }
     var showDominantDialog by remember { mutableStateOf(false) }
     var showAccentDialog by remember { mutableStateOf(false) }
     val cs = MaterialTheme.colorScheme
@@ -86,11 +105,8 @@ private fun ItemDetailsScreen(
             title = "Dominant Color",
             currentSelected = state.dominantColors,
             onDismiss = { showDominantDialog = false },
-            onSelect = {
-                onDominantColor(it)
-                showDominantDialog = false
-            },
-            isMultiple = false
+            onSelect = { onDominantColor(it); showDominantDialog = false },
+            isMultiple = false,
         )
     }
 
@@ -100,395 +116,435 @@ private fun ItemDetailsScreen(
             currentSelected = state.accentColors,
             onDismiss = { showAccentDialog = false },
             onSelect = onAccentColor,
-            isMultiple = true
+            isMultiple = true,
         )
     }
 
     Scaffold(
         containerColor = cs.background,
         topBar = {
-            Column {
-                TopAppBar(
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = cs.surface.copy(alpha = 0.92f),
-                    ),
-                    navigationIcon = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(start = 4.dp)
-                        ) {
-                            IconButton(onClick = onBack) {
-                                Icon(
-                                    Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "Back",
-                                    tint = cs.onSurface
-                                )
-                            }
-                            Text(
-                                text = "OutfitAI",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = cs.onSurface,
-                            )
+            TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = cs.background),
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = cs.onSurface)
+                    }
+                },
+                title = {
+                    Text(
+                        text = state.item?.category?.capitalizeFirst() ?: "Details",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = cs.onSurface,
+                    )
+                },
+                actions = {
+                    Box {
+                        IconButton(onClick = { showOverflow = true }, enabled = !state.isLoading) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "More options", tint = cs.onSurface)
                         }
-                    },
-                    title = {},
-                    actions = {
-                        IconButton(
-                            onClick = onRefresh,
-                            enabled = !state.isLoading && !state.isBusy
+                        DropdownMenu(
+                            expanded = showOverflow,
+                            onDismissRequest = { showOverflow = false },
                         ) {
-                            Icon(
-                                Icons.Default.Refresh,
-                                contentDescription = "Refresh",
-                                tint = cs.onSurface
+                            DropdownMenuItem(
+                                text = { Text("Delete item", color = cs.error) },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Delete, contentDescription = null, tint = cs.error)
+                                },
+                                onClick = { showOverflow = false; confirmDelete = true },
+                                enabled = !state.isBusy,
                             )
                         }
                     }
-                )
-                HorizontalDivider(color = cs.outlineVariant.copy(alpha = 0.5f))
+                },
+            )
+        },
+        bottomBar = {
+            if (state.isEditing) {
+                Column {
+                    HorizontalDivider(color = cs.outlineVariant.copy(alpha = 0.4f))
+                    Surface(color = cs.surfaceContainerLow) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp, vertical = 12.dp)
+                                .navigationBarsPadding(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            OutlinedButton(
+                                onClick = onToggleEdit,
+                                enabled = !state.isBusy,
+                                shape = CircleShape,
+                                modifier = Modifier.weight(1f).height(48.dp),
+                            ) {
+                                Text("Cancel")
+                            }
+                            Button(
+                                onClick = onSave,
+                                enabled = !state.isBusy,
+                                shape = CircleShape,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = cs.primary,
+                                    contentColor = cs.onPrimary,
+                                ),
+                                modifier = Modifier.weight(1f).height(48.dp),
+                            ) {
+                                if (state.isBusy) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(18.dp),
+                                        color = cs.onPrimary,
+                                        strokeWidth = 2.dp,
+                                    )
+                                } else {
+                                    Text("Save Changes")
+                                }
+                            }
+                        }
+                    }
+                }
             }
-        }
+        },
     ) { pad ->
-        Box(
-            Modifier
-                .fillMaxSize()
-                .padding(pad)
-        ) {
+        Box(Modifier.fillMaxSize().padding(pad)) {
             when {
                 state.isLoading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
 
                 state.error != null -> Text(
                     text = state.error,
                     color = cs.error,
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .padding(20.dp)
+                    modifier = Modifier.align(Alignment.Center).padding(20.dp),
                 )
 
                 state.item == null -> Text(
-                    "Item not found",
-                    modifier = Modifier.align(Alignment.Center)
+                    text = "Item not found",
+                    modifier = Modifier.align(Alignment.Center),
                 )
 
                 else -> {
                     val item = state.item
                     val filename = item.imageNoBgName ?: item.imageOriginalName
+                    val dominant = if (state.isEditing) state.dominantColors
+                                   else extractColorList(item.colorTags, "dominant")
+                    val accent = if (state.isEditing) state.accentColors
+                                 else extractColorList(item.colorTags, "accent")
 
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
                             .verticalScroll(rememberScrollState())
                             .padding(horizontal = 20.dp)
-                            .padding(bottom = 48.dp)
+                            .padding(bottom = 24.dp),
                     ) {
-                        Spacer(Modifier.height(16.dp))
+                        Spacer(Modifier.height(8.dp))
 
+                        // Hero
                         Surface(
-                            color = cs.surfaceContainer,
+                            color = cs.surfaceContainerLowest,
                             shape = shapes.extraLarge,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(320.dp),
-                                contentAlignment = Alignment.Center
+                                modifier = Modifier.fillMaxWidth().height(220.dp),
+                                contentAlignment = Alignment.Center,
                             ) {
                                 AsyncImage(
                                     model = mediaUrl(filename),
                                     contentDescription = item.category,
                                     contentScale = ContentScale.Fit,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .heightIn(max = 280.dp)
+                                    modifier = Modifier.fillMaxWidth().heightIn(max = 180.dp),
                                 )
-                                FilledIconButton(
-                                    onClick = onToggleEdit,
-                                    shape = CircleShape,
-                                    colors = IconButtonDefaults.filledIconButtonColors(
-                                        containerColor = cs.surfaceContainerLowest.copy(alpha = 0.92f),
-                                        contentColor = cs.onSurface
-                                    ),
-                                    modifier = Modifier
-                                        .align(Alignment.TopEnd)
-                                        .padding(12.dp)
+                                Column(
+                                    modifier = Modifier.align(Alignment.TopEnd).padding(12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
                                 ) {
-                                    Icon(
-                                        imageVector = if (state.isEditing) Icons.Default.Close else Icons.Default.Edit,
-                                        contentDescription = if (state.isEditing) "Cancel edit" else "Edit"
-                                    )
+                                    FilledIconButton(
+                                        onClick = onToggleEdit,
+                                        shape = CircleShape,
+                                        colors = IconButtonDefaults.filledIconButtonColors(
+                                            containerColor = cs.surfaceContainerLowest.copy(alpha = 0.92f),
+                                            contentColor = cs.onSurface,
+                                        ),
+                                    ) {
+                                        Icon(
+                                            imageVector = if (state.isEditing) Icons.Default.Close else Icons.Default.Edit,
+                                            contentDescription = if (state.isEditing) "Cancel edit" else "Edit",
+                                        )
+                                    }
+                                    if (!state.isEditing) {
+                                        FilledIconButton(
+                                            onClick = onWear,
+                                            enabled = !state.isBusy,
+                                            shape = CircleShape,
+                                            colors = IconButtonDefaults.filledIconButtonColors(
+                                                containerColor = cs.surfaceContainerLowest.copy(alpha = 0.92f),
+                                                contentColor = cs.onSurface,
+                                            ),
+                                        ) {
+                                            Icon(Icons.Default.CheckCircle, contentDescription = "Mark worn")
+                                        }
+                                    }
                                 }
                             }
                         }
 
-                        Spacer(Modifier.height(32.dp))
+                        Spacer(Modifier.height(16.dp))
 
-                        Text(
-                            text = item.category?.capitalizeFirst() ?: "Item",
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = cs.onSurface
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = "${item.brand ?: "—"} • ${item.category?.capitalizeFirst() ?: "—"}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = cs.onSurfaceVariant
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = "Worn ${item.wearCount} times",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = cs.onSurfaceVariant
-                        )
-
-                        Spacer(Modifier.height(20.dp))
-
-                        if (!state.isEditing) {
-                            Button(
-                                onClick = onWear,
-                                enabled = !state.isBusy,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp),
-                                shape = CircleShape,
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = cs.primary,
-                                    contentColor = cs.onPrimary
+                        // Title block
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.Bottom,
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    text = item.category?.capitalizeFirst() ?: "Item",
+                                    style = MaterialTheme.typography.displayLarge,
+                                    color = cs.onSurface,
                                 )
+                                if (!item.brand.isNullOrBlank()) {
+                                    Text(
+                                        text = item.brand,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = cs.onSurfaceVariant,
+                                    )
+                                }
+                            }
+                            Column(
+                                horizontalAlignment = Alignment.End,
+                                modifier = Modifier.padding(bottom = 4.dp),
                             ) {
-                                Icon(Icons.Default.CheckCircle, contentDescription = null)
-                                Spacer(Modifier.width(8.dp))
                                 Text(
-                                    text = "Mark Worn",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
-                        }
-
-                        Spacer(Modifier.height(32.dp))
-
-                        InfoCard(title = "Classification", modifier = Modifier.fillMaxWidth()) {
-                            if (state.isEditing) {
-                                DropdownSelector(
-                                    label = "Category",
-                                    selectedOption = state.category,
-                                    options = ItemConstants.CATEGORIES,
-                                    onOptionSelected = onCategory
-                                )
-                                Spacer(Modifier.height(8.dp))
-                                OutlinedTextField(
-                                    value = state.brand,
-                                    onValueChange = onBrand,
-                                    label = { Text("Brand") },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = shapes.large
-                                )
-                            } else {
-                                InfoRow(label = "Category", value = item.category?.capitalizeFirst() ?: "—")
-                                Spacer(Modifier.height(12.dp))
-                                InfoRow(label = "Brand", value = item.brand ?: "—")
-                            }
-                        }
-
-                        Spacer(Modifier.height(12.dp))
-
-                        InfoCard(title = "Attributes", modifier = Modifier.fillMaxWidth()) {
-                            if (state.isEditing) {
-                                DropdownSelector(
-                                    label = "Material",
-                                    selectedOption = state.material,
-                                    options = ItemConstants.MATERIALS,
-                                    onOptionSelected = onMaterial
-                                )
-                                Spacer(Modifier.height(8.dp))
-                                Spacer(Modifier.height(8.dp))
-                                Text(
-                                    "Weather",
+                                    text = "${item.wearCount}×",
                                     style = MaterialTheme.typography.labelLarge,
                                     color = cs.onSurfaceVariant,
                                 )
-                                Spacer(Modifier.height(6.dp))
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    ItemConstants.WEATHER_TAGS.forEach { tag ->
-                                        val selected = tag in state.weather
-                                        FilterChip(
-                                            selected = selected,
-                                            onClick = {
-                                                val updated = if (selected) state.weather - tag
-                                                           else state.weather + tag
-                                                onWeather(updated)
-                                            },
-                                            label = { Text(tag.capitalizeFirst()) },
-                                        )
-                                    }
-                                }
-                            } else {
-                                InfoRow(label = "Material", value = item.material?.capitalizeFirst() ?: "—")
-                                Spacer(Modifier.height(12.dp))
                                 Text(
-                                    text = "Weather",
+                                    text = relativeTime(item.lastWornAt),
                                     style = MaterialTheme.typography.labelLarge,
-                                    color = cs.onSurfaceVariant
+                                    color = cs.onSurfaceVariant,
                                 )
-                                Spacer(Modifier.height(6.dp))
-                                if (item.weather.isNotEmpty()) {
-                                    WeatherChips(tags = item.weather)
-                                } else {
-                                    Text("—", style = MaterialTheme.typography.bodyMedium, color = cs.onSurface)
-                                }
                             }
                         }
 
-                        Spacer(Modifier.height(12.dp))
-
-                        InfoCard(title = "Color Profile", modifier = Modifier.fillMaxWidth()) {
-                            val dominant = if (state.isEditing) state.dominantColors else extractColorList(item.colorTags, "dominant")
-                            val accent = if (state.isEditing) state.accentColors else extractColorList(item.colorTags, "accent")
-
-                            if (!state.isEditing && dominant.isEmpty() && accent.isEmpty()) {
-                                Text(
-                                    "No color data",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = cs.onSurfaceVariant
-                                )
-                            } else {
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    if (state.isEditing && dominant.isEmpty()) {
-                                        ColorSwatch(
-                                            name = "Pick",
-                                            role = "Dominant",
-                                            size = 64.dp,
-                                            color = cs.surfaceContainerHigh,
-                                            clickable = true,
-                                            onClick = { showDominantDialog = true }
-                                        )
-                                    } else {
-                                        dominant.take(1).forEach { name ->
-                                            ColorSwatch(
-                                                name = name,
-                                                role = "Dominant",
-                                                size = 64.dp,
-                                                color = colorNameToComposeColor(name, cs.surfaceVariant),
-                                                clickable = state.isEditing,
-                                                onClick = { showDominantDialog = true }
-                                            )
-                                        }
-                                    }
-
-                                    if (state.isEditing && accent.isEmpty()) {
-                                        ColorSwatch(
-                                            name = "Add",
-                                            role = "Accent",
-                                            size = 48.dp,
-                                            color = cs.surfaceContainerHigh,
-                                            clickable = true,
-                                            onClick = { showAccentDialog = true }
-                                        )
-                                    } else {
-                                        accent.take(3).forEach { name ->
-                                            ColorSwatch(
-                                                name = name,
-                                                role = "Accent",
-                                                size = 48.dp,
-                                                color = colorNameToComposeColor(name, cs.surfaceVariant),
-                                                clickable = state.isEditing,
-                                                onClick = { showAccentDialog = true }
-                                            )
-                                        }
-                                        if (state.isEditing && accent.isNotEmpty() && accent.size < 5) {
-                                            IconButton(
-                                                onClick = { showAccentDialog = true },
-                                                modifier = Modifier
-                                                    .size(32.dp)
-                                                    .clip(CircleShape)
-                                                    .background(cs.surfaceContainerHigh)
-                                            ) {
-                                                Icon(Icons.Default.Add, contentDescription = "Add accent", modifier = Modifier.size(16.dp))
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        Spacer(Modifier.height(12.dp))
-
-                        InfoCard(title = "Style", modifier = Modifier.fillMaxWidth()) {
-                            FlowRow(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                        // Color strip
+                        if (dominant.isNotEmpty() || accent.isNotEmpty() || state.isEditing) {
+                            Spacer(Modifier.height(16.dp))
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                val currentStyle = if (state.isEditing) state.style else item.style
-                                ItemConstants.STYLES.forEach { option ->
-                                    OccasionChip(
-                                        label = option.capitalizeFirst(),
-                                        selected = option in currentStyle,
-                                        clickable = state.isEditing,
-                                        onClick = {
-                                            val updated = currentStyle.toMutableList().apply {
-                                                if (contains(option)) remove(option) else add(option)
+                                if (state.isEditing && dominant.isEmpty()) {
+                                    ColorSwatch(
+                                        name = "Pick",
+                                        role = "",
+                                        size = 44.dp,
+                                        color = cs.surfaceContainerHigh,
+                                        clickable = true,
+                                        onClick = { showDominantDialog = true },
+                                    )
+                                } else {
+                                    dominant.take(1).forEach { name ->
+                                        ColorSwatch(
+                                            name = name,
+                                            role = "",
+                                            size = 44.dp,
+                                            color = colorNameToComposeColor(name, cs.surfaceVariant),
+                                            clickable = state.isEditing,
+                                            onClick = { showDominantDialog = true },
+                                        )
+                                    }
+                                }
+                                if (state.isEditing && accent.isEmpty()) {
+                                    ColorSwatch(
+                                        name = "Add",
+                                        role = "",
+                                        size = 36.dp,
+                                        color = cs.surfaceContainerHigh,
+                                        clickable = true,
+                                        onClick = { showAccentDialog = true },
+                                    )
+                                } else {
+                                    accent.take(3).forEach { name ->
+                                        ColorSwatch(
+                                            name = name,
+                                            role = "",
+                                            size = 36.dp,
+                                            color = colorNameToComposeColor(name, cs.surfaceVariant),
+                                            clickable = state.isEditing,
+                                            onClick = { showAccentDialog = true },
+                                        )
+                                    }
+                                }
+                                if (state.isEditing && accent.isNotEmpty() && accent.size < 5) {
+                                    IconButton(
+                                        onClick = { showAccentDialog = true },
+                                        modifier = Modifier
+                                            .size(32.dp)
+                                            .clip(CircleShape)
+                                            .background(cs.surfaceContainerHigh),
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Add,
+                                            contentDescription = "Add accent",
+                                            modifier = Modifier.size(16.dp),
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(Modifier.height(16.dp))
+
+                        // Grouped list card
+                        GroupedListCard(Modifier.fillMaxWidth()) {
+                            if (state.isEditing) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                                ) {
+                                    DropdownSelector(
+                                        label = "Category",
+                                        selectedOption = state.category,
+                                        options = ItemConstants.CATEGORIES,
+                                        onOptionSelected = onCategory,
+                                    )
+                                    DropdownSelector(
+                                        label = "Material",
+                                        selectedOption = state.material,
+                                        options = ItemConstants.MATERIALS,
+                                        onOptionSelected = onMaterial,
+                                    )
+                                    OutlinedTextField(
+                                        value = state.brand,
+                                        onValueChange = onBrand,
+                                        label = { Text("Brand") },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = shapes.large,
+                                        singleLine = true,
+                                    )
+                                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Text(
+                                            text = "WEATHER",
+                                            style = MaterialTheme.typography.labelLarge,
+                                            color = cs.onSurfaceVariant,
+                                        )
+                                        FlowRow(
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                                        ) {
+                                            ItemConstants.WEATHER_TAGS.forEach { tag ->
+                                                val selected = tag in state.weather
+                                                OccasionChip(
+                                                    label = tag.capitalizeFirst(),
+                                                    selected = selected,
+                                                    clickable = true,
+                                                    onClick = {
+                                                        onWeather(
+                                                            if (selected) state.weather - tag
+                                                            else state.weather + tag
+                                                        )
+                                                    },
+                                                )
                                             }
-                                            onStyle(updated)
                                         }
+                                    }
+                                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Text(
+                                            text = "STYLE",
+                                            style = MaterialTheme.typography.labelLarge,
+                                            color = cs.onSurfaceVariant,
+                                        )
+                                        FlowRow(
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                                        ) {
+                                            ItemConstants.STYLES.forEach { option ->
+                                                val sel = option in state.style
+                                                OccasionChip(
+                                                    label = option.capitalizeFirst(),
+                                                    selected = sel,
+                                                    clickable = true,
+                                                    onClick = {
+                                                        val updated = state.style.toMutableList().apply {
+                                                            if (sel) remove(option) else add(option)
+                                                        }
+                                                        onStyle(updated)
+                                                    },
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                GroupedRow("Material") {
+                                    Text(
+                                        text = item.material?.capitalizeFirst() ?: "—",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = cs.onSurface,
                                     )
                                 }
-                            }
-                        }
-
-                        if (state.isEditing) {
-                            Spacer(Modifier.height(20.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                OutlinedButton(
-                                    onClick = onToggleEdit,
-                                    enabled = !state.isBusy,
-                                    shape = CircleShape,
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .height(52.dp)
-                                ) {
-                                    Text("Cancel")
+                                HorizontalDivider(
+                                    color = cs.outlineVariant.copy(alpha = 0.4f),
+                                    modifier = Modifier.padding(start = 16.dp),
+                                )
+                                GroupedRow("Brand") {
+                                    Text(
+                                        text = item.brand ?: "—",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = cs.onSurface,
+                                    )
                                 }
-                                Button(
-                                    onClick = onSave,
-                                    enabled = !state.isBusy,
-                                    shape = CircleShape,
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = cs.primary,
-                                        contentColor = cs.onPrimary
-                                    ),
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .height(52.dp)
-                                ) {
-                                    Text("Save Changes")
+                                HorizontalDivider(
+                                    color = cs.outlineVariant.copy(alpha = 0.4f),
+                                    modifier = Modifier.padding(start = 16.dp),
+                                )
+                                GroupedRow("Category") {
+                                    Text(
+                                        text = item.category?.capitalizeFirst() ?: "—",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = cs.onSurface,
+                                    )
                                 }
-                            }
-                        }
-
-                        Spacer(Modifier.height(32.dp))
-                        HorizontalDivider(color = cs.outlineVariant.copy(alpha = 0.5f))
-                        Spacer(Modifier.height(16.dp))
-                        Box(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            TextButton(
-                                onClick = { confirmDelete = true },
-                                enabled = !state.isBusy,
-                                shape = CircleShape,
-                                colors = ButtonDefaults.textButtonColors(contentColor = cs.error)
-                            ) {
-                                Icon(Icons.Default.Delete, contentDescription = null)
-                                Spacer(Modifier.width(8.dp))
-                                Text("Delete Item")
+                                HorizontalDivider(
+                                    color = cs.outlineVariant.copy(alpha = 0.4f),
+                                    modifier = Modifier.padding(start = 16.dp),
+                                )
+                                GroupedChipSection("Weather") {
+                                    if (item.weather.isEmpty()) {
+                                        Text(
+                                            text = "—",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = cs.onSurface,
+                                        )
+                                    } else {
+                                        WeatherChips(item.weather)
+                                    }
+                                }
+                                HorizontalDivider(
+                                    color = cs.outlineVariant.copy(alpha = 0.4f),
+                                    modifier = Modifier.padding(start = 16.dp),
+                                )
+                                GroupedChipSection("Style") {
+                                    if (item.style.isEmpty()) {
+                                        Text(
+                                            text = "—",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = cs.onSurface,
+                                        )
+                                    } else {
+                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            item.style.forEach { s ->
+                                                OccasionChip(
+                                                    label = s.capitalizeFirst(),
+                                                    selected = true,
+                                                    clickable = false,
+                                                    onClick = {},
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -503,12 +559,12 @@ private fun ItemDetailsScreen(
                     confirmButton = {
                         Button(
                             onClick = { confirmDelete = false; onDelete() },
-                            colors = ButtonDefaults.buttonColors(containerColor = cs.error)
+                            colors = ButtonDefaults.buttonColors(containerColor = cs.error),
                         ) { Text("Delete") }
                     },
                     dismissButton = {
                         TextButton(onClick = { confirmDelete = false }) { Text("Cancel") }
-                    }
+                    },
                 )
             }
         }

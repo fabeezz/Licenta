@@ -16,40 +16,65 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
 import com.example.outfitai.util.capitalizeFirst
 
 @Composable
-internal fun InfoCard(
-    title: String,
+internal fun GroupedListCard(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val cs = MaterialTheme.colorScheme
     Surface(
-        color = cs.surfaceContainerLow,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = MaterialTheme.shapes.large,
-        border = BorderStroke(1.dp, cs.outlineVariant.copy(alpha = 0.5f)),
         modifier = modifier,
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = title.uppercase(),
-                style = MaterialTheme.typography.labelLarge,
-                color = cs.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(8.dp))
-            content()
-        }
+        Column(content = content)
     }
 }
 
 @Composable
-internal fun InfoRow(label: String, value: String) {
+internal fun GroupedRow(
+    label: String,
+    modifier: Modifier = Modifier,
+    trailing: @Composable () -> Unit,
+) {
     val cs = MaterialTheme.colorScheme
-    Column {
-        Text(text = label.uppercase(), style = MaterialTheme.typography.labelLarge, color = cs.onSurfaceVariant)
-        Text(text = value, style = MaterialTheme.typography.bodyMedium, color = cs.onSurface)
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = 52.dp)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label.uppercase(),
+            style = MaterialTheme.typography.labelLarge,
+            color = cs.onSurfaceVariant,
+        )
+        Spacer(Modifier.weight(1f))
+        trailing()
+    }
+}
+
+@Composable
+internal fun GroupedChipSection(
+    label: String,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val cs = MaterialTheme.colorScheme
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(
+            text = label.uppercase(),
+            style = MaterialTheme.typography.labelLarge,
+            color = cs.onSurfaceVariant,
+        )
+        content()
     }
 }
 
@@ -67,7 +92,7 @@ internal fun WeatherChips(tags: List<String>) {
                     text = tag.capitalizeFirst(),
                     style = MaterialTheme.typography.labelLarge,
                     color = cs.onSurface,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                 )
             }
         }
@@ -99,8 +124,20 @@ internal fun ColorSwatch(
                 .background(color)
                 .border(1.dp, cs.outlineVariant.copy(alpha = 0.5f), CircleShape),
         )
-        Text(text = name.capitalizeFirst(), style = MaterialTheme.typography.labelLarge, color = cs.onSurface, maxLines = 1)
-        Text(text = role, style = MaterialTheme.typography.bodyMedium.copy(fontSize = 11.sp), color = cs.onSurfaceVariant, maxLines = 1)
+        Text(
+            text = name.capitalizeFirst(),
+            style = MaterialTheme.typography.labelLarge,
+            color = cs.onSurface,
+            maxLines = 1,
+        )
+        if (role.isNotEmpty()) {
+            Text(
+                text = role,
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 11.sp),
+                color = cs.onSurfaceVariant,
+                maxLines = 1,
+            )
+        }
     }
 }
 
@@ -115,10 +152,10 @@ internal fun OccasionChip(label: String, selected: Boolean, clickable: Boolean, 
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.labelLarge,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
             color = if (selected) cs.onPrimary else cs.onSurface,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
         )
     }
 }

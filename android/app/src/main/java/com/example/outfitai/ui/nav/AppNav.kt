@@ -95,7 +95,12 @@ fun AppNav(
                         ?.savedStateHandle
                         ?.set("wardrobe_refresh", true)
                     navController.popBackStack()
-                }
+                },
+                onItemMutatedInPlace = {
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("wardrobe_refresh", true)
+                },
             )
         }
 
