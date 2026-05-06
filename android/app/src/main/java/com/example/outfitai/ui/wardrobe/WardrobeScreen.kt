@@ -8,9 +8,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.outfitai.ui.components.AppBottomBar
 import com.example.outfitai.ui.components.BottomBarDest
@@ -38,7 +36,7 @@ fun WardrobeRoute(
         onTripClick = onTripClick,
         onAddClick = upload.launch,
         onTabSelect = vm::setTab,
-        onFilterCategory = vm::setFilterCategory,
+        onFilterBucket = vm::setFilterBucket,
         onFilterColor = vm::setFilterColor,
         onFilterWeather = vm::setFilterWeather,
         onFilterStyle = vm::setFilterStyle,
@@ -61,7 +59,7 @@ private fun WardrobeScreen(
     onTripClick: () -> Unit,
     onAddClick: () -> Unit,
     onTabSelect: (WardrobeTab) -> Unit,
-    onFilterCategory: (String?) -> Unit,
+    onFilterBucket: (CategoryBucket?) -> Unit,
     onFilterColor: (String?) -> Unit,
     onFilterWeather: (String?) -> Unit,
     onFilterStyle: (String?) -> Unit,
@@ -70,6 +68,12 @@ private fun WardrobeScreen(
     onRenameCollection: (Int, String) -> Unit,
     onDeleteCollection: (Int) -> Unit,
 ) {
+    var sheetOpen by remember { mutableStateOf(false) }
+
+    val hasActiveFilters = state.filterColor != null ||
+            state.filterWeather != null ||
+            state.filterStyle != null
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -109,30 +113,37 @@ private fun WardrobeScreen(
             Spacer(Modifier.height(12.dp))
             SegmentedControl(selected = state.selectedTab, onSelect = onTabSelect)
             Spacer(Modifier.height(12.dp))
-            if (state.selectedTab != WardrobeTab.Collections) {
-                FilterChipsRow(
-                    state = state,
-                    onFilterCategory = onFilterCategory,
-                    onFilterColor = onFilterColor,
-                    onFilterWeather = onFilterWeather,
-                    onFilterStyle = onFilterStyle,
-                    onClearFilters = onClearFilters,
-                )
-                Spacer(Modifier.height(16.dp))
-            }
+
             when (state.selectedTab) {
-                WardrobeTab.Pieces -> PiecesContent(
-                    state = state,
-                    onItemClick = onItemClick,
-                    bottomPadding = pad.calculateBottomPadding(),
-                    modifier = Modifier.weight(1f),
-                )
-                WardrobeTab.Fits -> FitsContent(
-                    state = state,
-                    onOutfitClick = onOutfitClick,
-                    bottomPadding = pad.calculateBottomPadding(),
-                    modifier = Modifier.weight(1f),
-                )
+                WardrobeTab.Pieces -> {
+                    WardrobeCategoryStrip(
+                        selectedBucket = state.filterBucket,
+                        hasActiveFilters = hasActiveFilters,
+                        onBucketSelect = onFilterBucket,
+                        onFilterClick = { sheetOpen = true },
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    PiecesContent(
+                        state = state,
+                        onItemClick = onItemClick,
+                        bottomPadding = pad.calculateBottomPadding(),
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                WardrobeTab.Fits -> {
+                    // Tune button only — no category strip for Fits
+                    FitsFilterRow(
+                        hasActiveFilters = state.filterWeather != null || state.filterStyle != null,
+                        onFilterClick = { sheetOpen = true },
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    FitsContent(
+                        state = state,
+                        onOutfitClick = onOutfitClick,
+                        bottomPadding = pad.calculateBottomPadding(),
+                        modifier = Modifier.weight(1f),
+                    )
+                }
                 WardrobeTab.Collections -> CollectionsContent(
                     state = state,
                     onOutfitClick = onOutfitClick,
@@ -143,6 +154,20 @@ private fun WardrobeScreen(
                     modifier = Modifier.weight(1f),
                 )
             }
+        }
+
+        if (sheetOpen) {
+            WardrobeFiltersSheet(
+                state = state,
+                showColors = state.selectedTab == WardrobeTab.Pieces,
+                onFilterColor = onFilterColor,
+                onFilterWeather = onFilterWeather,
+                onFilterStyle = onFilterStyle,
+                onClearFilters = {
+                    onClearFilters()
+                },
+                onDismiss = { sheetOpen = false },
+            )
         }
     }
 }

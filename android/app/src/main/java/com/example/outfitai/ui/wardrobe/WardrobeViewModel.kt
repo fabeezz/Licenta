@@ -20,7 +20,7 @@ import javax.inject.Inject
 
 sealed interface WardrobeIntent {
     data class SelectTab(val tab: WardrobeTab) : WardrobeIntent
-    data class SetCategoryFilter(val value: String?) : WardrobeIntent
+    data class SetBucketFilter(val value: CategoryBucket?) : WardrobeIntent
     data class SetColorFilter(val value: String?) : WardrobeIntent
     data class SetWeatherFilter(val value: String?) : WardrobeIntent
     data class SetStyleFilter(val value: String?) : WardrobeIntent
@@ -30,7 +30,7 @@ sealed interface WardrobeIntent {
 
 private data class ActiveFilters(
     val tab: WardrobeTab = WardrobeTab.Pieces,
-    val category: String? = null,
+    val bucket: CategoryBucket? = null,
     val color: String? = null,
     val weather: String? = null,
     val style: String? = null,
@@ -64,13 +64,15 @@ class WardrobeViewModel @Inject constructor(
                     reduce { copy(isLoading = true, error = null) }
                     if (f.tab == WardrobeTab.Pieces) {
                         when (val result = getFilteredWardrobe(
-                            category = f.category,
+                            category = null,
                             dominantColor = f.color,
                             weather = f.weather,
                             style = f.style,
                         )) {
-                            is Resource.Success -> reduce {
-                                copy(isLoading = false, items = result.data, error = null)
+                            is Resource.Success -> {
+                                val filtered = if (f.bucket == null) result.data
+                                else result.data.filter { it.category in f.bucket.members }
+                                reduce { copy(isLoading = false, items = filtered, error = null) }
                             }
                             is Resource.Error -> reduce { copy(isLoading = false, error = result.message) }
                             Resource.Loading -> Unit
@@ -105,9 +107,9 @@ class WardrobeViewModel @Inject constructor(
                 reduce { copy(selectedTab = intent.tab) }
                 _filters.update { it.copy(tab = intent.tab) }
             }
-            is WardrobeIntent.SetCategoryFilter -> {
-                reduce { copy(filterCategory = intent.value) }
-                _filters.update { it.copy(category = intent.value) }
+            is WardrobeIntent.SetBucketFilter -> {
+                reduce { copy(filterBucket = intent.value) }
+                _filters.update { it.copy(bucket = intent.value) }
             }
             is WardrobeIntent.SetColorFilter -> {
                 reduce { copy(filterColor = intent.value) }
@@ -123,9 +125,9 @@ class WardrobeViewModel @Inject constructor(
             }
             WardrobeIntent.ClearFilters -> {
                 reduce {
-                    copy(filterCategory = null, filterColor = null, filterWeather = null, filterStyle = null)
+                    copy(filterBucket = null, filterColor = null, filterWeather = null, filterStyle = null)
                 }
-                _filters.update { it.copy(category = null, color = null, weather = null, style = null) }
+                _filters.update { it.copy(bucket = null, color = null, weather = null, style = null) }
             }
             WardrobeIntent.Refresh -> _filters.update { it.copy(nonce = it.nonce + 1) }
         }
@@ -134,7 +136,7 @@ class WardrobeViewModel @Inject constructor(
     // Convenience delegates for existing call sites in WardrobeScreen
     fun refresh() = onIntent(WardrobeIntent.Refresh)
     fun setTab(tab: WardrobeTab) = onIntent(WardrobeIntent.SelectTab(tab))
-    fun setFilterCategory(value: String?) = onIntent(WardrobeIntent.SetCategoryFilter(value))
+    fun setFilterBucket(value: CategoryBucket?) = onIntent(WardrobeIntent.SetBucketFilter(value))
     fun setFilterColor(value: String?) = onIntent(WardrobeIntent.SetColorFilter(value))
     fun setFilterWeather(value: String?) = onIntent(WardrobeIntent.SetWeatherFilter(value))
     fun setFilterStyle(value: String?) = onIntent(WardrobeIntent.SetStyleFilter(value))

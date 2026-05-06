@@ -13,7 +13,7 @@ data class WardrobeUiState(
     val collections: List<CollectionResponseDto> = emptyList(),
     val error: String? = null,
     val selectedTab: WardrobeTab = WardrobeTab.Pieces,
-    val filterCategory: String? = null,
+    val filterBucket: CategoryBucket? = null,
     val filterColor: String? = null,
     val filterWeather: String? = null,
     val filterStyle: String? = null,
