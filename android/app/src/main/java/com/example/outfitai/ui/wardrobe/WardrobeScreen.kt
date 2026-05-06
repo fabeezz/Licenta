@@ -115,7 +115,7 @@ private fun WardrobeScreen(
             Spacer(Modifier.height(12.dp))
 
             when (state.selectedTab) {
-                WardrobeTab.Pieces -> {
+                WardrobeTab.Clothes -> {
                     WardrobeCategoryStrip(
                         selectedBucket = state.filterBucket,
                         hasActiveFilters = hasActiveFilters,
@@ -130,7 +130,7 @@ private fun WardrobeScreen(
                         modifier = Modifier.weight(1f),
                     )
                 }
-                WardrobeTab.Fits -> {
+                WardrobeTab.Outfits -> {
                     // Tune button only — no category strip for Fits
                     FitsFilterRow(
                         hasActiveFilters = state.filterWeather != null || state.filterStyle != null,
@@ -159,7 +159,7 @@ private fun WardrobeScreen(
         if (sheetOpen) {
             WardrobeFiltersSheet(
                 state = state,
-                showColors = state.selectedTab == WardrobeTab.Pieces,
+                showColors = state.selectedTab == WardrobeTab.Clothes,
                 onFilterColor = onFilterColor,
                 onFilterWeather = onFilterWeather,
                 onFilterStyle = onFilterStyle,

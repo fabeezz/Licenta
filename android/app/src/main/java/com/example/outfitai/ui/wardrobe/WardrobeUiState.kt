@@ -4,7 +4,7 @@ import com.example.outfitai.data.model.CollectionResponseDto
 import com.example.outfitai.data.model.ItemOutDto
 import com.example.outfitai.data.model.OutfitSavedDto
 
-enum class WardrobeTab { Pieces, Fits, Collections }
+enum class WardrobeTab { Clothes, Outfits, Collections }
 
 data class WardrobeUiState(
     val isLoading: Boolean = true,
@@ -12,7 +12,7 @@ data class WardrobeUiState(
     val outfits: List<OutfitSavedDto> = emptyList(),
     val collections: List<CollectionResponseDto> = emptyList(),
     val error: String? = null,
-    val selectedTab: WardrobeTab = WardrobeTab.Pieces,
+    val selectedTab: WardrobeTab = WardrobeTab.Clothes,
     val filterBucket: CategoryBucket? = null,
     val filterColor: String? = null,
     val filterWeather: String? = null,

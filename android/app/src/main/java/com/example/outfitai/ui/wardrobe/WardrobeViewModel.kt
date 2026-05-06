@@ -29,7 +29,7 @@ sealed interface WardrobeIntent {
 }
 
 private data class ActiveFilters(
-    val tab: WardrobeTab = WardrobeTab.Pieces,
+    val tab: WardrobeTab = WardrobeTab.Clothes,
     val bucket: CategoryBucket? = null,
     val color: String? = null,
     val weather: String? = null,
@@ -62,7 +62,7 @@ class WardrobeViewModel @Inject constructor(
                 .debounce(200L)
                 .collectLatest { f ->
                     reduce { copy(isLoading = true, error = null) }
-                    if (f.tab == WardrobeTab.Pieces) {
+                    if (f.tab == WardrobeTab.Clothes) {
                         when (val result = getFilteredWardrobe(
                             category = null,
                             dominantColor = f.color,
@@ -77,7 +77,7 @@ class WardrobeViewModel @Inject constructor(
                             is Resource.Error -> reduce { copy(isLoading = false, error = result.message) }
                             Resource.Loading -> Unit
                         }
-                    } else if (f.tab == WardrobeTab.Fits) {
+                    } else if (f.tab == WardrobeTab.Outfits) {
                         when (val result = getWardrobeOutfits(
                             weather = f.weather,
                             style = f.style,

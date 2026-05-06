@@ -35,7 +35,7 @@ internal fun SegmentedControl(
                     modifier = Modifier.weight(1f),
                 ) {
                     Text(
-                        text = tabOption.name.uppercase(),
+                        text = tabOption.name,
                         style = if (isSelected) MaterialTheme.typography.labelLarge else MaterialTheme.typography.bodyMedium,
                         color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier
