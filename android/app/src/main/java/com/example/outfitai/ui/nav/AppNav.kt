@@ -10,9 +10,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.outfitai.ui.insights.InsightsRoute
 import com.example.outfitai.ui.itemdetails.ItemDetailsRoute
 import com.example.outfitai.ui.outfits.OutfitDetailRoute
 import com.example.outfitai.ui.outfits.OutfitStudioRoute
+import com.example.outfitai.ui.profile.ProfileRoute
 import com.example.outfitai.ui.trips.TripPlannerRoute
 import com.example.outfitai.ui.wardrobe.WardrobeRoute
 import com.example.outfitai.ui.wardrobe.WardrobeViewModel
@@ -26,6 +28,9 @@ object Routes {
 
     const val OutfitDetail = "outfit-detail/{outfitId}"
     fun outfitDetail(id: Int) = "outfit-detail/$id"
+
+    const val Profile = "profile"
+    const val Insights = "insights"
 }
 
 @Composable
@@ -76,6 +81,7 @@ fun AppNav(
 
             WardrobeRoute(
                 onLogout = onLogout,
+                onProfile = { navController.navigate(Routes.Profile) },
                 onStudioClick = { navController.navigate(Routes.OutfitStudio) },
                 onTripClick = { navController.navigate(Routes.TripPlanner) },
                 vm = vm,
@@ -116,6 +122,19 @@ fun AppNav(
                         ?.set("wardrobe_refresh", true)
                     navController.popBackStack()
                 }
+            )
+        }
+
+        composable(Routes.Profile) {
+            ProfileRoute(
+                onBack = { navController.popBackStack() },
+                onOpenInsights = { navController.navigate(Routes.Insights) },
+            )
+        }
+
+        composable(Routes.Insights) {
+            InsightsRoute(
+                onBack = { navController.popBackStack() },
             )
         }
     }

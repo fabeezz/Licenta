@@ -37,4 +37,5 @@ data class OutfitStudioUiState(
     val isFetchingWeather: Boolean = false,
     val weatherForecast: WeatherForecast? = null,
     val weatherError: String? = null,
+    val locationLabel: String = "",
 )

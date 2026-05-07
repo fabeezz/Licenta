@@ -51,6 +51,22 @@ def get_stats(
     return svc.get_basic_stats(user_id=current_user.id)
 
 
+@router.get("/stats/by-color")
+def get_color_stats(
+    current_user: User = Depends(get_current_user),
+    svc: ItemService = Depends(get_item_service),
+):
+    return svc.get_color_stats(user_id=current_user.id)
+
+
+@router.get("/stats/by-weather")
+def get_weather_stats(
+    current_user: User = Depends(get_current_user),
+    svc: ItemService = Depends(get_item_service),
+):
+    return svc.get_weather_stats(user_id=current_user.id)
+
+
 @router.get("", response_model=list[ItemOut])
 def list_items(
     current_user: User = Depends(get_current_user),

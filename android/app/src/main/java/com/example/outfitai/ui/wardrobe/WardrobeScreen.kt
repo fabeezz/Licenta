@@ -3,6 +3,7 @@ package com.example.outfitai.ui.wardrobe
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,6 +18,7 @@ import com.example.outfitai.ui.upload.rememberUploadLauncher
 @Composable
 fun WardrobeRoute(
     onLogout: () -> Unit,
+    onProfile: () -> Unit,
     onItemClick: (Int) -> Unit,
     onOutfitClick: (Int) -> Unit,
     onStudioClick: () -> Unit,
@@ -30,6 +32,7 @@ fun WardrobeRoute(
         state = state,
         onRefresh = vm::refresh,
         onLogout = onLogout,
+        onProfile = onProfile,
         onItemClick = onItemClick,
         onOutfitClick = onOutfitClick,
         onStudioClick = onStudioClick,
@@ -53,6 +56,7 @@ private fun WardrobeScreen(
     state: WardrobeUiState,
     onRefresh: () -> Unit,
     onLogout: () -> Unit,
+    onProfile: () -> Unit,
     onItemClick: (Int) -> Unit,
     onOutfitClick: (Int) -> Unit,
     onStudioClick: () -> Unit,
@@ -83,6 +87,9 @@ private fun WardrobeScreen(
                 actions = {
                     IconButton(onClick = onRefresh, enabled = !state.isLoading) {
                         Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                    }
+                    IconButton(onClick = onProfile) {
+                        Icon(Icons.Default.Person, contentDescription = "Profile")
                     }
                     IconButton(onClick = onLogout) {
                         Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Logout")

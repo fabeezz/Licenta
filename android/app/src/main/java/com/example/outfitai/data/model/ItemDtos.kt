@@ -28,3 +28,27 @@ data class ItemMinimalDto(
     @SerialName("image_no_bg_name") val imageNoBgName: String? = null,
     @SerialName("dominant_color") val dominantColor: String? = null,
 )
+
+@Serializable
+data class StatBucketDto(val key: String, val count: Int)
+
+@Serializable
+data class CategoryBucketDto(val category: String, val count: Int)
+
+@Serializable
+data class BasicStatsDto(
+    @SerialName("total_items") val totalItems: Int,
+    @SerialName("by_category") val byCategory: List<CategoryBucketDto>,
+)
+
+@Serializable
+data class ColorStatsDto(
+    @SerialName("total_items") val totalItems: Int,
+    @SerialName("by_color") val byColor: List<StatBucketDto>,
+)
+
+@Serializable
+data class WeatherStatsDto(
+    @SerialName("total_items") val totalItems: Int,
+    @SerialName("by_weather") val byWeather: List<StatBucketDto>,
+)

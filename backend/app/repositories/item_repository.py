@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Sequence
 
-from sqlalchemy import asc, desc, func, select
+from sqlalchemy import asc, desc, func, select, text
 from sqlalchemy.dialects.postgresql import array
 from sqlalchemy.orm import Session
 
@@ -144,3 +144,41 @@ class ItemRepository:
             for cat, cnt in self._db.execute(breakdown_stmt).all()
         ]
         return {"total_items": total, "by_category": by_category}
+
+    def color_stats_for_user(self, user_id: int) -> dict:
+        total_stmt = select(func.count(Item.id)).where(Item.user_id == user_id)
+        total: int = self._db.scalar(total_stmt) or 0
+
+        breakdown_stmt = (
+            select(
+                func.jsonb_extract_path_text(Item.color_tags, "dominant", "0").label("color"),
+                func.count(Item.id).label("cnt"),
+            )
+            .where(Item.user_id == user_id)
+            .where(Item.color_tags.isnot(None))
+            .group_by(text("1"))
+        )
+        by_color = [
+            {"key": row.color, "count": row.cnt}
+            for row in self._db.execute(breakdown_stmt).all()
+            if row.color
+        ]
+        return {"total_items": total, "by_color": by_color}
+
+    def weather_stats_for_user(self, user_id: int) -> dict:
+        total_stmt = select(func.count(Item.id)).where(Item.user_id == user_id)
+        total: int = self._db.scalar(total_stmt) or 0
+
+        rows = self._db.execute(
+            text(
+                "SELECT tag, count(*) AS cnt"
+                " FROM items,"
+                " jsonb_array_elements_text(weather) AS tag"
+                " WHERE user_id = :uid"
+                " GROUP BY tag"
+                " ORDER BY cnt DESC"
+            ),
+            {"uid": user_id},
+        ).all()
+        by_weather = [{"key": row.tag, "count": int(row.cnt)} for row in rows]
+        return {"total_items": total, "by_weather": by_weather}

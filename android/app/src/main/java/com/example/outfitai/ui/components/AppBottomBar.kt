@@ -9,7 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.FlightTakeoff
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Checkroom
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -75,7 +75,7 @@ fun AppBottomBar(
                     }
                 }
                 BarItem(
-                    icon = { Icon(Icons.Default.Person, contentDescription = "Wardrobe") },
+                    icon = { Icon(Icons.Default.Checkroom, contentDescription = "Wardrobe") },
                     active = active == BottomBarDest.WARDROBE,
                     onClick = onWardrobe,
                 )

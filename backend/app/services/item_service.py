@@ -124,6 +124,12 @@ class ItemService:
         """
         return self._repo.stats_for_user(user_id)
 
+    def get_color_stats(self, *, user_id: int) -> dict:
+        return self._repo.color_stats_for_user(user_id)
+
+    def get_weather_stats(self, *, user_id: int) -> dict:
+        return self._repo.weather_stats_for_user(user_id)
+
     # ── Mutations ────────────────────────────────────────────────────────────
 
     def delete_item(self, db: Session, item_id: int, *, user_id: int) -> None:

@@ -69,6 +69,7 @@ fun OutfitStudioRoute(
             isLoading = state.isFetchingWeather,
             forecast = state.weatherForecast,
             error = state.weatherError,
+            locationLabel = state.locationLabel,
             onDismiss = vm::closeWeatherSheet,
             onApply = vm::applyWeatherFilter,
             onRetry = vm::openWeatherSheet,

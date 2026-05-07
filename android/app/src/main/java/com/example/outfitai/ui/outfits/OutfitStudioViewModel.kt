@@ -3,6 +3,7 @@ package com.example.outfitai.ui.outfits
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.outfitai.core.common.Resource
+import com.example.outfitai.data.location.LocationStore
 import com.example.outfitai.data.model.OutfitCreateDto
 import com.example.outfitai.Config
 import com.example.outfitai.domain.usecase.auth.GetCurrentUserUseCase
@@ -15,6 +16,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
@@ -29,6 +31,7 @@ class OutfitStudioViewModel @Inject constructor(
     private val getCurrentUser: GetCurrentUserUseCase,
     private val getTodayWeather: GetTodayWeatherUseCase,
     private val suggestOutfit: SuggestOutfitUseCase,
+    private val locationStore: LocationStore,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(OutfitStudioUiState())
@@ -136,7 +139,9 @@ class OutfitStudioViewModel @Inject constructor(
     fun openWeatherSheet() {
         _state.update { it.copy(showWeatherSheet = true, isFetchingWeather = true, weatherError = null) }
         viewModelScope.launch {
-            when (val result = getTodayWeather(Config.DEFAULT_LAT, Config.DEFAULT_LON)) {
+            val loc = locationStore.location.first()
+            _state.update { it.copy(locationLabel = loc.label) }
+            when (val result = getTodayWeather(loc.lat, loc.lon)) {
                 is Resource.Success -> _state.update {
                     it.copy(isFetchingWeather = false, weatherForecast = result.data)
                 }

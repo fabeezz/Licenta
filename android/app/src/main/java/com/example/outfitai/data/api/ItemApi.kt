@@ -1,10 +1,13 @@
 package com.example.outfitai.data.api
 
+import com.example.outfitai.data.model.BasicStatsDto
+import com.example.outfitai.data.model.ColorStatsDto
 import com.example.outfitai.data.model.ItemOutDto
+import com.example.outfitai.data.model.ItemUpdateDto
+import com.example.outfitai.data.model.WeatherStatsDto
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.http.*
-import com.example.outfitai.data.model.ItemUpdateDto
 
 interface ItemApi {
     @Multipart
@@ -33,7 +36,13 @@ interface ItemApi {
     ): List<ItemOutDto>
 
     @GET("items/stats")
-    suspend fun getStats(): Map<String, @JvmSuppressWildcards Any>
+    suspend fun getStats(): BasicStatsDto
+
+    @GET("items/stats/by-color")
+    suspend fun getColorStats(): ColorStatsDto
+
+    @GET("items/stats/by-weather")
+    suspend fun getWeatherStats(): WeatherStatsDto
 
     @GET("items/{id}")
     suspend fun read(@Path("id") id: Int): ItemOutDto

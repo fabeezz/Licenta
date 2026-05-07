@@ -54,6 +54,7 @@ fun WeatherForecastSheet(
     isLoading: Boolean,
     forecast: WeatherForecast?,
     error: String?,
+    locationLabel: String,
     onDismiss: () -> Unit,
     onApply: () -> Unit,
     onRetry: () -> Unit,
@@ -87,7 +88,7 @@ fun WeatherForecastSheet(
         ) {
             // Header
             Text(
-                text = Config.DEFAULT_LOCATION_LABEL,
+                text = locationLabel.ifBlank { Config.DEFAULT_LOCATION_LABEL },
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.SemiBold,
             )
