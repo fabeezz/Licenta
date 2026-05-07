@@ -9,7 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.Grain
+import androidx.compose.material.icons.filled.Umbrella
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.WbCloudy
 import androidx.compose.material.icons.filled.Warning
@@ -21,7 +21,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -31,7 +30,6 @@ import com.example.outfitai.data.model.GeneratedOutfitDto
 import com.example.outfitai.data.model.ItemMinimalDto
 import com.example.outfitai.data.model.TripPlanResponseDto
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
 
 // ── DESIGN.md tokens ─────────────────────────────────────────────────────────
@@ -87,33 +85,7 @@ fun ReviewStep(
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // Header
-            item {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 24.dp),
-                ) {
-                    Text(
-                        "${plan.flag} ${plan.city}",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
-                    )
-                    val fmt = DateTimeFormatter.ofPattern("MMM d")
-                    val start = LocalDate.parse(plan.startDate).format(fmt)
-                    val end = LocalDate.parse(plan.endDate).format(fmt)
-                    val nights = java.time.temporal.ChronoUnit.DAYS.between(
-                        LocalDate.parse(plan.startDate), LocalDate.parse(plan.endDate)
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        "$nights nights · $start – $end · ${plan.bagSize.replace('_', ' ')}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                    )
-                }
-            }
+            item { Spacer(Modifier.height(8.dp)) }
 
             // Global warnings
             if (plan.globalWarnings.isNotEmpty()) {
@@ -189,8 +161,7 @@ fun ReviewStep(
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 16.dp)
-                            .navigationBarsPadding()
+                            .padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 12.dp)
                             .height(56.dp),
                     ) {
                         if (isSaving) {
@@ -288,7 +259,7 @@ private fun ForecastDay(day: DayForecastDto) {
 }
 
 private fun weatherIcon(code: Int, precipMm: Double): ImageVector = when {
-    precipMm >= 1.0 -> Icons.Default.Grain
+    precipMm >= 1.0 -> Icons.Default.Umbrella
     code in 1..2 -> Icons.Default.WbCloudy
     code >= 3 -> Icons.Default.Cloud
     else -> Icons.Default.LightMode

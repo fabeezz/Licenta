@@ -45,11 +45,6 @@ fun DatesStep(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp),
         ) {
-            Spacer(Modifier.height(8.dp))
-            Text(
-                "Trip dates",
-                style = MaterialTheme.typography.titleLarge,
-            )
             Text(
                 if (selectingStart) "Tap a day to set your start date"
                 else "Now tap your end date",
@@ -148,8 +143,7 @@ fun DatesStep(
                 shape = CircleShape,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 16.dp)
-                    .navigationBarsPadding()
+                    .padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 12.dp)
                     .height(56.dp),
             ) {
                 Text("Save dates", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)

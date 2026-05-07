@@ -55,15 +55,7 @@ fun ActivitiesStep(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
         ) {
-            item {
-                Text("Add activities", style = MaterialTheme.typography.titleLarge)
-                Text(
-                    "Pick activities for tailored outfit recommendations.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp, bottom = 24.dp),
-                )
-            }
+            item { Spacer(Modifier.height(8.dp)) }
 
             SECTIONS.forEach { section ->
                 val sectionActivities = ALL_ACTIVITIES.filter { it.section == section }
@@ -113,8 +105,7 @@ fun ActivitiesStep(
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 16.dp)
-                    .navigationBarsPadding()
+                    .padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 12.dp)
                     .height(56.dp),
             ) {
                 Text(

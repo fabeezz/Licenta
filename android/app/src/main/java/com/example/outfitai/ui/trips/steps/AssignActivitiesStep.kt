@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -54,6 +55,7 @@ fun AssignActivitiesStep(
     selectedActivities: Set<String>,
     dayActivities: Map<LocalDate, Set<String>>,
     onToggleActivityForDay: (LocalDate, String) -> Unit,
+    onQuickFill: (LocalDate) -> Unit,
     onGenerate: () -> Unit,
 ) {
     val days = buildDayList(startDate, endDate)
@@ -67,24 +69,7 @@ fun AssignActivitiesStep(
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            item {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 24.dp),
-                ) {
-                    Text(
-                        "Plan your days",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        "Assign activities to each day — each gets its own outfit style.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
+            item { Spacer(Modifier.height(8.dp)) }
 
             items(days) { date ->
                 val assigned = dayActivities[date] ?: emptySet()
@@ -93,6 +78,7 @@ fun AssignActivitiesStep(
                     availableActivities = selectedActivities,
                     assignedActivities = assigned,
                     onToggle = { key -> onToggleActivityForDay(date, key) },
+                    onQuickFill = { onQuickFill(date) },
                 )
                 Spacer(Modifier.height(12.dp))
             }
@@ -122,8 +108,7 @@ fun AssignActivitiesStep(
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 16.dp)
-                        .navigationBarsPadding()
+                        .padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 12.dp)
                         .height(56.dp),
                 ) {
                     Text(
@@ -145,22 +130,19 @@ private fun DayCard(
     availableActivities: Set<String>,
     assignedActivities: Set<String>,
     onToggle: (String) -> Unit,
+    onQuickFill: () -> Unit,
 ) {
     val dayName = date.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())
         .replaceFirstChar { it.uppercaseChar() }
     val month = date.month.getDisplayName(TextStyle.SHORT, Locale.getDefault())
-    val styleHint = when {
-        availableActivities.isEmpty() -> "Pick activities first"
-        assignedActivities.isEmpty() -> "Casual day"
-        else -> "${assignedActivities.size} planned"
-    }
+    val allFilled = availableActivities.isNotEmpty() && assignedActivities.containsAll(availableActivities)
 
     Surface(
         shape = RoundedCornerShape(24.dp),
         color = SurfaceCard,
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Column(modifier = Modifier.padding(18.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -177,22 +159,38 @@ private fun DayCard(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    if (availableActivities.isEmpty()) {
+                        Text(
+                            "Pick activities first",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        )
+                    }
                 }
-                Surface(
-                    shape = CircleShape,
-                    color = Color.White,
-                ) {
-                    Text(
-                        styleHint,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = Color.Black,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                    )
+
+                if (availableActivities.isNotEmpty()) {
+                    Surface(
+                        shape = CircleShape,
+                        color = Color.White,
+                    ) {
+                        IconButton(
+                            onClick = onQuickFill,
+                            enabled = !allFilled,
+                            modifier = Modifier.size(36.dp),
+                        ) {
+                            Icon(
+                                Icons.Default.Shuffle,
+                                contentDescription = "Quick fill",
+                                tint = if (allFilled) Color.Black.copy(alpha = 0.3f) else Color.Black,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
+                    }
                 }
             }
 
             if (availableActivities.isNotEmpty()) {
-                Spacer(Modifier.height(14.dp))
+                Spacer(Modifier.height(12.dp))
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),

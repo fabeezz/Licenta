@@ -2,14 +2,64 @@ package com.example.outfitai.ui.trips
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.outfitai.ui.trips.steps.*
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
+
+private data class TripHeaderData(
+    val title: String,
+    val subtitle: String? = null,
+    val isBigTitle: Boolean = false,
+)
+
+private fun headerForStep(state: TripPlannerUiState): TripHeaderData {
+    return when (state.step) {
+        TripStep.WHERE_TO -> TripHeaderData("Where to?")
+        TripStep.DATES -> TripHeaderData("Trip dates")
+        TripStep.BAG_TYPE -> TripHeaderData("Pack your bag")
+        TripStep.ACTIVITIES -> TripHeaderData("Add activities")
+        TripStep.ASSIGN_ACTIVITIES -> TripHeaderData("Plan your days")
+        TripStep.LOADING -> TripHeaderData("Planning your trip…")
+        TripStep.REVIEW -> {
+            val plan = state.plan
+            if (plan != null) {
+                val fmt = DateTimeFormatter.ofPattern("MMM d")
+                val start = LocalDate.parse(plan.startDate).format(fmt)
+                val end = LocalDate.parse(plan.endDate).format(fmt)
+                val nights = ChronoUnit.DAYS.between(
+                    LocalDate.parse(plan.startDate), LocalDate.parse(plan.endDate)
+                )
+                TripHeaderData(
+                    title = "${plan.flag} ${plan.city}",
+                    subtitle = "$nights nights · $start – $end · ${plan.bagSize.replace('_', ' ')}",
+                    isBigTitle = true,
+                )
+            } else {
+                TripHeaderData("")
+            }
+        }
+    }
+}
+
+private fun previousStep(step: TripStep): TripStep? = when (step) {
+    TripStep.WHERE_TO, TripStep.LOADING -> null
+    TripStep.DATES -> TripStep.WHERE_TO
+    TripStep.BAG_TYPE -> TripStep.DATES
+    TripStep.ACTIVITIES -> TripStep.BAG_TYPE
+    TripStep.ASSIGN_ACTIVITIES -> TripStep.ACTIVITIES
+    TripStep.REVIEW -> TripStep.ASSIGN_ACTIVITIES
+}
 
 @Composable
 fun TripPlannerRoute(
@@ -36,6 +86,7 @@ fun TripPlannerRoute(
         onToggleActivity = vm::toggleActivity,
         onContinueFromActivities = { vm.goToStep(TripStep.ASSIGN_ACTIVITIES) },
         onToggleActivityForDay = vm::toggleActivityForDay,
+        onQuickFill = vm::quickFillDay,
         onGenerate = vm::generateTrip,
         onSave = vm::saveTrip,
         onBack = { vm.goToStep(it) },
@@ -57,15 +108,19 @@ private fun TripPlannerScreen(
     onToggleActivity: (String) -> Unit,
     onContinueFromActivities: () -> Unit,
     onToggleActivityForDay: (java.time.LocalDate, String) -> Unit,
+    onQuickFill: (java.time.LocalDate) -> Unit,
     onGenerate: () -> Unit,
     onSave: (String) -> Unit,
     onBack: (TripStep) -> Unit,
     onClearError: () -> Unit,
 ) {
+    val headerData = headerForStep(state)
+
     Scaffold(
         topBar = {
             TripTopBar(
                 step = state.step,
+                headerData = headerData,
                 onClose = onClose,
                 onBack = onBack,
             )
@@ -107,6 +162,7 @@ private fun TripPlannerScreen(
                     selectedActivities = state.selectedActivities,
                     dayActivities = state.dayActivities,
                     onToggleActivityForDay = onToggleActivityForDay,
+                    onQuickFill = onQuickFill,
                     onGenerate = onGenerate,
                 )
                 TripStep.LOADING -> LoadingStep(
@@ -124,10 +180,10 @@ private fun TripPlannerScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TripTopBar(
     step: TripStep,
+    headerData: TripHeaderData,
     onClose: () -> Unit,
     onBack: (TripStep) -> Unit,
 ) {
@@ -140,24 +196,15 @@ private fun TripTopBar(
         TripStep.ASSIGN_ACTIVITIES -> 5
         TripStep.LOADING, TripStep.REVIEW -> 5
     }
+    val prevStep = previousStep(step)
 
-    Column {
-        TopAppBar(
-            title = {},
-            navigationIcon = {
-                IconButton(onClick = onClose) {
-                    Icon(Icons.Default.Close, contentDescription = "Close")
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.background,
-            ),
-        )
+    Column(modifier = Modifier.statusBarsPadding()) {
+        // Progress bar — topmost element, hidden on LOADING and REVIEW
         if (step != TripStep.LOADING && step != TripStep.REVIEW) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 4.dp),
+                    .padding(horizontal = 20.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -172,6 +219,49 @@ private fun TripTopBar(
                         trackColor = MaterialTheme.colorScheme.surfaceVariant,
                     )
                 }
+            }
+        }
+
+        // Back | Title | X row
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (prevStep != null) {
+                IconButton(onClick = { onBack(prevStep) }) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                }
+            } else {
+                Spacer(Modifier.size(48.dp))
+            }
+
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                if (headerData.title.isNotEmpty()) {
+                    Text(
+                        headerData.title,
+                        style = if (headerData.isBigTitle) MaterialTheme.typography.headlineLarge
+                                else MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+                headerData.subtitle?.let { sub ->
+                    Text(
+                        sub,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+
+            IconButton(onClick = onClose) {
+                Icon(Icons.Default.Close, contentDescription = "Close")
             }
         }
     }

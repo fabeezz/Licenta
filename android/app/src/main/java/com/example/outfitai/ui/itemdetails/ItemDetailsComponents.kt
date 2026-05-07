@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -18,63 +19,84 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.outfitai.util.capitalizeFirst
 
-@Composable
-internal fun GroupedListCard(
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = MaterialTheme.shapes.large,
-        modifier = modifier,
-    ) {
-        Column(content = content)
-    }
-}
+private val TileShape = RoundedCornerShape(18.dp)
 
 @Composable
-internal fun GroupedRow(
+internal fun InfoTile(
     label: String,
     modifier: Modifier = Modifier,
-    trailing: @Composable () -> Unit,
-) {
-    val cs = MaterialTheme.colorScheme
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .defaultMinSize(minHeight = 52.dp)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = label.uppercase(),
-            style = MaterialTheme.typography.labelLarge,
-            color = cs.onSurfaceVariant,
-        )
-        Spacer(Modifier.weight(1f))
-        trailing()
-    }
-}
-
-@Composable
-internal fun GroupedChipSection(
-    label: String,
-    modifier: Modifier = Modifier,
+    editable: Boolean = false,
+    onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val cs = MaterialTheme.colorScheme
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
+    val baseModifier = modifier
+        .clip(TileShape)
+        .background(cs.surfaceContainerLowest)
+        .run {
+            if (editable && onClick != null)
+                border(1.dp, cs.outlineVariant.copy(alpha = 0.6f), TileShape)
+                    .clickable(onClick = onClick)
+            else this
+        }
+        .padding(horizontal = 14.dp, vertical = 12.dp)
+
+    Column(modifier = baseModifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(
             text = label.uppercase(),
-            style = MaterialTheme.typography.labelLarge,
-            color = cs.onSurfaceVariant,
+            style = MaterialTheme.typography.labelLarge.copy(fontSize = 11.sp, letterSpacing = 0.6.sp),
+            color = cs.outline,
         )
         content()
+    }
+}
+
+@Composable
+internal fun InfoValueTile(
+    label: String,
+    value: String?,
+    modifier: Modifier = Modifier,
+    editable: Boolean = false,
+    onClick: (() -> Unit)? = null,
+) {
+    val cs = MaterialTheme.colorScheme
+    InfoTile(label = label, modifier = modifier, editable = editable, onClick = onClick) {
+        Text(
+            text = if (value.isNullOrBlank()) "—" else value.capitalizeFirst(),
+            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+            color = if (value.isNullOrBlank()) cs.onSurfaceVariant else cs.onSurface,
+            maxLines = 2,
+        )
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun InfoChipsTile(
+    label: String,
+    items: List<String>,
+    modifier: Modifier = Modifier,
+    editable: Boolean = false,
+    onClick: (() -> Unit)? = null,
+) {
+    val cs = MaterialTheme.colorScheme
+    InfoTile(label = label, modifier = modifier, editable = editable, onClick = onClick) {
+        if (items.isEmpty()) {
+            Text(
+                text = "—",
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                color = cs.onSurfaceVariant,
+            )
+        } else {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                items.forEach { item ->
+                    OccasionChip(label = item.capitalizeFirst(), selected = true, clickable = false, onClick = {})
+                }
+            }
+        }
     }
 }
 

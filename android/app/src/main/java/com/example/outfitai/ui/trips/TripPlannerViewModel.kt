@@ -96,6 +96,16 @@ class TripPlannerViewModel @Inject constructor(
         }
     }
 
+    fun quickFillDay(date: LocalDate) {
+        _state.update { state ->
+            val assigned = state.dayActivities[date] ?: emptySet()
+            val available = state.selectedActivities - assigned
+            if (available.isEmpty()) return@update state
+            val pick = available.random()
+            state.copy(dayActivities = state.dayActivities + (date to (assigned + pick)))
+        }
+    }
+
     fun generateTrip() {
         val s = _state.value
         val dest = s.selectedDestination ?: return

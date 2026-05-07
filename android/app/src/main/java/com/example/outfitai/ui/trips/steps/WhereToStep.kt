@@ -44,12 +44,6 @@ fun WhereToStep(
                 .padding(horizontal = 20.dp),
         ) {
             Spacer(Modifier.height(8.dp))
-            Text(
-                text = "Where to?",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(bottom = 16.dp),
-            )
-
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
@@ -106,8 +100,7 @@ fun WhereToStep(
                 shape = CircleShape,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 16.dp)
-                    .navigationBarsPadding()
+                    .padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 12.dp)
                     .height(56.dp),
             ) {
                 Text("Continue", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)

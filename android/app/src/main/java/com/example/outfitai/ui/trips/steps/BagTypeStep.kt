@@ -41,14 +41,6 @@ fun BagTypeStep(
                 .padding(horizontal = 20.dp),
         ) {
             Spacer(Modifier.height(8.dp))
-            Text("Pack your bag", style = MaterialTheme.typography.titleLarge)
-            Text(
-                "How much are you bringing?",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 4.dp, bottom = 24.dp),
-            )
-
             BagSize.entries.forEach { size ->
                 BagTypeCard(
                     bagSize = size,
@@ -68,8 +60,7 @@ fun BagTypeStep(
         ) {
             Column(
                 modifier = Modifier
-                    .padding(horizontal = 20.dp, vertical = 16.dp)
-                    .navigationBarsPadding(),
+                    .padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 // Summary pill
