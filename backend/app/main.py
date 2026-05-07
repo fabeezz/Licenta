@@ -12,8 +12,6 @@ from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.core.exception_handlers import register_exception_handlers
 from app.core.logging import configure_logging
-from app.db.base import Base
-from app.db.session import engine
 from app.routers import api_router
 from app.services.ai.category_classifier import ClipCategoryClassifier
 from app.services.ai.clip_attribute_classifier import ClipAttributeClassifier

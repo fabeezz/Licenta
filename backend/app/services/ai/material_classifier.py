@@ -119,7 +119,7 @@ class ClipMaterialClassifier:
         allowed = _allowed_labels(category)
 
         # Short-circuit: single canonical bucket allowed → no model call needed
-        canonicals = {_INTERNAL_TO_CANONICAL[l] for l in allowed}
+        canonicals = {_INTERNAL_TO_CANONICAL[lbl] for lbl in allowed}
         if len(canonicals) == 1:
             label = next(iter(canonicals))
             return AttributePrediction(label=label, confidence=1.0, topk=[(label, 1.0)])

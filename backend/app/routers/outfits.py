@@ -18,7 +18,7 @@ from app.schemas.outfit import (
 from app.services.outfit_service import OutfitService
 from app.services.outfits.filters import item_matches_style, item_matches_weather, prefer_explicit_style
 from app.services.outfits.harmony import HarmonyMode, suggest_outfit
-from app.services.outfits.slots import OUTER_CATEGORIES, SHOES_CATEGORIES, TOP_CATEGORIES, category_to_slot
+from app.services.outfits.slots import OUTER_CATEGORIES, SHOES_CATEGORIES, TOP_CATEGORIES
 
 router = APIRouter(prefix="/outfits", tags=["outfits"])
 
@@ -30,6 +30,7 @@ def create_outfit(
     current_user: User = Depends(get_current_user),
     svc: OutfitService = Depends(get_outfit_service),
 ):
+    """Create a new outfit from a set of item IDs for the authenticated user."""
     return svc.create(db, payload, user_id=current_user.id)
 
 
@@ -43,22 +44,24 @@ def list_outfits(
     current_user: User = Depends(get_current_user),
     svc: OutfitService = Depends(get_outfit_service),
 ):
+    """Return a paginated, optionally filtered list of outfits for the authenticated user."""
     return svc.list(
         db, user_id=current_user.id, skip=skip, limit=limit, weather=weather, style=style
     )
 
 
-@router.get("/{outfit_id}", response_model=OutfitResponse)
+@router.get("/{outfit_id}", response_model=OutfitResponse, responses={404: {"description": "Outfit not found"}})
 def get_outfit(
     outfit_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
     svc: OutfitService = Depends(get_outfit_service),
 ):
+    """Return a single outfit by ID, scoped to the authenticated user."""
     return svc.get_or_404(db, outfit_id, user_id=current_user.id)
 
 
-@router.patch("/{outfit_id}", response_model=OutfitResponse)
+@router.patch("/{outfit_id}", response_model=OutfitResponse, responses={404: {"description": "Outfit not found"}})
 def update_outfit(
     outfit_id: int,
     payload: OutfitUpdate,
@@ -66,16 +69,18 @@ def update_outfit(
     current_user: User = Depends(get_current_user),
     svc: OutfitService = Depends(get_outfit_service),
 ):
+    """Update the name or item composition of the specified outfit."""
     return svc.update(db, outfit_id, payload, user_id=current_user.id)
 
 
-@router.delete("/{outfit_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{outfit_id}", status_code=status.HTTP_204_NO_CONTENT, responses={404: {"description": "Outfit not found"}})
 def delete_outfit(
     outfit_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
     svc: OutfitService = Depends(get_outfit_service),
 ):
+    """Delete the specified outfit."""
     svc.delete(db, outfit_id, user_id=current_user.id)
 
 

@@ -18,6 +18,7 @@ router = APIRouter(prefix="/trips", tags=["trips"])
 
 @router.get("/destinations", response_model=list[DestinationOut])
 async def list_destinations(svc: TripService = Depends(get_trip_service)) -> list[DestinationOut]:
+    """Return all available trip destinations."""
     return await svc.list_destinations()
 
 
@@ -27,6 +28,7 @@ async def generate_plan(
     user: User = Depends(get_current_user),
     svc: TripService = Depends(get_trip_service),
 ) -> TripPlanResponse:
+    """Generate a packing list from the user's wardrobe based on destination, dates, and weather."""
     return await svc.generate_plan(user, body)
 
 
@@ -36,4 +38,5 @@ def save_plan(
     user: User = Depends(get_current_user),
     svc: TripService = Depends(get_trip_service),
 ) -> TripRead:
+    """Persist a generated trip plan to the database and return the saved record."""
     return svc.save_plan(user, body)

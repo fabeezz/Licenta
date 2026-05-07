@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import math
 import random
-from datetime import date
-from typing import Sequence
 
 from app.models.item import Item
 from app.models.outfit import Outfit
@@ -403,10 +401,14 @@ class TripService:
             bottom = harmony_result.get("bottom")
             shoe  = harmony_result.get("shoes")
             outer = harmony_result.get("outer") if needs_outer else None
-            if top:   _pool_add(top,    top_pool,    pool_limit, bag_size)
-            if bottom: _pool_add(bottom, bottom_pool, pool_limit, bag_size)
-            if shoe:  _pool_add(shoe,   shoe_pool,   pool_limit, bag_size)
-            if outer: _pool_add(outer,  outer_pool,  pool_limit, bag_size)
+            if top:
+                _pool_add(top, top_pool, pool_limit, bag_size)
+            if bottom:
+                _pool_add(bottom, bottom_pool, pool_limit, bag_size)
+            if shoe:
+                _pool_add(shoe, shoe_pool, pool_limit, bag_size)
+            if outer:
+                _pool_add(outer, outer_pool, pool_limit, bag_size)
         else:
             # Fallback: original per-slot random picks
             top   = _pick_with_pool(top_cands,        top_pool,   pool_limit, bag_size)

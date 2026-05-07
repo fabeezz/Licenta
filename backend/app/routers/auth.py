@@ -18,6 +18,7 @@ def register(
     payload: UserCreate,
     db: Session = Depends(get_db),
 ):
+    """Register a new user and return a JWT access token."""
     if db.scalars(select(User).where(User.email == payload.email)).first():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -45,6 +46,7 @@ def login(
     payload: UserLogin,
     db: Session = Depends(get_db),
 ):
+    """Authenticate a user by username and password and return a JWT access token."""
     user = db.scalars(select(User).where(User.username == payload.username)).first()
     if not user or not verify_password(payload.password, user.hashed_password):
         raise HTTPException(
@@ -57,6 +59,7 @@ def login(
 
 @router.get("/me", response_model=UserOut)
 def me(current_user: User = Depends(get_current_user)):
+    """Return the profile of the currently authenticated user."""
     return current_user
 
 
@@ -65,6 +68,7 @@ def reset_password(
     payload: PasswordResetRequest,
     db: Session = Depends(get_db),
 ):
+    """Reset a user's password after verifying their username and email match."""
     user = db.scalars(select(User).where(User.username == payload.username)).first()
     if not user or user.email != payload.email:
         raise HTTPException(

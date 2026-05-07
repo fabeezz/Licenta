@@ -1,4 +1,4 @@
-from sqlalchemy import String, Integer, DateTime
+from sqlalchemy import String, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -11,6 +11,6 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
 
-    items: Mapped[list["Item"]] = relationship("Item", back_populates="user")
-    outfits: Mapped[list["Outfit"]] = relationship("Outfit", back_populates="user", cascade="all, delete-orphan")
-    collections: Mapped[list["OutfitCollection"]] = relationship("OutfitCollection", back_populates="user", cascade="all, delete-orphan")
+    items: Mapped[list["Item"]] = relationship("Item", back_populates="user")  # noqa: F821
+    outfits: Mapped[list["Outfit"]] = relationship("Outfit", back_populates="user", cascade="all, delete-orphan")  # noqa: F821
+    collections: Mapped[list["OutfitCollection"]] = relationship("OutfitCollection", back_populates="user", cascade="all, delete-orphan")  # noqa: F821

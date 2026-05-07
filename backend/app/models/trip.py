@@ -31,5 +31,5 @@ class Trip(Base):
     )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-    user: Mapped["User"] = relationship("User")
-    collection: Mapped["OutfitCollection | None"] = relationship("OutfitCollection")
+    user: Mapped["User"] = relationship("User")  # noqa: F821
+    collection: Mapped["OutfitCollection | None"] = relationship("OutfitCollection")  # noqa: F821

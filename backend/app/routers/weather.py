@@ -17,4 +17,5 @@ async def get_today(
     _: User = Depends(get_current_user),
     weather_service: WeatherService = Depends(get_weather_service),
 ) -> WeatherTodayResponse:
+    """Return today's weather conditions for the given latitude and longitude."""
     return await weather_service.get_today(lat=lat, lon=lon)

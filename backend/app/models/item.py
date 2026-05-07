@@ -32,7 +32,7 @@ class Item(Base):
     last_worn_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-    user: Mapped["User"] = relationship("User", back_populates="items")
+    user: Mapped["User"] = relationship("User", back_populates="items")  # noqa: F821
 
     @hybrid_property
     def dominant_color(self) -> str | None:

@@ -20,8 +20,8 @@ class OutfitCollection(Base):
     name: Mapped[str] = mapped_column(String, nullable=False)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
 
-    user: Mapped["User"] = relationship("User", back_populates="collections")
-    outfits: Mapped[list["Outfit"]] = relationship(
+    user: Mapped["User"] = relationship("User", back_populates="collections")  # noqa: F821
+    outfits: Mapped[list["Outfit"]] = relationship(  # noqa: F821
         "Outfit",
         secondary=outfit_collection_outfits,
         lazy="selectin",

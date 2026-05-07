@@ -8,47 +8,47 @@ def rgb_to_hsl_normalized(r: int, g: int, b: int) -> Tuple[float, float, float]:
     H: 0-360, S: 0.0-1.0, L: 0.0-1.0
     """
     r_f, g_f, b_f = r / 255.0, g / 255.0, b / 255.0
-    h, l, s = rgb_to_hls(r_f, g_f, b_f)
-    return h * 360.0, s, l
+    h, lightness, s = rgb_to_hls(r_f, g_f, b_f)
+    return h * 360.0, s, lightness
 
 def rgb_to_color_name(r: int, g: int, b: int) -> str:
     """
     Maps an RGB triplet to a clothing-relevant color name.
     """
-    h, s, l = rgb_to_hsl_normalized(r, g, b)
+    h, s, lightness = rgb_to_hsl_normalized(r, g, b)
     
     # 1. Absolute Neutrals (Black, White, Gray)
-    if l < 0.15:
+    if lightness < 0.15:
         return "black"
-    if l > 0.75 and s < 0.25:
+    if lightness > 0.75 and s < 0.25:
         return "white"
     if s < 0.15:
         return "gray"
 
     # 2. Beige (Warm, desaturated, light colors)
-    if s < 0.4 and 20 <= h <= 60 and l > 0.5:
+    if s < 0.4 and 20 <= h <= 60 and lightness > 0.5:
         return "beige"
 
     # 3. Colors by Hue
     if h < 15 or h >= 345:
-        if l < 0.4:
+        if lightness < 0.4:
             return "burgundy"  # Dark red
-        if l > 0.65:           # Light red is Pink!
+        if lightness > 0.65:           # Light red is Pink!
             return "pink"
         return "red"
         
     if 15 <= h < 45:
-        if l < 0.5:
+        if lightness < 0.5:
             return "brown"     
         return "orange"
         
     if 45 <= h < 75:
-        if l < 0.4:
+        if lightness < 0.4:
             return "olive"     
         return "yellow"
         
     if 75 <= h < 165:
-        if l < 0.35:
+        if lightness < 0.35:
             return "dark green"
         return "green"
         
@@ -56,7 +56,7 @@ def rgb_to_color_name(r: int, g: int, b: int) -> str:
         return "cyan"          
         
     if 210 <= h < 260:
-        if l < 0.4:
+        if lightness < 0.4:
             return "navy"      
         return "blue"
         

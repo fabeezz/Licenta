@@ -19,6 +19,7 @@ def create_collection(
     current_user: User = Depends(get_current_user),
     svc: OutfitCollectionService = Depends(get_collection_service),
 ):
+    """Create a new outfit collection for the authenticated user."""
     return svc.create(db, payload, user_id=current_user.id)
 
 
@@ -30,20 +31,22 @@ def list_collections(
     current_user: User = Depends(get_current_user),
     svc: OutfitCollectionService = Depends(get_collection_service),
 ):
+    """Return a paginated list of outfit collections for the authenticated user."""
     return svc.list(db, user_id=current_user.id, skip=skip, limit=limit)
 
 
-@router.get("/{collection_id}", response_model=CollectionResponse)
+@router.get("/{collection_id}", response_model=CollectionResponse, responses={404: {"description": "Collection not found"}})
 def get_collection(
     collection_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
     svc: OutfitCollectionService = Depends(get_collection_service),
 ):
+    """Return a single outfit collection by ID, scoped to the authenticated user."""
     return svc.get_or_404(db, collection_id, user_id=current_user.id)
 
 
-@router.patch("/{collection_id}", response_model=CollectionResponse)
+@router.patch("/{collection_id}", response_model=CollectionResponse, responses={404: {"description": "Collection not found"}})
 def update_collection(
     collection_id: int,
     payload: CollectionUpdate,
@@ -51,14 +54,16 @@ def update_collection(
     current_user: User = Depends(get_current_user),
     svc: OutfitCollectionService = Depends(get_collection_service),
 ):
+    """Update the name or outfit membership of the specified collection."""
     return svc.update(db, collection_id, payload, user_id=current_user.id)
 
 
-@router.delete("/{collection_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{collection_id}", status_code=status.HTTP_204_NO_CONTENT, responses={404: {"description": "Collection not found"}})
 def delete_collection(
     collection_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
     svc: OutfitCollectionService = Depends(get_collection_service),
 ):
+    """Delete the specified outfit collection."""
     svc.delete(db, collection_id, user_id=current_user.id)

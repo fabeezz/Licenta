@@ -20,8 +20,8 @@ class Outfit(Base):
     top_id: Mapped[int] = mapped_column(Integer, ForeignKey("items.id", ondelete="CASCADE"), nullable=False)
     outer_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("items.id", ondelete="SET NULL"), nullable=True)
 
-    user: Mapped["User"] = relationship("User", back_populates="outfits")
-    shoe: Mapped["Item"] = relationship("Item", foreign_keys=[shoe_id])
-    bottom: Mapped["Item"] = relationship("Item", foreign_keys=[bottom_id])
-    top: Mapped["Item"] = relationship("Item", foreign_keys=[top_id])
-    outer: Mapped["Item | None"] = relationship("Item", foreign_keys=[outer_id])
+    user: Mapped["User"] = relationship("User", back_populates="outfits")  # noqa: F821
+    shoe: Mapped["Item"] = relationship("Item", foreign_keys=[shoe_id])  # noqa: F821
+    bottom: Mapped["Item"] = relationship("Item", foreign_keys=[bottom_id])  # noqa: F821
+    top: Mapped["Item"] = relationship("Item", foreign_keys=[top_id])  # noqa: F821
+    outer: Mapped["Item | None"] = relationship("Item", foreign_keys=[outer_id])  # noqa: F821
