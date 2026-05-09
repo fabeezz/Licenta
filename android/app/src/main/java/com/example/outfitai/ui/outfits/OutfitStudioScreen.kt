@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Tune
@@ -32,6 +33,8 @@ fun OutfitStudioRoute(
     onBack: () -> Unit,
     onWardrobeClick: () -> Unit,
     onTripClick: () -> Unit,
+    onProfileClick: () -> Unit = {},
+    onInspirationClick: () -> Unit = {},
     vm: OutfitStudioViewModel = hiltViewModel(),
 ) {
     val state by vm.state.collectAsState()
@@ -78,6 +81,7 @@ fun OutfitStudioRoute(
 
     OutfitStudioScreen(
         state = state,
+        onInspirationClick = onInspirationClick,
         snackbarHostState = snackbarHostState,
         onStep = vm::stepSlot,
         onToggleLayers = vm::toggleLayers,
@@ -85,6 +89,7 @@ fun OutfitStudioRoute(
         onSave = vm::openSaveDialog,
         onWardrobeClick = onWardrobeClick,
         onTripClick = onTripClick,
+        onProfileClick = onProfileClick,
         onAddClick = upload.launch,
         onFilterClick = vm::openFilterDialog,
         onWeatherClick = vm::openWeatherSheet,
@@ -101,9 +106,11 @@ private fun OutfitStudioScreen(
     onSave: () -> Unit,
     onWardrobeClick: () -> Unit,
     onTripClick: () -> Unit,
+    onProfileClick: () -> Unit,
     onAddClick: () -> Unit,
     onFilterClick: () -> Unit,
     onWeatherClick: () -> Unit,
+    onInspirationClick: () -> Unit = {},
 ) {
     val canSave = state.top.current != null && state.bottom.current != null && state.shoes.current != null
     val colors = MaterialTheme.colorScheme
@@ -119,6 +126,7 @@ private fun OutfitStudioScreen(
                     onStudio = {},
                     onAdd = onAddClick,
                     onWardrobe = onWardrobeClick,
+                    onProfile = onProfileClick,
                 )
             }
         },
@@ -186,6 +194,10 @@ private fun OutfitStudioScreen(
                     .padding(end = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                FloatingControlButton(
+                    onClick = onInspirationClick,
+                    icon = { Icon(Icons.Default.AutoAwesome, contentDescription = "From image") },
+                )
                 FloatingControlButton(
                     onClick = onWeatherClick,
                     icon = { Icon(Icons.Outlined.WbSunny, contentDescription = "Weather") },

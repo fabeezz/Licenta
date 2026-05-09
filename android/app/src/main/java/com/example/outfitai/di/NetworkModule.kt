@@ -5,6 +5,7 @@ import com.example.outfitai.Config
 import com.example.outfitai.data.api.AuthApi
 import com.example.outfitai.data.api.AuthInterceptor
 import com.example.outfitai.data.api.CollectionApi
+import com.example.outfitai.data.api.InspirationApi
 import com.example.outfitai.data.api.ItemApi
 import com.example.outfitai.data.api.OutfitApi
 import com.example.outfitai.data.api.TripApi
@@ -84,4 +85,9 @@ object NetworkModule {
     @Singleton
     fun provideTripApi(retrofit: Retrofit): TripApi =
         retrofit.create(TripApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideInspirationApi(retrofit: Retrofit): InspirationApi =
+        retrofit.create(InspirationApi::class.java)
 }

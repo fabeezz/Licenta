@@ -75,6 +75,7 @@ class ItemService:
             weather=[t.lower() for t in weather_value],
             style=[t.lower() for t in style_value],
             wear_count=0,
+            embedding=result.embedding,
         )
         self._repo.add(item)
         db.commit()
@@ -175,6 +176,20 @@ class ItemService:
         db.commit()
         db.refresh(item)
         return item
+
+    def get_wardrobe_gaps(self, *, user_id: int) -> list:
+        """Return gap analysis results for *user_id*'s wardrobe.
+
+        Args:
+            user_id: User whose wardrobe is analysed.
+
+        Returns:
+            List of :class:`~app.services.insights.gaps.Gap` instances.
+        """
+        from app.services.insights import gaps as gaps_module
+
+        items = self._repo.list_all_for_user(user_id)
+        return gaps_module.analyze(items)
 
     def mark_item_worn(self, db: Session, item_id: int, *, user_id: int) -> Item:
         """Increment the wear counter and record the current timestamp.

@@ -5,12 +5,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.outfitai.ui.gaps.GapsRoute
 import com.example.outfitai.ui.insights.InsightsRoute
+import com.example.outfitai.ui.inspiration.InspirationRoute
 import com.example.outfitai.ui.itemdetails.ItemDetailsRoute
 import com.example.outfitai.ui.outfits.OutfitDetailRoute
 import com.example.outfitai.ui.outfits.OutfitStudioRoute
@@ -31,6 +34,16 @@ object Routes {
 
     const val Profile = "profile"
     const val Insights = "insights"
+    const val Gaps = "gaps"
+    const val Inspiration = "inspiration"
+}
+
+private fun NavController.navigateTab(route: String) {
+    navigate(route) {
+        popUpTo(Routes.Wardrobe) { saveState = true }
+        launchSingleTop = true
+        restoreState = true
+    }
 }
 
 @Composable
@@ -52,14 +65,30 @@ fun AppNav(
                         ?.set("wardrobe_refresh", true)
                     navController.popBackStack()
                 },
+                onStudioClick = { navController.navigateTab(Routes.OutfitStudio) },
+                onWardrobeClick = { navController.navigateTab(Routes.Wardrobe) },
+                onProfileClick = { navController.navigateTab(Routes.Profile) },
             )
         }
 
         composable(Routes.OutfitStudio) {
             OutfitStudioRoute(
                 onBack = { navController.popBackStack() },
-                onWardrobeClick = { navController.popBackStack() },
-                onTripClick = { navController.navigate(Routes.TripPlanner) },
+                onWardrobeClick = { navController.navigateTab(Routes.Wardrobe) },
+                onTripClick = { navController.navigateTab(Routes.TripPlanner) },
+                onProfileClick = { navController.navigateTab(Routes.Profile) },
+                onInspirationClick = { navController.navigate(Routes.Inspiration) },
+            )
+        }
+
+        composable(Routes.Inspiration) {
+            InspirationRoute(
+                onBack = { navController.popBackStack() },
+                onOutfitSaved = { outfitId ->
+                    navController.navigate(Routes.outfitDetail(outfitId)) {
+                        popUpTo(Routes.Inspiration) { inclusive = true }
+                    }
+                },
             )
         }
 
@@ -80,10 +109,9 @@ fun AppNav(
             }
 
             WardrobeRoute(
-                onLogout = onLogout,
-                onProfile = { navController.navigate(Routes.Profile) },
-                onStudioClick = { navController.navigate(Routes.OutfitStudio) },
-                onTripClick = { navController.navigate(Routes.TripPlanner) },
+                onStudioClick = { navController.navigateTab(Routes.OutfitStudio) },
+                onTripClick = { navController.navigateTab(Routes.TripPlanner) },
+                onProfileClick = { navController.navigateTab(Routes.Profile) },
                 vm = vm,
                 onItemClick = { id -> navController.navigate(Routes.itemDetails(id)) },
                 onOutfitClick = { id -> navController.navigate(Routes.outfitDetail(id)) }
@@ -129,11 +157,22 @@ fun AppNav(
             ProfileRoute(
                 onBack = { navController.popBackStack() },
                 onOpenInsights = { navController.navigate(Routes.Insights) },
+                onOpenGaps = { navController.navigate(Routes.Gaps) },
+                onLogout = onLogout,
+                onTripClick = { navController.navigateTab(Routes.TripPlanner) },
+                onStudioClick = { navController.navigateTab(Routes.OutfitStudio) },
+                onWardrobeClick = { navController.navigateTab(Routes.Wardrobe) },
             )
         }
 
         composable(Routes.Insights) {
             InsightsRoute(
+                onBack = { navController.popBackStack() },
+            )
+        }
+
+        composable(Routes.Gaps) {
+            GapsRoute(
                 onBack = { navController.popBackStack() },
             )
         }

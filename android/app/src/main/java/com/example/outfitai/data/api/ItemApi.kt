@@ -2,6 +2,7 @@ package com.example.outfitai.data.api
 
 import com.example.outfitai.data.model.BasicStatsDto
 import com.example.outfitai.data.model.ColorStatsDto
+import com.example.outfitai.data.model.GapsResponseDto
 import com.example.outfitai.data.model.ItemOutDto
 import com.example.outfitai.data.model.ItemUpdateDto
 import com.example.outfitai.data.model.WeatherStatsDto
@@ -34,6 +35,9 @@ interface ItemApi {
         @Query("limit") limit: Int = 50,
         @Query("offset") offset: Int = 0,
     ): List<ItemOutDto>
+
+    @GET("items/gaps")
+    suspend fun getGaps(): GapsResponseDto
 
     @GET("items/stats")
     suspend fun getStats(): BasicStatsDto

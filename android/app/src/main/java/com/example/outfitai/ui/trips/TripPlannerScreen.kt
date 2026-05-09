@@ -5,6 +5,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
+import com.example.outfitai.ui.components.AppBottomBar
+import com.example.outfitai.ui.components.BottomBarDest
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,6 +67,10 @@ private fun previousStep(step: TripStep): TripStep? = when (step) {
 fun TripPlannerRoute(
     onClose: () -> Unit,
     onSaved: (collectionId: Int) -> Unit,
+    onStudioClick: () -> Unit = {},
+    onWardrobeClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {},
+    onAddClick: () -> Unit = {},
     vm: TripPlannerViewModel = hiltViewModel(),
 ) {
     val state by vm.state.collectAsState()
@@ -76,6 +82,10 @@ fun TripPlannerRoute(
     TripPlannerScreen(
         state = state,
         onClose = onClose,
+        onStudioClick = onStudioClick,
+        onWardrobeClick = onWardrobeClick,
+        onProfileClick = onProfileClick,
+        onAddClick = onAddClick,
         onDestinationSelected = vm::selectDestination,
         onContinueFromWhere = { vm.goToStep(TripStep.DATES) },
         onStartDate = vm::setStartDate,
@@ -98,6 +108,10 @@ fun TripPlannerRoute(
 private fun TripPlannerScreen(
     state: TripPlannerUiState,
     onClose: () -> Unit,
+    onStudioClick: () -> Unit,
+    onWardrobeClick: () -> Unit,
+    onProfileClick: () -> Unit,
+    onAddClick: () -> Unit,
     onDestinationSelected: (com.example.outfitai.data.model.DestinationDto) -> Unit,
     onContinueFromWhere: () -> Unit,
     onStartDate: (java.time.LocalDate) -> Unit,
@@ -124,6 +138,18 @@ private fun TripPlannerScreen(
                 onClose = onClose,
                 onBack = onBack,
             )
+        },
+        bottomBar = {
+            Box(modifier = Modifier.padding(bottom = 24.dp)) {
+                AppBottomBar(
+                    active = BottomBarDest.TRIP,
+                    onTrip = {},
+                    onStudio = onStudioClick,
+                    onAdd = onAddClick,
+                    onWardrobe = onWardrobeClick,
+                    onProfile = onProfileClick,
+                )
+            }
         },
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->

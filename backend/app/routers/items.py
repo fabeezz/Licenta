@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.dependencies import get_current_user, get_item_service
 from app.db.session import get_db
 from app.models.user import User
-from app.schemas.item import ItemListQuery, ItemOut, ItemUpdate
+from app.schemas.item import GapsResponse, ItemListQuery, ItemOut, ItemUpdate
 from app.services.item_service import ItemService
 
 router = APIRouter(prefix="/items", tags=["items"])
@@ -69,6 +69,19 @@ def get_weather_stats(
 ):
     """Return a breakdown of wardrobe items grouped by weather tag for the authenticated user."""
     return svc.get_weather_stats(user_id=current_user.id)
+
+
+@router.get("/gaps", response_model=GapsResponse)
+def get_wardrobe_gaps(
+    current_user: User = Depends(get_current_user),
+    svc: ItemService = Depends(get_item_service),
+):
+    """Analyse the authenticated user's wardrobe and return coverage gaps across slot, weather, style, and color dimensions."""
+    raw_gaps = svc.get_wardrobe_gaps(user_id=current_user.id)
+    return GapsResponse(gaps=[
+        {"dimension": g.dimension, "key": g.key, "severity": g.severity, "suggestion": g.suggestion}
+        for g in raw_gaps
+    ])
 
 
 @router.get("", response_model=list[ItemOut])

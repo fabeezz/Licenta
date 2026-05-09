@@ -52,3 +52,16 @@ data class WeatherStatsDto(
     @SerialName("total_items") val totalItems: Int,
     @SerialName("by_weather") val byWeather: List<StatBucketDto>,
 )
+
+@Serializable
+data class GapDto(
+    val dimension: String,
+    val key: String,
+    val severity: String,
+    val suggestion: String,
+)
+
+@Serializable
+data class GapsResponseDto(
+    val gaps: List<GapDto>,
+)

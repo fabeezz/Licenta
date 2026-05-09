@@ -2,8 +2,6 @@ package com.example.outfitai.ui.wardrobe
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,12 +15,11 @@ import com.example.outfitai.ui.upload.rememberUploadLauncher
 
 @Composable
 fun WardrobeRoute(
-    onLogout: () -> Unit,
-    onProfile: () -> Unit,
     onItemClick: (Int) -> Unit,
     onOutfitClick: (Int) -> Unit,
     onStudioClick: () -> Unit,
     onTripClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {},
     vm: WardrobeViewModel = hiltViewModel(),
 ) {
     val state by vm.state.collectAsState()
@@ -31,12 +28,11 @@ fun WardrobeRoute(
     WardrobeScreen(
         state = state,
         onRefresh = vm::refresh,
-        onLogout = onLogout,
-        onProfile = onProfile,
         onItemClick = onItemClick,
         onOutfitClick = onOutfitClick,
         onStudioClick = onStudioClick,
         onTripClick = onTripClick,
+        onProfileClick = onProfileClick,
         onAddClick = upload.launch,
         onTabSelect = vm::setTab,
         onFilterBucket = vm::setFilterBucket,
@@ -55,12 +51,11 @@ fun WardrobeRoute(
 private fun WardrobeScreen(
     state: WardrobeUiState,
     onRefresh: () -> Unit,
-    onLogout: () -> Unit,
-    onProfile: () -> Unit,
     onItemClick: (Int) -> Unit,
     onOutfitClick: (Int) -> Unit,
     onStudioClick: () -> Unit,
     onTripClick: () -> Unit,
+    onProfileClick: () -> Unit,
     onAddClick: () -> Unit,
     onTabSelect: (WardrobeTab) -> Unit,
     onFilterBucket: (CategoryBucket?) -> Unit,
@@ -88,12 +83,6 @@ private fun WardrobeScreen(
                     IconButton(onClick = onRefresh, enabled = !state.isLoading) {
                         Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                     }
-                    IconButton(onClick = onProfile) {
-                        Icon(Icons.Default.Person, contentDescription = "Profile")
-                    }
-                    IconButton(onClick = onLogout) {
-                        Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Logout")
-                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
             )
@@ -106,6 +95,7 @@ private fun WardrobeScreen(
                     onStudio = onStudioClick,
                     onAdd = onAddClick,
                     onWardrobe = {},
+                    onProfile = onProfileClick,
                 )
             }
         },

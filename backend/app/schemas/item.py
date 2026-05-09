@@ -87,6 +87,21 @@ class ItemUpdate(BaseModel):
         return v
 
 
+class GapOut(BaseModel):
+    """A single wardrobe gap across one analysis dimension."""
+
+    dimension: Literal["slot", "weather", "style", "color"]
+    key: str
+    severity: Literal["missing", "low"]
+    suggestion: str
+
+
+class GapsResponse(BaseModel):
+    """Response envelope for ``GET /items/gaps``."""
+
+    gaps: list[GapOut]
+
+
 class ItemListQuery(BaseModel):
     """Validated query parameters for ``GET /items``."""
 

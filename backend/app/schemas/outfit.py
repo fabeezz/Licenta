@@ -100,3 +100,21 @@ class OutfitSuggestResponse(BaseModel):
     bottom: int | None = None
     outer: int | None = None
     shoes: int | None = None
+
+
+class InspirationSlotMatch(BaseModel):
+    """Top-ranked items for a single slot from an inspiration search."""
+
+    best: ItemMinimal | None
+    alternates: list[ItemMinimal]
+    score: float | None
+
+
+class InspirationResponse(BaseModel):
+    """Result of POST /outfits/from-image; one ranked slot-match per outfit slot."""
+
+    source_image_url: str
+    top: InspirationSlotMatch
+    bottom: InspirationSlotMatch
+    outer: InspirationSlotMatch
+    shoes: InspirationSlotMatch

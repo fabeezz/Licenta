@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from typing import Any, Optional
+import numpy as np
 from PIL import Image
 
 from app.core.logging import log_latency
@@ -32,6 +33,7 @@ class PipelineResult:
     material_confidence: Optional[float]
     style: list[str]
     weather: list[str]
+    embedding: bytes | None = None
 
 
 def _threshold(pred: AttributePrediction, attr: str) -> tuple[Optional[str], Optional[float]]:
@@ -112,4 +114,5 @@ class ItemPipeline:
             material_confidence=material_confidence,
             style=style,
             weather=weather,
+            embedding=image_embed.cpu().numpy().astype(np.float32).tobytes(),
         )

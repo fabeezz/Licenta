@@ -1,24 +1,33 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, status
+import io
+
+from fastapi import APIRouter, Depends, UploadFile, File, status
+from PIL import Image
 from sqlalchemy.orm import Session
 
-from app.core.dependencies import get_current_user, get_item_repository, get_outfit_service
+from app.core.config import settings
+from app.core.dependencies import get_current_user, get_item_repository, get_outfit_service, get_pipeline
 from app.db.session import get_db
 from app.models.user import User
 from app.repositories.item_repository import ItemRepository
-from app.schemas.item import ItemListQuery
+from app.schemas.item import ItemListQuery, ItemMinimal
 from app.schemas.outfit import (
+    InspirationResponse,
+    InspirationSlotMatch,
     OutfitCreate,
     OutfitResponse,
     OutfitSuggestRequest,
     OutfitSuggestResponse,
     OutfitUpdate,
 )
+from app.services.inspiration.search import match_inspiration
 from app.services.outfit_service import OutfitService
 from app.services.outfits.filters import item_matches_style, item_matches_weather, prefer_explicit_style
 from app.services.outfits.harmony import HarmonyMode, suggest_outfit
 from app.services.outfits.slots import OUTER_CATEGORIES, SHOES_CATEGORIES, TOP_CATEGORIES
+from app.services.pipeline import ItemPipeline
+from app.services.storage import save_upload
 
 router = APIRouter(prefix="/outfits", tags=["outfits"])
 
@@ -147,4 +156,39 @@ def suggest_outfit_endpoint(
         bottom=result["bottom"].id if "bottom" in result else None,
         outer=result["outer"].id if "outer" in result else None,
         shoes=result["shoes"].id if "shoes" in result else None,
+    )
+
+
+@router.post("/from-image", response_model=InspirationResponse)
+async def inspiration_from_image(
+    image: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    item_repo: ItemRepository = Depends(get_item_repository),
+    pipeline: ItemPipeline = Depends(get_pipeline),
+):
+    """Upload an inspiration image (e.g. Pinterest screenshot) and get the closest
+    wardrobe items per slot ranked by CLIP similarity."""
+    raw = await image.read()
+    ext = (image.filename or "jpg").rsplit(".", 1)[-1].lower()
+    screenshot_name = save_upload(raw, ext)
+
+    rgb_img = Image.open(io.BytesIO(raw)).convert("RGB")
+    all_items = item_repo.list_all_for_user(current_user.id)
+    result = match_inspiration(rgb_img, pipeline.base_classifier, all_items)
+
+    source_url = f"/media/{screenshot_name}"
+
+    def _to_slot_match(slot_match) -> InspirationSlotMatch:
+        return InspirationSlotMatch(
+            best=ItemMinimal.model_validate(slot_match.best) if slot_match.best else None,
+            alternates=[ItemMinimal.model_validate(it) for it in slot_match.alternates],
+            score=slot_match.score,
+        )
+
+    return InspirationResponse(
+        source_image_url=source_url,
+        top=_to_slot_match(result.top),
+        bottom=_to_slot_match(result.bottom),
+        outer=_to_slot_match(result.outer),
+        shoes=_to_slot_match(result.shoes),
     )

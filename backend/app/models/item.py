@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import Integer, String, DateTime, ForeignKey, func, text
+from sqlalchemy import Integer, LargeBinary, String, DateTime, ForeignKey, func, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -26,6 +26,7 @@ class Item(Base):
     material: Mapped[str | None] = mapped_column(String, nullable=True)
     weather: Mapped[list[str]] = mapped_column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
     style: Mapped[list[str]] = mapped_column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
+    embedding: Mapped[bytes | None] = mapped_column(LargeBinary, nullable=True)
     wear_count: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0, server_default="0"
     )

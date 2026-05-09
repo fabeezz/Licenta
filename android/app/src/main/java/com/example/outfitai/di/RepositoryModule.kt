@@ -6,6 +6,8 @@ import com.example.outfitai.data.collections.CollectionRepository
 import com.example.outfitai.data.collections.CollectionRepositoryImpl
 import com.example.outfitai.data.insights.InsightsRepository
 import com.example.outfitai.data.insights.InsightsRepositoryImpl
+import com.example.outfitai.data.inspiration.InspirationRepository
+import com.example.outfitai.data.inspiration.InspirationRepositoryImpl
 import com.example.outfitai.data.item.ItemRepository
 import com.example.outfitai.data.item.ItemRepositoryImpl
 import com.example.outfitai.data.outfits.OutfitRepository
@@ -57,4 +59,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindInsightsRepository(impl: InsightsRepositoryImpl): InsightsRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindInspirationRepository(impl: InspirationRepositoryImpl): InspirationRepository
 }

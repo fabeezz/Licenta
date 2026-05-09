@@ -76,6 +76,18 @@ class ItemRepository:
         stmt = select(Item).where(Item.id == item_id, Item.user_id == user_id)
         return self._db.scalars(stmt).first()
 
+    def list_all_for_user(self, user_id: int) -> Sequence[Item]:
+        """Return every item owned by *user_id* with no pagination.
+
+        Args:
+            user_id: Owner constraint.
+
+        Returns:
+            Sequence of all ``Item`` instances belonging to this user.
+        """
+        stmt = select(Item).where(Item.user_id == user_id)
+        return self._db.scalars(stmt).all()
+
     def list_for_user(self, user_id: int, filters: ItemListQuery) -> Sequence[Item]:
         """Return items owned by *user_id* with optional filtering and pagination.
 
