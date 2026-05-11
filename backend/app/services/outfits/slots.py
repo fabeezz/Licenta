@@ -11,6 +11,7 @@ class OutfitSlot(StrEnum):
 
 
 TOP_CATEGORIES = {"t-shirt", "shirt", "sweater"}
+THIN_TOP_CATEGORIES = {"t-shirt", "shirt"}
 BOTTOM_CATEGORIES = {"jeans", "pants", "shorts", "skirt"}
 OUTER_CATEGORIES = {"hoodie", "jacket", "coat", "blazer"}
 SHOES_CATEGORIES = {"sneakers", "shoes", "boots"}

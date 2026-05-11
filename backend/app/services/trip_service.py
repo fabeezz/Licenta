@@ -25,6 +25,7 @@ from app.schemas.trip import (
 from app.schemas.weather import DayForecast
 from app.services.outfits.filters import item_matches_style, item_matches_weather, prefer_explicit_style
 from app.services.outfits.harmony import suggest_outfit
+from app.services.outfits.slots import THIN_TOP_CATEGORIES
 from app.services.trip.activity_map import style_for_day
 from app.services.trip.destinations import DESTINATIONS
 from app.services.weather_service import WeatherService
@@ -32,7 +33,7 @@ from app.services.weather_service import WeatherService
 # ── Category → slot mapping ───────────────────────────────────────────────────
 
 _TOP_CATS = {"t-shirt", "shirt", "hoodie", "sweater", "dress"}
-_THIN_TOP_CATS = {"t-shirt", "shirt"}        # used when an outer layer is added
+_THIN_TOP_CATS = THIN_TOP_CATEGORIES
 _BOTTOM_CATS = {"jeans", "pants", "shorts", "skirt"}
 _SHOE_CATS = {"sneakers", "shoes", "boots"}
 _OUTER_CATS = {"jacket", "coat", "blazer"}

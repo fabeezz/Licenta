@@ -41,8 +41,8 @@ _COMPLEMENTARY_PAIRS: list[tuple[frozenset[str], frozenset[str]]] = [
 ]
 
 # Layering penalty triggers
-_HEAVY_OUTERS: frozenset[str] = frozenset({"coat", "jacket", "puffer jacket"})
-_BULKY_TOPS: frozenset[str] = frozenset({"hoodie", "sweater"})
+_HEAVY_OUTERS: frozenset[str] = frozenset({"hoodie"})
+_BULKY_TOPS: frozenset[str] = frozenset({"sweater"})
 
 
 class HarmonyMode(StrEnum):

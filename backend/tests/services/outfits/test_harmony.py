@@ -150,35 +150,35 @@ class TestAnalogousMode:
 
 
 class TestLayeringPenalty:
-    def test_hoodie_plus_coat_penalized(self):
+    def test_sweater_plus_hoodie_penalized(self):
         with_penalty = score_outfit({
-            "top": _item("hoodie", "gray"),
-            "outer": _item("coat", "black"),
+            "top": _item("sweater", "gray"),
+            "outer": _item("hoodie", "black"),
             "shoes": _item("boots", "black"),
         }, HarmonyMode.NEUTRAL_ACCENT)
 
         without_penalty = score_outfit({
             "top": _item("t-shirt", "white"),
-            "outer": _item("coat", "black"),
+            "outer": _item("hoodie", "black"),
             "shoes": _item("boots", "black"),
         }, HarmonyMode.NEUTRAL_ACCENT)
 
         assert without_penalty > with_penalty
 
-    def test_sweater_plus_jacket_penalized(self):
-        with_penalty = score_outfit({
+    def test_sweater_plus_jacket_not_penalized(self):
+        sweater_jacket = score_outfit({
             "top": _item("sweater", "beige"),
             "outer": _item("jacket", "black"),
             "shoes": _item("sneakers", "white"),
         }, HarmonyMode.NEUTRAL_ACCENT)
 
-        without_penalty = score_outfit({
+        shirt_jacket = score_outfit({
             "top": _item("shirt", "white"),
             "outer": _item("jacket", "black"),
             "shoes": _item("sneakers", "white"),
         }, HarmonyMode.NEUTRAL_ACCENT)
 
-        assert without_penalty > with_penalty
+        assert sweater_jacket == shirt_jacket
 
 
 class TestShoesTieIn:
