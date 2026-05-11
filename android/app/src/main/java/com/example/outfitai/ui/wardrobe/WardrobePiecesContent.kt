@@ -37,8 +37,12 @@ internal fun PiecesContent(
             )
         }
         state.items.isEmpty() -> Box(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            val message = if (state.searchQuery.isNotBlank())
+                "No matches for \"${state.searchQuery}\""
+            else
+                "No items yet. Tap + to upload your first piece."
             Text(
-                text = "No items yet. Tap + to upload your first piece.",
+                text = message,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(20.dp),

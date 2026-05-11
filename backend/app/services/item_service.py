@@ -9,7 +9,9 @@ from app.core.exceptions import NotFoundError
 from app.models.item import Item
 from app.repositories.item_repository import ItemRepository
 from app.schemas.item import ItemListQuery, ItemUpdate
+from app.services.ai.clip_attribute_classifier import ClipAttributeClassifier
 from app.services.pipeline import ItemPipeline
+from app.services.search.text_search import cosine_search
 
 
 class ItemService:
@@ -101,6 +103,26 @@ class ItemService:
         if not item:
             raise NotFoundError("Item", item_id)
         return item
+
+    def search_items(
+        self,
+        query: str,
+        filters: ItemListQuery,
+        *,
+        user_id: int,
+        classifier: ClipAttributeClassifier,
+    ) -> Sequence[Item]:
+        """Return wardrobe items ranked by semantic similarity to *query*.
+
+        Applies chip filters first, then re-ranks by CLIP cosine similarity.
+        Items without an embedding are silently skipped.
+        """
+        import numpy as np
+
+        candidates = self._repo.list_for_user(user_id, filters)
+        query_embed: np.ndarray = classifier.encode_text(query).cpu().numpy().squeeze(0)
+        ranked = cosine_search(query_embed, candidates, limit=filters.limit or 50)
+        return [item for item, _ in ranked]
 
     def list_items(self, filters: ItemListQuery, *, user_id: int) -> Sequence[Item]:
         """Return filtered and paginated items for *user_id*.

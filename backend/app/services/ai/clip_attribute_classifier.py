@@ -34,6 +34,13 @@ class ClipAttributeClassifier:
         return F.normalize(feats, dim=-1)
 
     @torch.no_grad()
+    def encode_text(self, text: str) -> torch.Tensor:
+        """Encode a text query and return an L2-normalized embedding (1, D)."""
+        tokens = self.tokenizer([text]).to(self.device)
+        feats = self.model.encode_text(tokens)
+        return F.normalize(feats, dim=-1)
+
+    @torch.no_grad()
     def score_labels(
         self,
         image_embed: torch.Tensor,

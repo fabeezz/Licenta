@@ -36,6 +36,16 @@ interface ItemApi {
         @Query("offset") offset: Int = 0,
     ): List<ItemOutDto>
 
+    @GET("items/search")
+    suspend fun searchItems(
+        @Query("q") query: String,
+        @Query("category") category: String? = null,
+        @Query("colors") colors: List<String>? = null,
+        @Query("weather") weather: String? = null,
+        @Query("style") style: String? = null,
+        @Query("limit") limit: Int = 50,
+    ): List<ItemOutDto>
+
     @GET("items/gaps")
     suspend fun getGaps(): GapsResponseDto
 

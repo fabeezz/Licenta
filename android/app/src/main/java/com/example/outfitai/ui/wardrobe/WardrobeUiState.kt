@@ -17,4 +17,5 @@ data class WardrobeUiState(
     val filterColor: String? = null,
     val filterWeather: String? = null,
     val filterStyle: String? = null,
+    val searchQuery: String = "",
 )

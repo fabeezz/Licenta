@@ -9,6 +9,7 @@ import com.example.outfitai.domain.usecase.collections.GetCollectionsUseCase
 import com.example.outfitai.domain.usecase.collections.RenameCollectionUseCase
 import com.example.outfitai.domain.usecase.wardrobe.GetFilteredWardrobeUseCase
 import com.example.outfitai.domain.usecase.wardrobe.GetWardrobeOutfitsUseCase
+import com.example.outfitai.domain.usecase.wardrobe.SearchWardrobeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,6 +25,7 @@ sealed interface WardrobeIntent {
     data class SetColorFilter(val value: String?) : WardrobeIntent
     data class SetWeatherFilter(val value: String?) : WardrobeIntent
     data class SetStyleFilter(val value: String?) : WardrobeIntent
+    data class SetSearchQuery(val query: String) : WardrobeIntent
     data object ClearFilters : WardrobeIntent
     data object Refresh : WardrobeIntent
 }
@@ -34,6 +36,7 @@ private data class ActiveFilters(
     val color: String? = null,
     val weather: String? = null,
     val style: String? = null,
+    val searchQuery: String = "",
     val nonce: Int = 0, // incremented on Refresh to re-trigger same filters
 )
 
@@ -41,6 +44,7 @@ private data class ActiveFilters(
 class WardrobeViewModel @Inject constructor(
     private val getFilteredWardrobe: GetFilteredWardrobeUseCase,
     private val getWardrobeOutfits: GetWardrobeOutfitsUseCase,
+    private val searchWardrobe: SearchWardrobeUseCase,
     private val getCollections: GetCollectionsUseCase,
     private val createCollectionUseCase: CreateCollectionUseCase,
     private val renameCollectionUseCase: RenameCollectionUseCase,
@@ -63,19 +67,34 @@ class WardrobeViewModel @Inject constructor(
                 .collectLatest { f ->
                     reduce { copy(isLoading = true, error = null) }
                     if (f.tab == WardrobeTab.Clothes) {
-                        when (val result = getFilteredWardrobe(
-                            category = null,
-                            dominantColor = f.color,
-                            weather = f.weather,
-                            style = f.style,
-                        )) {
-                            is Resource.Success -> {
-                                val filtered = if (f.bucket == null) result.data
-                                else result.data.filter { it.category in f.bucket.members }
-                                reduce { copy(isLoading = false, items = filtered, error = null) }
+                        if (f.searchQuery.isNotBlank()) {
+                            when (val result = searchWardrobe(
+                                query = f.searchQuery,
+                                category = f.bucket?.members?.firstOrNull(),
+                                weather = f.weather,
+                                style = f.style,
+                            )) {
+                                is Resource.Success -> reduce {
+                                    copy(isLoading = false, items = result.data, error = null)
+                                }
+                                is Resource.Error -> reduce { copy(isLoading = false, error = result.message) }
+                                Resource.Loading -> Unit
                             }
-                            is Resource.Error -> reduce { copy(isLoading = false, error = result.message) }
-                            Resource.Loading -> Unit
+                        } else {
+                            when (val result = getFilteredWardrobe(
+                                category = null,
+                                dominantColor = f.color,
+                                weather = f.weather,
+                                style = f.style,
+                            )) {
+                                is Resource.Success -> {
+                                    val filtered = if (f.bucket == null) result.data
+                                    else result.data.filter { it.category in f.bucket.members }
+                                    reduce { copy(isLoading = false, items = filtered, error = null) }
+                                }
+                                is Resource.Error -> reduce { copy(isLoading = false, error = result.message) }
+                                Resource.Loading -> Unit
+                            }
                         }
                     } else if (f.tab == WardrobeTab.Outfits) {
                         when (val result = getWardrobeOutfits(
@@ -123,11 +142,15 @@ class WardrobeViewModel @Inject constructor(
                 reduce { copy(filterStyle = intent.value) }
                 _filters.update { it.copy(style = intent.value) }
             }
+            is WardrobeIntent.SetSearchQuery -> {
+                reduce { copy(searchQuery = intent.query) }
+                _filters.update { it.copy(searchQuery = intent.query) }
+            }
             WardrobeIntent.ClearFilters -> {
                 reduce {
-                    copy(filterBucket = null, filterColor = null, filterWeather = null, filterStyle = null)
+                    copy(filterBucket = null, filterColor = null, filterWeather = null, filterStyle = null, searchQuery = "")
                 }
-                _filters.update { it.copy(bucket = null, color = null, weather = null, style = null) }
+                _filters.update { it.copy(bucket = null, color = null, weather = null, style = null, searchQuery = "") }
             }
             WardrobeIntent.Refresh -> _filters.update { it.copy(nonce = it.nonce + 1) }
         }
@@ -141,6 +164,7 @@ class WardrobeViewModel @Inject constructor(
     fun setFilterWeather(value: String?) = onIntent(WardrobeIntent.SetWeatherFilter(value))
     fun setFilterStyle(value: String?) = onIntent(WardrobeIntent.SetStyleFilter(value))
     fun clearFilters() = onIntent(WardrobeIntent.ClearFilters)
+    fun setSearchQuery(query: String) = onIntent(WardrobeIntent.SetSearchQuery(query))
 
     fun createCollection(name: String, outfitIds: List<Int>) {
         viewModelScope.launch {

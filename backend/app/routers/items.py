@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, File, Form, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user, get_item_service
@@ -82,6 +82,19 @@ def get_wardrobe_gaps(
         {"dimension": g.dimension, "key": g.key, "severity": g.severity, "suggestion": g.suggestion}
         for g in raw_gaps
     ])
+
+
+@router.get("/search", response_model=list[ItemOut])
+def search_items(
+    request: Request,
+    q: str = Query(..., min_length=1, max_length=120),
+    current_user: User = Depends(get_current_user),
+    svc: ItemService = Depends(get_item_service),
+    filters: ItemListQuery = Depends(),
+):
+    """Return wardrobe items ranked by CLIP semantic similarity to the text query *q*."""
+    pipeline = request.app.state.pipeline
+    return list(svc.search_items(q, filters, user_id=current_user.id, classifier=pipeline.base_classifier))
 
 
 @router.get("", response_model=list[ItemOut])

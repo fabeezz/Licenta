@@ -37,6 +37,22 @@ class WardrobeRepositoryImpl @Inject constructor(
         offset = offset,
     )
 
+    override suspend fun searchItems(
+        query: String,
+        category: String?,
+        colors: List<String>?,
+        weather: String?,
+        style: String?,
+        limit: Int,
+    ): List<ItemOutDto> = api.searchItems(
+        query = query,
+        category = category,
+        colors = colors,
+        weather = weather,
+        style = style,
+        limit = limit,
+    )
+
     override suspend fun listOutfits(
         weather: String?,
         style: String?,

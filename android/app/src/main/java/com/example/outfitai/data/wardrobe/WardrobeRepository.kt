@@ -18,6 +18,15 @@ interface WardrobeRepository {
         offset: Int = 0,
     ): List<ItemOutDto>
 
+    suspend fun searchItems(
+        query: String,
+        category: String? = null,
+        colors: List<String>? = null,
+        weather: String? = null,
+        style: String? = null,
+        limit: Int = 50,
+    ): List<ItemOutDto>
+
     suspend fun listOutfits(
         weather: String? = null,
         style: String? = null,
