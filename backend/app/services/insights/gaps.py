@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Literal, Sequence
 
 from app.models.item import Item
-from app.services.outfits.slots import OutfitSlot, category_to_slot
+from app.services.outfits.slots import OutfitSlot, category_to_slots
 
 _WEATHER_TAGS: frozenset[str] = frozenset({"warm", "cold", "rainy"})
 _STYLE_TAGS: frozenset[str] = frozenset({"casual", "formal", "sporty"})
@@ -41,7 +41,6 @@ _SUGGESTIONS: dict[tuple[str, str], str] = {
     ("color", "dark"): "Add a dark neutral (black, navy, gray) to ground your color palette.",
     ("color", "colorful"): "Introduce some color — a bold piece lifts an otherwise muted wardrobe.",
     ("color", "neutrals"): "You're missing neutral tones entirely. A white or black basic is endlessly versatile.",
-    ("outfit", "completability"): "",  # built dynamically
     ("onboarding", "starter"): (
         "Add a few more items to unlock gap analysis. "
         "Aim for at least a top, bottom, and pair of shoes."
@@ -96,9 +95,7 @@ def _outfit_completability_gap(items: Sequence[Item]) -> Gap | None:
     required_slots = {OutfitSlot.TOP, OutfitSlot.BOTTOM, OutfitSlot.SHOES}
     filled = set()
     for item in items:
-        slot = category_to_slot(item.category)
-        if slot in required_slots:
-            filled.add(slot)
+        filled.update(category_to_slots(item.category) & required_slots)
 
     missing = required_slots - filled
     if not missing:
@@ -116,8 +113,7 @@ def _slot_gaps(items: Sequence[Item]) -> list[Gap]:
     threshold = _low_threshold(total, _SLOT_SHARE, _SLOT_FLOOR)
     counts: dict[OutfitSlot, int] = {s: 0 for s in OutfitSlot}
     for item in items:
-        slot = category_to_slot(item.category)
-        if slot is not None:
+        for slot in category_to_slots(item.category):
             counts[slot] += 1
 
     result: list[Gap] = []

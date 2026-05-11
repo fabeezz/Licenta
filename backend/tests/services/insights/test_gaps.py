@@ -72,6 +72,20 @@ class TestSlotCoverage:
         keys = _keys(_analyze_full(items), "slot")
         assert {"top", "bottom", "outer", "shoes"}.issubset(keys)
 
+    def test_dress_credits_both_top_and_bottom(self):
+        items = [_item(category="dress"), _item(category="dress")]
+        keys = _keys(_analyze_full(items), "slot")
+        assert "top" not in keys
+        assert "bottom" not in keys
+
+    def test_dress_satisfies_outfit_completability_top_bottom(self):
+        items = (
+            [_item(category="dress") for _ in range(2)]
+            + [_item(category="sneakers") for _ in range(2)]
+        )
+        keys = _keys(_analyze_full(items), "outfit")
+        assert "completability" not in keys
+
 
 # ── Weather coverage ──────────────────────────────────────────────────────────
 
