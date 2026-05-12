@@ -67,6 +67,10 @@ class OutfitCollectionRepository:
         )
         return self._db.scalars(stmt).all()
 
+    def get_by_ids(self, outfit_ids: set[int]) -> list[Outfit]:
+        stmt = select(Outfit).where(Outfit.id.in_(outfit_ids))
+        return list(self._db.scalars(stmt).all())
+
     def verify_outfits_owned(self, user_id: int, outfit_ids: set[int]) -> set[int]:
         stmt = select(Outfit.id).where(
             Outfit.id.in_(outfit_ids),

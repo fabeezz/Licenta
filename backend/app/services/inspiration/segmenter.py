@@ -4,6 +4,7 @@ from functools import cached_property
 from typing import TYPE_CHECKING
 
 import numpy as np
+import torch
 from PIL import Image
 
 from app.services.outfits.slots import OutfitSlot
@@ -55,10 +56,16 @@ class GarmentSegmenter:
     def _pipe(self):
         from transformers import pipeline as hf_pipeline
 
+        device = 0 if torch.cuda.is_available() else -1
         return hf_pipeline(
             "image-segmentation",
             model="mattmdjaga/segformer_b2_clothes",
+            device=device,
         )
+
+    def prewarm(self) -> None:
+        """Force the lazy pipeline load so the first real request doesn't pay the cold-start cost."""
+        _ = self._pipe
 
     def segment(self, rgb_img: Image.Image) -> dict[OutfitSlot, Image.Image]:
         """Return tightly cropped garment images keyed by slot.

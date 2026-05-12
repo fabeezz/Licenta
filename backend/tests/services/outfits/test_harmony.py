@@ -9,6 +9,7 @@ import pytest
 from app.services.outfits.harmony import (
     HarmonyMode,
     NEUTRALS,
+    is_layering_allowed,
     score_outfit,
     suggest_outfit,
 )
@@ -149,23 +150,45 @@ class TestAnalogousMode:
         assert s_neighbor > s
 
 
-class TestLayeringPenalty:
-    def test_sweater_plus_hoodie_penalized(self):
-        with_penalty = score_outfit({
-            "top": _item("sweater", "gray"),
-            "outer": _item("hoodie", "black"),
-            "shoes": _item("boots", "black"),
-        }, HarmonyMode.NEUTRAL_ACCENT)
+class TestLayeringRule:
+    def test_hoodie_plus_sweater_not_allowed(self):
+        # Hard rule: hoodie outer + sweater top is forbidden.
+        assert is_layering_allowed("hoodie", "sweater") is False
 
-        without_penalty = score_outfit({
-            "top": _item("t-shirt", "white"),
-            "outer": _item("hoodie", "black"),
-            "shoes": _item("boots", "black"),
-        }, HarmonyMode.NEUTRAL_ACCENT)
+    def test_hoodie_plus_thin_top_allowed(self):
+        assert is_layering_allowed("hoodie", "t-shirt") is True
+        assert is_layering_allowed("hoodie", "shirt") is True
 
-        assert without_penalty > with_penalty
+    def test_jacket_allows_any_top(self):
+        assert is_layering_allowed("jacket", "sweater") is True
+        assert is_layering_allowed("coat", "sweater") is True
+        assert is_layering_allowed("blazer", "sweater") is True
 
-    def test_sweater_plus_jacket_not_penalized(self):
+    def test_suggest_outfit_never_returns_hoodie_plus_sweater(self):
+        # With only sweater tops and hoodie outers, suggest_outfit should return None
+        # (all combos are invalid and get skipped).
+        candidates = {
+            "top": [_item("sweater", "gray")],
+            "outer": [_item("hoodie", "black")],
+            "shoes": [_item("boots", "black")],
+        }
+        rng = random.Random(42)
+        result = suggest_outfit(candidates, samples=50, rng=rng)
+        assert result is None or result.get("outer") is None or result.get("top") is None
+
+    def test_suggest_outfit_picks_thin_top_with_hoodie(self):
+        # With both sweater and t-shirt tops + hoodie outer, only t-shirt should appear.
+        candidates = {
+            "top": [_item("sweater", "gray"), _item("t-shirt", "white")],
+            "outer": [_item("hoodie", "black")],
+            "shoes": [_item("boots", "black")],
+        }
+        rng = random.Random(42)
+        result = suggest_outfit(candidates, samples=100, rng=rng)
+        assert result is not None
+        assert result["top"].category == "t-shirt"
+
+    def test_sweater_plus_jacket_allowed(self):
         sweater_jacket = score_outfit({
             "top": _item("sweater", "beige"),
             "outer": _item("jacket", "black"),

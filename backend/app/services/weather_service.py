@@ -4,6 +4,7 @@ from datetime import date
 
 import httpx
 
+from app.core.config import settings
 from app.core.exceptions import WeatherUnavailableError
 from app.schemas.weather import DayForecast, HourPoint, WeatherTodayResponse
 
@@ -31,7 +32,7 @@ class WeatherService:
             "timezone": "auto",
         }
         try:
-            r = await self._client.get(self._base_url, params=params, timeout=10.0)
+            r = await self._client.get(self._base_url, params=params, timeout=settings.WEATHER_HTTP_TIMEOUT)
             r.raise_for_status()
         except httpx.HTTPError as exc:
             raise WeatherUnavailableError(str(exc)) from exc
@@ -58,7 +59,7 @@ class WeatherService:
             "timezone": "auto",
         }
         try:
-            r = await self._client.get(self._base_url, params=params, timeout=10.0)
+            r = await self._client.get(self._base_url, params=params, timeout=settings.WEATHER_HTTP_TIMEOUT)
             r.raise_for_status()
         except httpx.HTTPError as exc:
             raise WeatherUnavailableError(str(exc)) from exc

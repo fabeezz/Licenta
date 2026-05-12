@@ -4,23 +4,8 @@ from typing import Literal
 
 from pydantic import BaseModel, field_validator
 
+from app.schemas._validators import lowercase_str, lowercase_str_list
 from app.schemas.item import ItemMinimal
-
-
-class OutfitItemRef(ItemMinimal):
-    """Item reference used in AI recommendation responses."""
-
-    category: str | None = None
-
-
-class OutfitOut(BaseModel):
-    """AI recommendation result (not a CRUD outfit)."""
-
-    top: OutfitItemRef
-    bottom: OutfitItemRef
-    outer: OutfitItemRef
-    shoes: OutfitItemRef
-    score: float
 
 
 class OutfitCreate(BaseModel):
@@ -38,16 +23,12 @@ class OutfitCreate(BaseModel):
     @field_validator("style", mode="before")
     @classmethod
     def to_lowercase(cls, v: str | None) -> str | None:
-        if isinstance(v, str):
-            return v.lower()
-        return v
+        return lowercase_str(v)
 
     @field_validator("weather", mode="before")
     @classmethod
     def weather_to_lowercase(cls, v: list[str] | None) -> list[str]:
-        if isinstance(v, list):
-            return [t.lower() if isinstance(t, str) else t for t in v]
-        return []
+        return lowercase_str_list(v) or []
 
 
 class OutfitUpdate(BaseModel):
@@ -60,16 +41,12 @@ class OutfitUpdate(BaseModel):
     @field_validator("style", mode="before")
     @classmethod
     def to_lowercase(cls, v: str | None) -> str | None:
-        if isinstance(v, str):
-            return v.lower()
-        return v
+        return lowercase_str(v)
 
     @field_validator("weather", mode="before")
     @classmethod
     def weather_to_lowercase(cls, v: list[str] | None) -> list[str] | None:
-        if isinstance(v, list):
-            return [t.lower() if isinstance(t, str) else t for t in v]
-        return v
+        return lowercase_str_list(v)
 
 
 class OutfitResponse(BaseModel):

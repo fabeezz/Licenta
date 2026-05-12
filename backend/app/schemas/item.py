@@ -5,6 +5,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.schemas._validators import lowercase_str, lowercase_str_list
+
 
 class ItemBase(BaseModel):
     """Shared read fields for all item response shapes."""
@@ -50,16 +52,12 @@ class ItemUpdate(BaseModel):
     @field_validator("category", "material", mode="before")
     @classmethod
     def to_lowercase(cls, v: str | None) -> str | None:
-        if isinstance(v, str):
-            return v.lower()
-        return v
+        return lowercase_str(v)
 
     @field_validator("weather", "style", mode="before")
     @classmethod
     def weather_to_lowercase(cls, v: list[str] | None) -> list[str] | None:
-        if isinstance(v, list):
-            return [t.lower() if isinstance(t, str) else t for t in v]
-        return v
+        return lowercase_str_list(v)
 
     @field_validator("color_tags", mode="before")
     @classmethod

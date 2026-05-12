@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import array
 from sqlalchemy.orm import Session, joinedload
 
+from app.core.utils import parse_csv_tags
 from app.models.item import Item
 from app.models.outfit import Outfit
 
@@ -119,8 +120,7 @@ class OutfitRepository:
             .limit(limit)
         )
         if weather:
-            tags = [t.strip().lower() for t in weather.split(",")]
-            stmt = stmt.where(Outfit.weather.op("?|")(array(tags)))
+            stmt = stmt.where(Outfit.weather.op("?|")(array(parse_csv_tags(weather))))
         if style:
             stmt = stmt.where(Outfit.style == style)
         return self._db.scalars(stmt).all()

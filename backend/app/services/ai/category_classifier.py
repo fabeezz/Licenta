@@ -1,19 +1,9 @@
 from __future__ import annotations
-from dataclasses import dataclass
-from typing import List, Tuple
+from typing import List
 
 import torch
-from PIL import Image
 
 from app.services.ai.clip_attribute_classifier import ClipAttributeClassifier, AttributePrediction
-
-
-# Kept for backward compatibility with any code that imports ClipPrediction
-@dataclass
-class ClipPrediction:
-    label: str
-    confidence: float
-    topk: List[Tuple[str, float]]
 
 
 class ClipCategoryClassifier:
@@ -31,6 +21,14 @@ class ClipCategoryClassifier:
             "a fashion catalog image of a {}",
             "the garment shown is a {}",
         ]
+        self._cached_labels: List[str] | None = None
+        self._cached_embeds: torch.Tensor | None = None
+
+    def prewarm(self, labels: List[str]) -> None:
+        """Precompute and cache label embeddings for the given label set."""
+        label_templates = [[t.format(lbl) for t in self._templates] for lbl in labels]
+        self._cached_labels = labels
+        self._cached_embeds = self._base.precompute_label_embeds(labels, label_templates)
 
     def score(
         self,
@@ -38,13 +36,8 @@ class ClipCategoryClassifier:
         labels: List[str],
         top_k: int = 3,
     ) -> AttributePrediction:
+        if self._cached_embeds is not None and self._cached_labels == labels:
+            return self._base.score_against_cached(
+                image_embed, self._cached_embeds, labels, top_k
+            )
         return self._base.score_labels(image_embed, labels, self._templates, top_k=top_k)
-
-    def predict(
-        self,
-        rgb_img: Image.Image,
-        labels: List[str],
-        top_k: int = 3,
-    ) -> ClipPrediction:
-        pred = self._base.predict(rgb_img, labels, self._templates, top_k=top_k)
-        return ClipPrediction(label=pred.label, confidence=pred.confidence, topk=pred.topk)

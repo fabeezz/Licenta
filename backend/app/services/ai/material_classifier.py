@@ -1,9 +1,8 @@
 from __future__ import annotations
 from collections import defaultdict
-from typing import Dict, FrozenSet, List, Optional
+from typing import Dict, FrozenSet, List, Optional, Tuple
 
 import torch
-from PIL import Image
 
 from app.services.ai.clip_attribute_classifier import ClipAttributeClassifier, AttributePrediction
 
@@ -113,9 +112,27 @@ def _collapse(pred: AttributePrediction) -> AttributePrediction:
 class ClipMaterialClassifier:
     def __init__(self, base_classifier: ClipAttributeClassifier) -> None:
         self._base = base_classifier
+        # cache_key → (allowed_labels, precomputed_embeds)
+        # None entry means single-canonical short-circuit (no model call needed)
+        self._cache: Dict[str, Tuple[List[str], torch.Tensor] | None] = {}
+
+    def prewarm(self) -> None:
+        """Precompute and cache label embeddings for every known category + the unknown fallback."""
+        categories = list(_CATEGORY_TO_ALLOWED.keys()) + [""]  # "" = unknown/None
+        for normalized_cat in categories:
+            allowed = _allowed_labels(normalized_cat if normalized_cat else None)
+            canonicals = {_INTERNAL_TO_CANONICAL[lbl] for lbl in allowed}
+            if len(canonicals) == 1:
+                self._cache[normalized_cat] = None  # short-circuit marker
+                continue
+            cat_for_templates = normalized_cat or "clothing item"
+            label_templates = _build_label_templates(allowed, cat_for_templates)
+            embeds = self._base.precompute_label_embeds(allowed, label_templates)
+            self._cache[normalized_cat] = (allowed, embeds)
 
     def score(self, image_embed: torch.Tensor, category: Optional[str]) -> AttributePrediction:
         cat = (category or "clothing item").lower().strip()
+        cache_key = (category or "").lower().strip()
         allowed = _allowed_labels(category)
 
         # Short-circuit: single canonical bucket allowed → no model call needed
@@ -124,11 +141,16 @@ class ClipMaterialClassifier:
             label = next(iter(canonicals))
             return AttributePrediction(label=label, confidence=1.0, topk=[(label, 1.0)])
 
-        label_templates = _build_label_templates(allowed, cat)
-        pred = self._base.score_labels_multi(
-            image_embed, allowed, label_templates, top_k=len(allowed)
-        )
-        return _collapse(pred)
+        cached = self._cache.get(cache_key)
+        if cached is not None:
+            cached_labels, label_embeds_t = cached
+            pred = self._base.score_against_cached(
+                image_embed, label_embeds_t, cached_labels, top_k=len(cached_labels)
+            )
+        else:
+            label_templates = _build_label_templates(allowed, cat)
+            pred = self._base.score_labels_multi(
+                image_embed, allowed, label_templates, top_k=len(allowed)
+            )
 
-    def predict(self, rgb_img: Image.Image, category: Optional[str]) -> AttributePrediction:
-        return self.score(self._base.encode_image(rgb_img), category)
+        return _collapse(pred)

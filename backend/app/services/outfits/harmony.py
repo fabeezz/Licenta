@@ -40,9 +40,17 @@ _COMPLEMENTARY_PAIRS: list[tuple[frozenset[str], frozenset[str]]] = [
     (frozenset({"cyan"}), frozenset({"red", "burgundy", "pink"})),
 ]
 
-# Layering penalty triggers
+# Layering rule: heavy outers (hoodie) may only be worn over thin tops (t-shirt / shirt).
+# Jacket / coat / blazer can layer over any top including sweater.
 _HEAVY_OUTERS: frozenset[str] = frozenset({"hoodie"})
 _BULKY_TOPS: frozenset[str] = frozenset({"sweater"})
+
+
+def is_layering_allowed(outer_category: str | None, top_category: str | None) -> bool:
+    """Return False when a heavy outer (hoodie) is paired with a bulky top (sweater)."""
+    if not outer_category or not top_category:
+        return True
+    return not (outer_category in _HEAVY_OUTERS and top_category in _BULKY_TOPS)
 
 
 class HarmonyMode(StrEnum):
@@ -169,9 +177,6 @@ def score_outfit(items_by_slot: dict[str, Item | None], mode: HarmonyMode) -> fl
         elif outer_dom in NEUTRALS or top_dom in NEUTRALS:
             score += 0.5
 
-        # Layering penalty
-        if (outer.category or "") in _HEAVY_OUTERS and (top.category or "") in _BULKY_TOPS:
-            score -= 2.0
 
     # Style consistency — penalise outfits that mix explicit style tags.
     # Items with an empty style list are "any-style" and don't contribute.
@@ -214,6 +219,10 @@ def suggest_outfit(
 
     for _ in range(samples):
         combo: dict[str, Item] = {slot: rng.choice(items) for slot, items in non_empty.items()}
+        outer_cat = (combo.get("outer") and combo["outer"].category) or None
+        top_cat = (combo.get("top") and combo["top"].category) or None
+        if not is_layering_allowed(outer_cat, top_cat):
+            continue
         s = score_outfit(combo, mode)
         if s > best_score:
             best_score = s

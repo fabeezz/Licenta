@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 
+
 class Settings(BaseSettings):
     DATABASE_URL: str
     MEDIA_ROOT: str = "media"
@@ -10,8 +11,12 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
 
     OPEN_METEO_BASE_URL: str = "https://api.open-meteo.com/v1/forecast"
+    WEATHER_HTTP_TIMEOUT: float = 10.0
+
+    CORS_ALLOW_ORIGINS: list[str] = ["*"]
 
     class Config:
         env_file = ".env"
+
 
 settings = Settings()

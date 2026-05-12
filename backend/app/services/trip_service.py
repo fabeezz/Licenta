@@ -24,39 +24,46 @@ from app.schemas.trip import (
 )
 from app.schemas.weather import DayForecast
 from app.services.outfits.filters import item_matches_style, item_matches_weather, prefer_explicit_style
-from app.services.outfits.harmony import suggest_outfit
-from app.services.outfits.slots import THIN_TOP_CATEGORIES
+from app.services.outfits.harmony import is_layering_allowed, suggest_outfit
+from app.services.outfits.slots import (
+    BOTTOM_CATEGORIES,
+    DUAL_SLOT_CATEGORIES,
+    OUTER_CATEGORIES,
+    SHOES_CATEGORIES,
+    THIN_TOP_CATEGORIES,
+    TOP_CATEGORIES,
+)
 from app.services.trip.activity_map import style_for_day
+from app.services.trip.config import COLD_THRESHOLD, RAINY_THRESHOLD, SNOW_THRESHOLD, WARDROBE_QUERY_LIMIT
 from app.services.trip.destinations import DESTINATIONS
 from app.services.weather_service import WeatherService
+from app.core.exceptions import NotFoundError
 
 # ── Category → slot mapping ───────────────────────────────────────────────────
+# _TOP_CATS / _BOTTOM_CATS / _SHOE_CATS / _OUTER_CATS are imported from slots.py
+# to share the single source of truth with Outfit Studio.
+# Hoodie is intentionally in OUTER_CATEGORIES (not tops): it layers over t-shirt/shirt only
+# (see is_layering_allowed). Jacket/coat/blazer can layer over any top including sweater.
+# Dresses fill both top and bottom slots in Studio; trip planner treats them as tops.
+_TOP_CATS = TOP_CATEGORIES | DUAL_SLOT_CATEGORIES  # {"t-shirt", "shirt", "sweater", "dress"}
+_BOTTOM_CATS = BOTTOM_CATEGORIES     # {"jeans", "pants", "shorts", "skirt"}
+_SHOE_CATS = SHOES_CATEGORIES        # {"sneakers", "shoes", "boots"}
+_OUTER_CATS = OUTER_CATEGORIES       # {"hoodie", "jacket", "coat", "blazer"}
+_BAG_CATS = {"bag", "backpack"}      # no studio equivalent, kept local
 
-_TOP_CATS = {"t-shirt", "shirt", "hoodie", "sweater", "dress"}
-_THIN_TOP_CATS = THIN_TOP_CATEGORIES
-_BOTTOM_CATS = {"jeans", "pants", "shorts", "skirt"}
-_SHOE_CATS = {"sneakers", "shoes", "boots"}
-_OUTER_CATS = {"jacket", "coat", "blazer"}
-_BAG_CATS = {"bag", "backpack"}
-
-# ── Weather-tag thresholds (Celsius) ─────────────────────────────────────────
-
-_SNOW_THRESHOLD = 0.0
-_COLD_THRESHOLD = 15.0
-_RAINY_THRESHOLD = 1.0  # mm precipitation
 
 
 def _day_weather_tags(forecast: DayForecast) -> list[str]:
     tags: list[str] = []
     avg = (forecast.temp_max_c + forecast.temp_min_c) / 2
-    if avg <= _SNOW_THRESHOLD:
+    if avg <= SNOW_THRESHOLD:
         tags.append("snow")
         tags.append("cold")
-    elif avg < _COLD_THRESHOLD:
+    elif avg < COLD_THRESHOLD:
         tags.append("cold")
     else:
         tags.append("warm")
-    if forecast.precip_mm >= _RAINY_THRESHOLD:
+    if forecast.precip_mm >= RAINY_THRESHOLD:
         tags.append("rainy")
     return tags or ["warm"]
 
@@ -169,8 +176,7 @@ class TripService:
     async def generate_plan(self, user: User, req: TripGenerateRequest) -> TripPlanResponse:
         dest = DESTINATIONS.get(req.city_key)
         if dest is None:
-            from fastapi import HTTPException, status
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Unknown destination")
+            raise NotFoundError(f"Unknown destination: {req.city_key}")
 
         # Fetch weather forecast
         forecast = await self._weather.get_forecast_range(
@@ -180,7 +186,7 @@ class TripService:
         # Load user's full wardrobe
         all_items = self._items.list_for_user(
             user.id,
-            ItemListQuery(limit=200, offset=0),
+            ItemListQuery(limit=WARDROBE_QUERY_LIMIT, offset=0),
         )
 
         tops = [i for i in all_items if i.category in _TOP_CATS]
@@ -312,20 +318,7 @@ class TripService:
                 and (not match_style or item_matches_style(i, style))
             ]
 
-        def filtered_outer(items: list[Item], match_style: bool = True) -> list[Item]:
-            # Outers match against full weather tags (including rainy) since that's why we add them.
-            return [
-                i for i in items
-                if item_matches_weather(i, weather_tags)
-                and (not match_style or item_matches_style(i, style))
-            ]
-
-        # Top: when layering, restrict to thin pieces (t-shirt/shirt) so hoodie+jacket is avoided.
-        if needs_outer:
-            thin_tops = [t for t in tops if t.category in _THIN_TOP_CATS]
-            top_cands = filtered(thin_tops) or filtered(tops)  # fall back to all tops if thin unavailable
-        else:
-            top_cands = filtered(tops)
+        top_cands = filtered(tops)
 
         bottom_cands = filtered(bottoms)
         shoe_cands = filtered(shoes)
@@ -415,6 +408,11 @@ class TripService:
             top   = _pick_with_pool(top_cands,        top_pool,   pool_limit, bag_size)
             shoe  = _pick_with_pool(shoe_cands_final, shoe_pool,  pool_limit, bag_size)
             outer = _pick_with_pool(outer_cands,      outer_pool, pool_limit, bag_size) if needs_outer else None
+            # Enforce layering rule: if a hoodie is paired with a sweater, prefer a thin top instead.
+            if outer and top and not is_layering_allowed(outer.category, top.category):
+                thin_cands = [t for t in top_cands if t.category in THIN_TOP_CATEGORIES]
+                if thin_cands:
+                    top = random.choice(thin_cands)
             bottom = None  # set below after dress check
 
         # Dress skips bottom — if a dress was chosen as the top, no separate bottom is needed.
@@ -475,8 +473,7 @@ class TripService:
     def save_plan(self, user: User, req: TripSaveRequest) -> TripRead:
         dest = DESTINATIONS.get(req.city_key)
         if dest is None:
-            from fastapi import HTTPException, status
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Unknown destination")
+            raise NotFoundError(f"Unknown destination: {req.city_key}")
 
         # Create collection
         collection = OutfitCollection(

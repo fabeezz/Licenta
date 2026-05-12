@@ -7,20 +7,20 @@ _VALID_STYLES = {"casual", "formal", "sporty"}
 
 
 class UserCreate(BaseModel):
-    """Body la înregistrare."""
+    """Registration request body."""
     username: str
     email: EmailStr
     password: str
 
 
 class UserLogin(BaseModel):
-    """Body la login (username sau email + parolă)."""
+    """Login request body (username or email + password)."""
     username: str
     password: str
 
 
 class UserOut(BaseModel):
-    """Răspuns: user fără parolă."""
+    """User representation returned by auth endpoints (no password field)."""
     id: int
     username: str
     email: str

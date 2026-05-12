@@ -232,3 +232,8 @@ def match_inspiration(
         outer=outer_m,
         shoes=shoes_m,
     )
+
+
+def prewarm_segmenter() -> None:
+    """Force the SegFormer pipeline to load so the first inspiration request doesn't pay cold-start."""
+    _segmenter.prewarm()

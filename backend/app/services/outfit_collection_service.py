@@ -5,7 +5,6 @@ from typing import Sequence
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import InvalidOutfitsError, NotFoundError
-from app.models.outfit import Outfit
 from app.models.outfit_collection import OutfitCollection
 from app.repositories.outfit_collection_repository import OutfitCollectionRepository
 from app.schemas.outfit_collection import CollectionCreate, CollectionUpdate
@@ -21,7 +20,7 @@ class OutfitCollectionService:
         if owned != outfit_ids:
             raise InvalidOutfitsError()
 
-        outfits = db.query(Outfit).filter(Outfit.id.in_(outfit_ids)).all()
+        outfits = self._repo.get_by_ids(outfit_ids)
         collection = OutfitCollection(name=payload.name, user_id=user_id)
         collection.outfits = outfits
         self._repo.add(collection)

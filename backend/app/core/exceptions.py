@@ -8,10 +8,11 @@ class DomainError(Exception):
 class NotFoundError(DomainError):
     """Raised when a requested entity does not exist or is not visible to the caller."""
 
-    def __init__(self, entity: str, entity_id: int) -> None:
+    def __init__(self, entity: str, entity_id: int | str | None = None) -> None:
         self.entity = entity
         self.entity_id = entity_id
-        super().__init__(f"{entity} with id={entity_id} not found")
+        msg = f"{entity} with id={entity_id} not found" if entity_id is not None else entity
+        super().__init__(msg)
 
 
 class InvalidItemsError(DomainError):

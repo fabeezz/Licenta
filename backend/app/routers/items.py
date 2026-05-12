@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, Query, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user, get_item_service
+from app.core.utils import parse_csv_tags
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.item import GapsResponse, ItemListQuery, ItemOut, ItemUpdate
@@ -30,8 +31,8 @@ async def create_item(
         if image.filename and "." in image.filename
         else "png"
     )
-    weather_tags = [t.strip().lower() for t in weather.split(",")] if weather else None
-    style_tags = [t.strip().lower() for t in style.split(",")] if style else None
+    weather_tags = parse_csv_tags(weather) or None
+    style_tags = parse_csv_tags(style) or None
     return svc.create_item_with_upload(
         db,
         content,
@@ -89,15 +90,13 @@ def get_wardrobe_gaps(
 
 @router.get("/search", response_model=list[ItemOut])
 def search_items(
-    request: Request,
     q: str = Query(..., min_length=1, max_length=120),
     current_user: User = Depends(get_current_user),
     svc: ItemService = Depends(get_item_service),
     filters: ItemListQuery = Depends(),
 ):
     """Return wardrobe items ranked by CLIP semantic similarity to the text query *q*."""
-    pipeline = request.app.state.pipeline
-    return list(svc.search_items(q, filters, user_id=current_user.id, classifier=pipeline.base_classifier))
+    return list(svc.search_items(q, filters, user_id=current_user.id))
 
 
 @router.get("", response_model=list[ItemOut])

@@ -51,9 +51,27 @@ _STYLE_TEMPLATES: Dict[str, List[str]] = {
 }
 
 
+def _build_style_label_templates(labels: List[str], cat: str) -> List[List[str]]:
+    return [
+        [t.format(cat) if "{}" in t else t for t in _STYLE_TEMPLATES[lbl]]
+        for lbl in labels
+    ]
+
+
 class ClipStyleClassifier:
     def __init__(self, base_classifier: ClipAttributeClassifier) -> None:
         self._base = base_classifier
+        # cache_key → (labels, precomputed_embeds)
+        self._cache: Dict[str, Tuple[List[str], torch.Tensor]] = {}
+
+    def prewarm(self) -> None:
+        """Precompute and cache label embeddings for every known category + the unknown fallback."""
+        categories = list(_ALLOWED_BY_CATEGORY.keys()) + [""]  # "" = unknown/None
+        for cat in categories:
+            labels = sorted(_ALLOWED_BY_CATEGORY.get(cat, _ALL_STYLES))
+            label_templates = _build_style_label_templates(labels, cat)
+            embeds = self._base.precompute_label_embeds(labels, label_templates)
+            self._cache[cat] = (labels, embeds)
 
     def score_multi(
         self,
@@ -63,20 +81,22 @@ class ClipStyleClassifier:
     ) -> List[Tuple[str, float]]:
         """Return all allowed styles above *threshold*, falling back to the best allowed."""
         cat = (category or "").lower().strip()
-        allowed = _ALLOWED_BY_CATEGORY.get(cat, _ALL_STYLES)
+        cached = self._cache.get(cat)
 
-        labels = sorted(allowed)  # stable order for reproducibility
-        label_templates = [
-            [t.format(cat) if "{}" in t else t for t in _STYLE_TEMPLATES[lbl]]
-            for lbl in labels
-        ]
+        if cached is not None:
+            labels, label_embeds_t = cached
+            pred = self._base.score_against_cached(
+                image_embed, label_embeds_t, labels, top_k=len(labels)
+            )
+        else:
+            allowed = _ALLOWED_BY_CATEGORY.get(cat, _ALL_STYLES)
+            labels = sorted(allowed)
+            label_templates = _build_style_label_templates(labels, cat)
+            pred = self._base.score_labels_multi(
+                image_embed, labels, label_templates, top_k=len(labels)
+            )
 
-        pred = self._base.score_labels_multi(
-            image_embed, labels, label_templates, top_k=len(labels)
-        )
-
-        # pred.topk is already sorted desc; re-normalize within the allowed subset
-        # (softmax was over all labels, but we restricted labels to allowed, so it's fine)
+        # pred.topk is already sorted desc
         above = [(lbl, conf) for lbl, conf in pred.topk if conf >= threshold]
         if not above:
             above = [pred.topk[0]]  # guaranteed: at least top-scoring allowed label

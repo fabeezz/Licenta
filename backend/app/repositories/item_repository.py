@@ -6,6 +6,7 @@ from sqlalchemy import asc, desc, func, select, text
 from sqlalchemy.dialects.postgresql import array
 from sqlalchemy.orm import Session
 
+from app.core.utils import parse_csv_tags
 from app.models.item import Item
 from app.schemas.item import ItemListQuery
 
@@ -122,11 +123,9 @@ class ItemRepository:
         if filters.material:
             stmt = stmt.where(Item.material == filters.material)
         if filters.weather:
-            tags = [t.strip().lower() for t in filters.weather.split(",")]
-            stmt = stmt.where(Item.weather.op("?|")(array(tags)))
+            stmt = stmt.where(Item.weather.op("?|")(array(parse_csv_tags(filters.weather))))
         if filters.style:
-            tags = [t.strip().lower() for t in filters.style.split(",")]
-            stmt = stmt.where(Item.style.op("?|")(array(tags)))
+            stmt = stmt.where(Item.style.op("?|")(array(parse_csv_tags(filters.style))))
 
         sort_col = _SORT_FIELDS.get(filters.sort_by, Item.created_at)
         order_fn = asc if filters.sort_dir == "asc" else desc
