@@ -13,6 +13,7 @@ class Outfit(Base):
     weather: Mapped[list[str]] = mapped_column(JSONB, nullable=False, server_default=text("'[]'::jsonb"))
     style: Mapped[str | None] = mapped_column(String, nullable=True)
     is_trip: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    source: Mapped[str] = mapped_column(String, nullable=False, server_default=text("'manual'"))
 
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     shoe_id: Mapped[int] = mapped_column(Integer, ForeignKey("items.id", ondelete="CASCADE"), nullable=False)

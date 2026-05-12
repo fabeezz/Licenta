@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, field_validator
 
 from app.schemas.item import ItemMinimal
@@ -31,6 +33,7 @@ class OutfitCreate(BaseModel):
     outer_id: int | None = None
     weather: list[str] = []
     style: str | None = None
+    source: Literal["manual", "inspiration"] = "manual"
 
     @field_validator("style", mode="before")
     @classmethod
@@ -83,6 +86,7 @@ class OutfitResponse(BaseModel):
     bottom: ItemMinimal
     top: ItemMinimal
     outer: ItemMinimal | None
+    source: str
 
 
 class OutfitSuggestRequest(BaseModel):

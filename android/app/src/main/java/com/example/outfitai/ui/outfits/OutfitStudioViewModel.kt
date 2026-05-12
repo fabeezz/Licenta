@@ -277,6 +277,7 @@ class OutfitStudioViewModel @Inject constructor(
                 outerId = outer?.id,
                 weather = s.selectedWeather,
                 style = s.selectedStyle.takeIf { it.isNotBlank() },
+                source = "manual",
             )
             when (val result = createOutfit(dto)) {
                 is Resource.Success -> _state.update {

@@ -51,6 +51,7 @@ class OutfitService:
             name=payload.name,
             weather=payload.weather,
             style=payload.style,
+            source=payload.source,
             shoe_id=payload.shoe_id,
             bottom_id=payload.bottom_id,
             top_id=payload.top_id,

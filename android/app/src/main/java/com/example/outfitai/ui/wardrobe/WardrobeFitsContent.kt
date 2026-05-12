@@ -71,27 +71,35 @@ internal fun FitCard(outfit: OutfitSavedDto, onClick: () -> Unit) {
             .aspectRatio(3f / 4f),
     ) {
         val gap = 4.dp
-        Box(modifier = Modifier.padding(12.dp)) {
-            if (outfit.outer != null) {
-                Column(verticalArrangement = Arrangement.spacedBy(gap)) {
-                    Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(gap)) {
-                        FitCardItem(outfit.outer, Modifier.weight(1f))
-                        FitCardItem(outfit.top, Modifier.weight(1f))
+        Box(modifier = Modifier.fillMaxSize()) {
+            Box(modifier = Modifier.padding(12.dp)) {
+                if (outfit.outer != null) {
+                    Column(verticalArrangement = Arrangement.spacedBy(gap)) {
+                        Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(gap)) {
+                            FitCardItem(outfit.outer, Modifier.weight(1f))
+                            FitCardItem(outfit.top, Modifier.weight(1f))
+                        }
+                        Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(gap)) {
+                            FitCardItem(outfit.bottom, Modifier.weight(1f))
+                            FitCardItem(outfit.shoe, Modifier.weight(1f))
+                        }
                     }
-                    Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(gap)) {
-                        FitCardItem(outfit.bottom, Modifier.weight(1f))
-                        FitCardItem(outfit.shoe, Modifier.weight(1f))
-                    }
-                }
-            } else {
-                Column(verticalArrangement = Arrangement.spacedBy(gap)) {
-                    FitCardItem(outfit.top, Modifier.weight(1.5f))
-                    Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(gap)) {
-                        FitCardItem(outfit.bottom, Modifier.weight(1f))
-                        FitCardItem(outfit.shoe, Modifier.weight(1f))
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(gap)) {
+                        FitCardItem(outfit.top, Modifier.weight(1.5f))
+                        Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(gap)) {
+                            FitCardItem(outfit.bottom, Modifier.weight(1f))
+                            FitCardItem(outfit.shoe, Modifier.weight(1f))
+                        }
                     }
                 }
             }
+            OutfitSourceBadge(
+                source = outfit.sourceEnum,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp),
+            )
         }
     }
 }
