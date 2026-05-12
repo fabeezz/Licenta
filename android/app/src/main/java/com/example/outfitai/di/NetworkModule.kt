@@ -8,6 +8,7 @@ import com.example.outfitai.data.api.CollectionApi
 import com.example.outfitai.data.api.InspirationApi
 import com.example.outfitai.data.api.ItemApi
 import com.example.outfitai.data.api.OutfitApi
+import com.example.outfitai.data.api.ProfileApi
 import com.example.outfitai.data.api.TripApi
 import com.example.outfitai.data.api.WeatherApi
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -90,4 +91,9 @@ object NetworkModule {
     @Singleton
     fun provideInspirationApi(retrofit: Retrofit): InspirationApi =
         retrofit.create(InspirationApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideProfileApi(retrofit: Retrofit): ProfileApi =
+        retrofit.create(ProfileApi::class.java)
 }

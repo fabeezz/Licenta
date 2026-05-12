@@ -199,11 +199,12 @@ class ItemService:
         db.refresh(item)
         return item
 
-    def get_wardrobe_gaps(self, *, user_id: int) -> list:
+    def get_wardrobe_gaps(self, *, user_id: int, preferred_styles: list[str] | None = None) -> list:
         """Return gap analysis results for *user_id*'s wardrobe.
 
         Args:
             user_id: User whose wardrobe is analysed.
+            preferred_styles: Optional list of user's preferred styles to focus gap suggestions.
 
         Returns:
             List of :class:`~app.services.insights.gaps.Gap` instances.
@@ -211,7 +212,7 @@ class ItemService:
         from app.services.insights import gaps as gaps_module
 
         items = self._repo.list_all_for_user(user_id)
-        return gaps_module.analyze(items)
+        return gaps_module.analyze(items, preferred_styles=preferred_styles)
 
     def mark_item_worn(self, db: Session, item_id: int, *, user_id: int) -> Item:
         """Increment the wear counter and record the current timestamp.

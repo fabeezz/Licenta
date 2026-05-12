@@ -14,10 +14,12 @@ from app.repositories.item_repository import ItemRepository
 from app.repositories.outfit_collection_repository import OutfitCollectionRepository
 from app.repositories.outfit_repository import OutfitRepository
 from app.repositories.trip_repository import TripRepository
+from app.repositories.user_repository import UserRepository
 from app.services.item_service import ItemService
 from app.services.outfit_collection_service import OutfitCollectionService
 from app.services.outfit_service import OutfitService
 from app.services.pipeline import ItemPipeline
+from app.services.profile_service import ProfileService
 from app.services.trip_service import TripService
 from app.services.weather_service import WeatherService
 
@@ -105,6 +107,16 @@ def get_weather_service(
 
 def get_trip_repository(db: Session = Depends(get_db)) -> TripRepository:
     return TripRepository(db)
+
+
+def get_user_repository(db: Session = Depends(get_db)) -> UserRepository:
+    return UserRepository(db)
+
+
+def get_profile_service(
+    repo: UserRepository = Depends(get_user_repository),
+) -> ProfileService:
+    return ProfileService(repo)
 
 
 def get_trip_service(

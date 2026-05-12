@@ -69,14 +69,14 @@ def _low_threshold(total: int, share: float, floor: int) -> int:
     return max(floor, round(total * share))
 
 
-def analyze(items: Sequence[Item]) -> list[Gap]:
+def analyze(items: Sequence[Item], preferred_styles: list[str] | None = None) -> list[Gap]:
     """Return a list of wardrobe gaps across slot, weather, style, and color dimensions."""
     if len(items) < _ONBOARDING_THRESHOLD:
         return [_gap("onboarding", "starter", "low")]
-    return _analyze_full(items)
+    return _analyze_full(items, preferred_styles=preferred_styles)
 
 
-def _analyze_full(items: Sequence[Item]) -> list[Gap]:
+def _analyze_full(items: Sequence[Item], preferred_styles: list[str] | None = None) -> list[Gap]:
     """Full gap analysis — called only when wardrobe meets the onboarding threshold."""
     gaps: list[Gap] = []
     outfit_gap = _outfit_completability_gap(items)
@@ -84,7 +84,7 @@ def _analyze_full(items: Sequence[Item]) -> list[Gap]:
         gaps.append(outfit_gap)
     gaps.extend(_slot_gaps(items))
     gaps.extend(_weather_gaps(items))
-    gaps.extend(_style_gaps(items))
+    gaps.extend(_style_gaps(items, preferred_styles=preferred_styles))
     gaps.extend(_color_gaps(items))
     return gaps
 
@@ -150,10 +150,12 @@ def _weather_gaps(items: Sequence[Item]) -> list[Gap]:
 
 # ── Style coverage ────────────────────────────────────────────────────────────
 
-def _style_gaps(items: Sequence[Item]) -> list[Gap]:
+def _style_gaps(items: Sequence[Item], preferred_styles: list[str] | None = None) -> list[Gap]:
     total = len(items)
     threshold = _low_threshold(total, _STYLE_SHARE, _STYLE_FLOOR)
-    counts: dict[str, int] = {tag: 0 for tag in _STYLE_TAGS}
+    # Limit gap reporting to the user's preferred styles when available
+    active_tags = frozenset(preferred_styles) & _STYLE_TAGS if preferred_styles else _STYLE_TAGS
+    counts: dict[str, int] = {tag: 0 for tag in active_tags}
     for item in items:
         for tag in (item.style or []):
             if tag in counts:

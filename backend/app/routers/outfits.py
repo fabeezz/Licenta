@@ -105,6 +105,11 @@ def suggest_outfit_endpoint(
     weather_tags = [t.strip().lower() for t in payload.weather.split(",")] if payload.weather else []
     style = payload.style.strip().lower() if payload.style else None
 
+    # When no style is explicitly requested, use the user's first preferred style as a soft hint.
+    effective_style = style or (
+        (current_user.preferred_styles or [None])[0] if not style else None
+    )
+
     def passes_filters(item) -> bool:
         if weather_tags and not item_matches_weather(item, weather_tags):
             return False
@@ -131,10 +136,10 @@ def suggest_outfit_endpoint(
         elif cat in SHOES_CATEGORIES:
             candidates["shoes"].append(item)
 
-    # Prefer items that explicitly declare the requested style so all slots feel cohesive.
-    if style:
+    # Prefer items that explicitly declare the effective style so all slots feel cohesive.
+    if effective_style:
         for slot in ("top", "bottom", "shoes", "outer"):
-            candidates[slot] = prefer_explicit_style(candidates[slot], style)
+            candidates[slot] = prefer_explicit_style(candidates[slot], effective_style)
 
     allowed_modes: list[HarmonyMode] | None = None
     if payload.modes:

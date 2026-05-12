@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavType
@@ -17,6 +18,7 @@ import com.example.outfitai.ui.inspiration.InspirationRoute
 import com.example.outfitai.ui.itemdetails.ItemDetailsRoute
 import com.example.outfitai.ui.outfits.OutfitDetailRoute
 import com.example.outfitai.ui.outfits.OutfitStudioRoute
+import com.example.outfitai.ui.profile.EditProfileRoute
 import com.example.outfitai.ui.profile.ProfileRoute
 import com.example.outfitai.ui.trips.TripPlannerRoute
 import com.example.outfitai.ui.wardrobe.WardrobeRoute
@@ -33,6 +35,7 @@ object Routes {
     fun outfitDetail(id: Int) = "outfit-detail/$id"
 
     const val Profile = "profile"
+    const val EditProfile = "edit-profile"
     const val Insights = "insights"
     const val Gaps = "gaps"
     const val Inspiration = "inspiration"
@@ -162,6 +165,17 @@ fun AppNav(
                 onTripClick = { navController.navigateTab(Routes.TripPlanner) },
                 onStudioClick = { navController.navigateTab(Routes.OutfitStudio) },
                 onWardrobeClick = { navController.navigateTab(Routes.Wardrobe) },
+                onEditProfile = { navController.navigate(Routes.EditProfile) },
+            )
+        }
+
+        composable(Routes.EditProfile) { entry ->
+            val profileEntry = remember(entry) {
+                navController.getBackStackEntry(Routes.Profile)
+            }
+            EditProfileRoute(
+                onBack = { navController.popBackStack() },
+                vm = hiltViewModel(profileEntry),
             )
         }
 

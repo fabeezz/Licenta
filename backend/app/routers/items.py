@@ -77,7 +77,10 @@ def get_wardrobe_gaps(
     svc: ItemService = Depends(get_item_service),
 ):
     """Analyse the authenticated user's wardrobe and return coverage gaps across slot, weather, style, and color dimensions."""
-    raw_gaps = svc.get_wardrobe_gaps(user_id=current_user.id)
+    raw_gaps = svc.get_wardrobe_gaps(
+        user_id=current_user.id,
+        preferred_styles=current_user.preferred_styles,
+    )
     return GapsResponse(gaps=[
         {"dimension": g.dimension, "key": g.key, "severity": g.severity, "suggestion": g.suggestion}
         for g in raw_gaps
