@@ -1,5 +1,8 @@
 package com.example.outfitai.ui.itemdetails
 
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -21,6 +24,10 @@ import coil.compose.AsyncImage
 import com.example.outfitai.data.model.ItemConstants
 import com.example.outfitai.core.ui.color.colorNameToComposeColor
 import com.example.outfitai.core.media.mediaUrl
+import com.example.outfitai.ui.components.LoomButton
+import com.example.outfitai.ui.components.LoomButtonVariant
+import com.example.outfitai.ui.components.LoomTopBarWithBack
+import com.example.outfitai.ui.theme.Spacing
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.jsonPrimitive
@@ -28,28 +35,33 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun ItemDetailsRoute(
     onBack: () -> Unit,
     onItemChanged: () -> Unit,
     onItemMutatedInPlace: () -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     vm: ItemDetailsViewModel = hiltViewModel(),
 ) {
     val state by vm.state.collectAsState()
     ItemDetailsScreen(
-        state = state,
-        onBack = onBack,
-        onToggleEdit = vm::toggleEdit,
-        onSave = { vm.save(onItemMutatedInPlace) },
-        onWear = { vm.wear(onItemMutatedInPlace) },
-        onDelete = { vm.delete(onItemChanged) },
-        onCategory = vm::setCategory,
-        onBrand = vm::setBrand,
-        onMaterial = vm::setMaterial,
-        onWeather = vm::setWeather,
-        onStyle = vm::setStyle,
-        onDominantColor = vm::setDominantColor,
-        onAccentColor = vm::toggleAccentColor,
+        state                   = state,
+        onBack                  = onBack,
+        onToggleEdit            = vm::toggleEdit,
+        onSave                  = { vm.save(onItemMutatedInPlace) },
+        onWear                  = { vm.wear(onItemMutatedInPlace) },
+        onDelete                = { vm.delete(onItemChanged) },
+        onCategory              = vm::setCategory,
+        onBrand                 = vm::setBrand,
+        onMaterial              = vm::setMaterial,
+        onWeather               = vm::setWeather,
+        onStyle                 = vm::setStyle,
+        onDominantColor         = vm::setDominantColor,
+        onAccentColor           = vm::toggleAccentColor,
+        sharedTransitionScope   = sharedTransitionScope,
+        animatedVisibilityScope = animatedVisibilityScope,
     )
 }
 
@@ -76,7 +88,7 @@ private fun relativeTime(isoString: String?): String {
 
 private enum class EditSheet { CATEGORY, MATERIAL, BRAND, WEATHER, STYLE, NONE }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalSharedTransitionApi::class)
 @Composable
 private fun ItemDetailsScreen(
     state: ItemDetailsUiState,
@@ -92,6 +104,8 @@ private fun ItemDetailsScreen(
     onStyle: (List<String>) -> Unit,
     onDominantColor: (String) -> Unit,
     onAccentColor: (String) -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
     var confirmDelete by remember { mutableStateOf(false) }
     var showDominantDialog by remember { mutableStateOf(false) }
@@ -168,14 +182,9 @@ private fun ItemDetailsScreen(
     Scaffold(
         containerColor = cs.background,
         topBar = {
-            TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = cs.background),
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = cs.onSurface)
-                    }
-                },
-                title = {},
+            LoomTopBarWithBack(
+                title = "",
+                onBack = onBack,
                 actions = {
                     if (!state.isEditing) {
                         IconButton(onClick = onWear, enabled = !state.isBusy) {
@@ -203,38 +212,24 @@ private fun ItemDetailsScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 20.dp, vertical = 12.dp)
+                                .padding(horizontal = Spacing.xl, vertical = Spacing.md)
                                 .navigationBarsPadding(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
                         ) {
-                            OutlinedButton(
+                            LoomButton(
+                                text = "Cancel",
                                 onClick = onToggleEdit,
                                 enabled = !state.isBusy,
-                                shape = CircleShape,
-                                modifier = Modifier.weight(1f).height(48.dp),
-                            ) {
-                                Text("Cancel")
-                            }
-                            Button(
+                                variant = LoomButtonVariant.Secondary,
+                                modifier = Modifier.weight(1f),
+                            )
+                            LoomButton(
+                                text = "Save Changes",
                                 onClick = onSave,
                                 enabled = !state.isBusy,
-                                shape = CircleShape,
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = cs.primary,
-                                    contentColor = cs.onPrimary,
-                                ),
-                                modifier = Modifier.weight(1f).height(48.dp),
-                            ) {
-                                if (state.isBusy) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(18.dp),
-                                        color = cs.onPrimary,
-                                        strokeWidth = 2.dp,
-                                    )
-                                } else {
-                                    Text("Save Changes")
-                                }
-                            }
+                                isLoading = state.isBusy,
+                                modifier = Modifier.weight(1f),
+                            )
                         }
                     }
                 }
@@ -286,12 +281,19 @@ private fun ItemDetailsScreen(
                                 modifier = Modifier.fillMaxWidth().height(heroHeight),
                                 contentAlignment = Alignment.Center,
                             ) {
-                                AsyncImage(
-                                    model = mediaUrl(filename),
-                                    contentDescription = item.category,
-                                    contentScale = ContentScale.Fit,
-                                    modifier = Modifier.fillMaxSize(),
-                                )
+                                with(sharedTransitionScope) {
+                                    AsyncImage(
+                                        model = mediaUrl(filename),
+                                        contentDescription = item.category,
+                                        contentScale = ContentScale.Fit,
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .sharedElement(
+                                                rememberSharedContentState(key = "item-image-${item.id}"),
+                                                animatedVisibilityScope = animatedVisibilityScope,
+                                            ),
+                                    )
+                                }
                             }
                         }
 
@@ -456,13 +458,18 @@ private fun ItemDetailsScreen(
                     title = { Text("Delete item?") },
                     text = { Text("This action cannot be undone.") },
                     confirmButton = {
-                        Button(
+                        LoomButton(
+                            text = "Delete",
                             onClick = { confirmDelete = false; onDelete() },
-                            colors = ButtonDefaults.buttonColors(containerColor = cs.error),
-                        ) { Text("Delete") }
+                            variant = LoomButtonVariant.Destructive,
+                        )
                     },
                     dismissButton = {
-                        TextButton(onClick = { confirmDelete = false }) { Text("Cancel") }
+                        LoomButton(
+                            text = "Cancel",
+                            onClick = { confirmDelete = false },
+                            variant = LoomButtonVariant.Ghost,
+                        )
                     },
                 )
             }

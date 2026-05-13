@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
@@ -23,12 +22,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.platform.LocalContext
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import coil.size.Precision
-import coil.size.Size
 import com.example.outfitai.data.model.ItemMinimalDto
 import com.example.outfitai.data.model.OutfitSavedDto
 import com.example.outfitai.core.ui.color.colorNameToComposeColor
 import com.example.outfitai.core.media.mediaUrl
+import com.example.outfitai.ui.components.LoomTopBarWithBack
+import com.example.outfitai.ui.theme.Elevation
+import com.example.outfitai.ui.theme.Spacing
 import com.example.outfitai.util.capitalizeFirst
 
 @Composable
@@ -63,17 +63,9 @@ private fun OutfitDetailScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    state.outfit?.let {
-                        Text(it.name, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
+            LoomTopBarWithBack(
+                title = state.outfit?.name ?: "",
+                onBack = onBack,
                 actions = {
                     IconButton(onClick = onDelete, enabled = !state.isDeleting && state.outfit != null) {
                         if (state.isDeleting) {
@@ -82,7 +74,7 @@ private fun OutfitDetailScreen(
                             Icon(Icons.Default.Delete, contentDescription = "Delete", tint = colors.error)
                         }
                     }
-                }
+                },
             )
         }
     ) { pad ->
@@ -90,7 +82,7 @@ private fun OutfitDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(pad)
-                .padding(horizontal = 12.dp, vertical = 12.dp),
+                .padding(horizontal = Spacing.md, vertical = Spacing.md),
             contentAlignment = Alignment.Center
         ) {
             when {
@@ -170,16 +162,14 @@ private fun OutfitDetailScreen(
 @Composable
 private fun MetadataChip(text: String) {
     Surface(
-        shape = RoundedCornerShape(12.dp),
+        shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
     ) {
         Text(
             text = text.capitalizeFirst(),
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.xs),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontWeight = FontWeight.SemiBold,
-            letterSpacing = 0.5.sp
         )
     }
 }
@@ -228,8 +218,8 @@ private fun StaticSlotTile(
 ) {
     val context = LocalContext.current
     Surface(
-        shape = RoundedCornerShape(24.dp),
-        color = Color(0xFFF9F9F9),
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         modifier = modifier
     ) {
         AsyncImage(
@@ -241,7 +231,7 @@ private fun StaticSlotTile(
             contentScale = ContentScale.Fit,
             filterQuality = androidx.compose.ui.graphics.FilterQuality.High,
             modifier = Modifier
-                .padding(4.dp)
+                .padding(Spacing.xs)
                 .fillMaxSize()
         )
     }
@@ -267,7 +257,7 @@ private fun ColorPalette(outfit: OutfitSavedDto) {
                     modifier = Modifier.size(44.dp),
                     shape = CircleShape,
                     color = composeColor,
-                    shadowElevation = 4.dp,
+                    shadowElevation = Elevation.Level3,
                     border = if (composeColor == Color.White || colorName.lowercase() == "white" || colorName.lowercase() == "beige") {
                         androidx.compose.foundation.BorderStroke(0.5.dp, Color.Black.copy(alpha = 0.1f))
                     } else {

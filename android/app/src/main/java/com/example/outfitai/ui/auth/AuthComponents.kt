@@ -6,8 +6,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import com.example.outfitai.ui.theme.Spacing
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,12 +29,12 @@ internal fun DecorativeBackdrop(modifier: Modifier = Modifier) {
         modifier = modifier
             .shadow(
                 elevation = 12.dp,
-                shape = RoundedCornerShape(40.dp),
+                shape = MaterialTheme.shapes.extraLarge,
                 ambientColor = Color.Black.copy(alpha = 0.04f),
                 spotColor = Color.Black.copy(alpha = 0.04f),
             )
             .rotate(-3f)
-            .clip(RoundedCornerShape(40.dp))
+            .clip(MaterialTheme.shapes.extraLarge)
             .background(MaterialTheme.colorScheme.surfaceContainerLow),
     )
 }
@@ -158,7 +158,7 @@ internal fun AuthTextField(
         textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
         keyboardOptions = keyboardOptions,
         visualTransformation = visualTransformation,
-        shape = RoundedCornerShape(16.dp),
+        shape = MaterialTheme.shapes.large,
         colors = TextFieldDefaults.colors(
             focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
             unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -181,14 +181,14 @@ internal fun AuthPrimaryButton(label: String, onClick: () -> Unit, enabled: Bool
     Button(
         onClick = onClick,
         enabled = enabled,
-        shape = RoundedCornerShape(16.dp),
+        shape = MaterialTheme.shapes.large,
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
             disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
             disabledContentColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
         ),
-        contentPadding = PaddingValues(vertical = 16.dp),
+        contentPadding = PaddingValues(vertical = Spacing.lg),
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 52.dp),
@@ -199,9 +199,9 @@ internal fun AuthPrimaryButton(label: String, onClick: () -> Unit, enabled: Bool
                 color = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier.size(18.dp),
             )
-            Spacer(Modifier.width(10.dp))
+            Spacer(Modifier.width(Spacing.sm))
         }
-        Text(text = label, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+        Text(text = label, style = MaterialTheme.typography.titleMedium)
     }
 }
 

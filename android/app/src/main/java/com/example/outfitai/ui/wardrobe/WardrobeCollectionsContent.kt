@@ -107,8 +107,8 @@ internal fun CollectionsContent(
 private fun AddCollectionTile(onClick: () -> Unit) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(24.dp),
-        color = Color(0xFFF9F9F9),
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(3f / 4f),
@@ -147,8 +147,8 @@ private fun CollectionCard(
 
     Surface(
         onClick = onTap,
-        shape = RoundedCornerShape(24.dp),
-        color = Color(0xFFF9F9F9),
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(3f / 4f),
@@ -225,8 +225,8 @@ private fun CollectionMosaic(items: List<ItemMinimalDto>, modifier: Modifier = M
     val gap = 4.dp
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color.White.copy(alpha = 0.5f)),
+            .clip(MaterialTheme.shapes.medium)
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)),
     ) {
         when (items.size) {
             0 -> Unit
@@ -263,7 +263,7 @@ private fun MosaicCell(item: ItemMinimalDto, modifier: Modifier = Modifier) {
         contentDescription = null,
         contentScale = ContentScale.Fit,
         modifier = modifier
-            .clip(RoundedCornerShape(6.dp))
+            .clip(MaterialTheme.shapes.extraSmall)
             .padding(2.dp),
     )
 }

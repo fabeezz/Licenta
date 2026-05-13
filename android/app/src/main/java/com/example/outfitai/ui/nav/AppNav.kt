@@ -1,5 +1,7 @@
 package com.example.outfitai.ui.nav
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -49,146 +51,157 @@ private fun NavController.navigateTab(route: String) {
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun AppNav(
     onLogout: () -> Unit,
 ) {
     val navController = rememberNavController()
 
-    NavHost(
-        navController = navController,
-        startDestination = Routes.Wardrobe
-    ) {
-        composable(Routes.TripPlanner) {
-            TripPlannerRoute(
-                onClose = { navController.popBackStack() },
-                onSaved = {
-                    navController.previousBackStackEntry
-                        ?.savedStateHandle
-                        ?.set("wardrobe_refresh", true)
-                    navController.popBackStack()
-                },
-                onStudioClick = { navController.navigateTab(Routes.OutfitStudio) },
-                onWardrobeClick = { navController.navigateTab(Routes.Wardrobe) },
-                onProfileClick = { navController.navigateTab(Routes.Profile) },
-            )
-        }
+    SharedTransitionLayout {
+        val sharedTransitionScope = this
 
-        composable(Routes.OutfitStudio) {
-            OutfitStudioRoute(
-                onBack = { navController.popBackStack() },
-                onWardrobeClick = { navController.navigateTab(Routes.Wardrobe) },
-                onTripClick = { navController.navigateTab(Routes.TripPlanner) },
-                onProfileClick = { navController.navigateTab(Routes.Profile) },
-                onInspirationClick = { navController.navigate(Routes.Inspiration) },
-            )
-        }
+        NavHost(
+            navController    = navController,
+            startDestination = Routes.Wardrobe,
+        ) {
+            composable(Routes.TripPlanner) {
+                TripPlannerRoute(
+                    onClose = { navController.popBackStack() },
+                    onSaved = {
+                        navController.previousBackStackEntry
+                            ?.savedStateHandle
+                            ?.set("wardrobe_refresh", true)
+                        navController.popBackStack()
+                    },
+                    onStudioClick   = { navController.navigateTab(Routes.OutfitStudio) },
+                    onWardrobeClick = { navController.navigateTab(Routes.Wardrobe) },
+                    onProfileClick  = { navController.navigateTab(Routes.Profile) },
+                )
+            }
 
-        composable(Routes.Inspiration) {
-            InspirationRoute(
-                onBack = { navController.popBackStack() },
-                onOutfitSaved = { outfitId ->
-                    navController.navigate(Routes.outfitDetail(outfitId)) {
-                        popUpTo(Routes.Inspiration) { inclusive = true }
+            composable(Routes.OutfitStudio) {
+                OutfitStudioRoute(
+                    onBack             = { navController.popBackStack() },
+                    onWardrobeClick    = { navController.navigateTab(Routes.Wardrobe) },
+                    onTripClick        = { navController.navigateTab(Routes.TripPlanner) },
+                    onProfileClick     = { navController.navigateTab(Routes.Profile) },
+                    onInspirationClick = { navController.navigate(Routes.Inspiration) },
+                )
+            }
+
+            composable(Routes.Inspiration) {
+                InspirationRoute(
+                    onBack = { navController.popBackStack() },
+                    onOutfitSaved = { outfitId ->
+                        navController.navigate(Routes.outfitDetail(outfitId)) {
+                            popUpTo(Routes.Inspiration) { inclusive = true }
+                        }
+                    },
+                )
+            }
+
+            composable(Routes.Wardrobe) {
+                val animVisScope = this
+                val vm: WardrobeViewModel = hiltViewModel()
+
+                val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
+
+                val shouldRefresh by savedStateHandle?.getStateFlow("wardrobe_refresh", false)
+                    ?.collectAsState()
+                    ?: androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+
+                LaunchedEffect(shouldRefresh) {
+                    if (shouldRefresh) {
+                        vm.refresh()
+                        savedStateHandle?.set("wardrobe_refresh", false)
                     }
-                },
-            )
-        }
-
-        composable(Routes.Wardrobe) {
-            val vm: WardrobeViewModel = hiltViewModel()
-
-            val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
-
-            val shouldRefresh by savedStateHandle?.getStateFlow("wardrobe_refresh", false)
-                ?.collectAsState()
-                ?: androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
-
-            LaunchedEffect(shouldRefresh) {
-                if (shouldRefresh) {
-                    vm.refresh()
-                    savedStateHandle?.set("wardrobe_refresh", false)
                 }
+
+                WardrobeRoute(
+                    onStudioClick           = { navController.navigateTab(Routes.OutfitStudio) },
+                    onTripClick             = { navController.navigateTab(Routes.TripPlanner) },
+                    onProfileClick          = { navController.navigateTab(Routes.Profile) },
+                    vm                      = vm,
+                    onItemClick             = { id -> navController.navigate(Routes.itemDetails(id)) },
+                    onOutfitClick           = { id -> navController.navigate(Routes.outfitDetail(id)) },
+                    sharedTransitionScope   = sharedTransitionScope,
+                    animatedVisibilityScope = animVisScope,
+                )
             }
 
-            WardrobeRoute(
-                onStudioClick = { navController.navigateTab(Routes.OutfitStudio) },
-                onTripClick = { navController.navigateTab(Routes.TripPlanner) },
-                onProfileClick = { navController.navigateTab(Routes.Profile) },
-                vm = vm,
-                onItemClick = { id -> navController.navigate(Routes.itemDetails(id)) },
-                onOutfitClick = { id -> navController.navigate(Routes.outfitDetail(id)) }
-            )
-        }
-
-        composable(
-            route = Routes.ItemDetails,
-            arguments = listOf(navArgument("itemId") { type = NavType.IntType })
-        ) {
-            ItemDetailsRoute(
-                onBack = { navController.popBackStack() },
-                onItemChanged = {
-                    navController.previousBackStackEntry
-                        ?.savedStateHandle
-                        ?.set("wardrobe_refresh", true)
-                    navController.popBackStack()
-                },
-                onItemMutatedInPlace = {
-                    navController.previousBackStackEntry
-                        ?.savedStateHandle
-                        ?.set("wardrobe_refresh", true)
-                },
-            )
-        }
-
-        composable(
-            route = Routes.OutfitDetail,
-            arguments = listOf(navArgument("outfitId") { type = NavType.IntType })
-        ) {
-            OutfitDetailRoute(
-                onBack = { navController.popBackStack() },
-                onDeleted = {
-                    navController.previousBackStackEntry
-                        ?.savedStateHandle
-                        ?.set("wardrobe_refresh", true)
-                    navController.popBackStack()
-                }
-            )
-        }
-
-        composable(Routes.Profile) {
-            ProfileRoute(
-                onBack = { navController.popBackStack() },
-                onOpenInsights = { navController.navigate(Routes.Insights) },
-                onOpenGaps = { navController.navigate(Routes.Gaps) },
-                onLogout = onLogout,
-                onTripClick = { navController.navigateTab(Routes.TripPlanner) },
-                onStudioClick = { navController.navigateTab(Routes.OutfitStudio) },
-                onWardrobeClick = { navController.navigateTab(Routes.Wardrobe) },
-                onEditProfile = { navController.navigate(Routes.EditProfile) },
-            )
-        }
-
-        composable(Routes.EditProfile) { entry ->
-            val profileEntry = remember(entry) {
-                navController.getBackStackEntry(Routes.Profile)
+            composable(
+                route     = Routes.ItemDetails,
+                arguments = listOf(navArgument("itemId") { type = NavType.IntType }),
+            ) {
+                val animVisScope = this
+                ItemDetailsRoute(
+                    onBack                  = { navController.popBackStack() },
+                    onItemChanged           = {
+                        navController.previousBackStackEntry
+                            ?.savedStateHandle
+                            ?.set("wardrobe_refresh", true)
+                        navController.popBackStack()
+                    },
+                    onItemMutatedInPlace    = {
+                        navController.previousBackStackEntry
+                            ?.savedStateHandle
+                            ?.set("wardrobe_refresh", true)
+                    },
+                    sharedTransitionScope   = sharedTransitionScope,
+                    animatedVisibilityScope = animVisScope,
+                )
             }
-            EditProfileRoute(
-                onBack = { navController.popBackStack() },
-                vm = hiltViewModel(profileEntry),
-            )
-        }
 
-        composable(Routes.Insights) {
-            InsightsRoute(
-                onBack = { navController.popBackStack() },
-            )
-        }
+            composable(
+                route     = Routes.OutfitDetail,
+                arguments = listOf(navArgument("outfitId") { type = NavType.IntType }),
+            ) {
+                OutfitDetailRoute(
+                    onBack    = { navController.popBackStack() },
+                    onDeleted = {
+                        navController.previousBackStackEntry
+                            ?.savedStateHandle
+                            ?.set("wardrobe_refresh", true)
+                        navController.popBackStack()
+                    },
+                )
+            }
 
-        composable(Routes.Gaps) {
-            GapsRoute(
-                onBack = { navController.popBackStack() },
-            )
+            composable(Routes.Profile) {
+                ProfileRoute(
+                    onBack         = { navController.popBackStack() },
+                    onOpenInsights = { navController.navigate(Routes.Insights) },
+                    onOpenGaps     = { navController.navigate(Routes.Gaps) },
+                    onLogout       = onLogout,
+                    onTripClick    = { navController.navigateTab(Routes.TripPlanner) },
+                    onStudioClick  = { navController.navigateTab(Routes.OutfitStudio) },
+                    onWardrobeClick = { navController.navigateTab(Routes.Wardrobe) },
+                    onEditProfile  = { navController.navigate(Routes.EditProfile) },
+                )
+            }
+
+            composable(Routes.EditProfile) { entry ->
+                val profileEntry = remember(entry) {
+                    navController.getBackStackEntry(Routes.Profile)
+                }
+                EditProfileRoute(
+                    onBack = { navController.popBackStack() },
+                    vm     = hiltViewModel(profileEntry),
+                )
+            }
+
+            composable(Routes.Insights) {
+                InsightsRoute(
+                    onBack = { navController.popBackStack() },
+                )
+            }
+
+            composable(Routes.Gaps) {
+                GapsRoute(
+                    onBack = { navController.popBackStack() },
+                )
+            }
         }
     }
 }

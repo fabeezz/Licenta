@@ -3,7 +3,7 @@ package com.example.outfitai.ui.outfits
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.Umbrella
@@ -13,49 +13,46 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-
-private val PillUnselectedBg = Color(0xFFF0F0F0)
-private val PillSelectedBg   = Color(0xFF3A3A3A)
-private val PillUnselectedFg = Color(0xFF666666)
-private val PillSelectedFg   = Color.White
+import com.example.outfitai.ui.components.LoomButton
+import com.example.outfitai.ui.components.LoomButtonVariant
+import com.example.outfitai.ui.theme.Spacing
 
 @Composable
 private fun FilterPill(
     label: String,
     selected: Boolean,
     onClick: () -> Unit,
-    icon: ImageVector? = null
+    icon: ImageVector? = null,
 ) {
-    val bg = if (selected) PillSelectedBg else PillUnselectedBg
-    val fg = if (selected) PillSelectedFg else PillUnselectedFg
+    val cs = MaterialTheme.colorScheme
+    val bg = if (selected) cs.primary else cs.surfaceContainer
+    val fg = if (selected) cs.onPrimary else cs.onSurfaceVariant
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
         modifier = Modifier
-            .clip(RoundedCornerShape(50))
+            .clip(CircleShape)
             .background(bg)
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 10.dp)
+            .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
     ) {
         icon?.let {
             Icon(
-                imageVector = it,
+                imageVector        = it,
                 contentDescription = null,
-                tint = fg,
-                modifier = Modifier.size(16.dp)
+                tint               = fg,
+                modifier           = Modifier.size(16.dp),
             )
         }
         Text(
-            text = label,
-            color = fg,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Medium
+            text       = label,
+            color      = fg,
+            style      = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Medium,
         )
     }
 }
@@ -65,7 +62,7 @@ private fun FilterPill(
 fun OutfitFilterDialog(
     initialState: OutfitFilterState,
     onDismiss: () -> Unit,
-    onApply: (style: String?, climate: String?) -> Unit
+    onApply: (style: String?, climate: String?) -> Unit,
 ) {
     var style by remember { mutableStateOf(initialState.style) }
     var climate by remember { mutableStateOf(initialState.climate) }
@@ -74,86 +71,67 @@ fun OutfitFilterDialog(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            horizontalAlignment = Alignment.Start
+                .padding(horizontal = Spacing.xl, vertical = Spacing.lg),
+            horizontalAlignment = Alignment.Start,
         ) {
             Text(
                 text = "Style",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 8.dp)
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(bottom = Spacing.sm),
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 listOf("Casual", "Athleisure", "Formal").forEach { opt ->
                     FilterPill(
-                        label = opt,
+                        label    = opt,
                         selected = style == opt,
-                        onClick = { style = if (style == opt) null else opt }
+                        onClick  = { style = if (style == opt) null else opt },
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(Spacing.xl))
 
             Text(
                 text = "Weather",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 8.dp)
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(bottom = Spacing.sm),
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 listOf(
-                    Triple("Cold", Icons.Filled.AcUnit, Unit),
-                    Triple("Warm", Icons.Filled.WbSunny, Unit),
-                    Triple("Rainy", Icons.Filled.Umbrella, Unit)
-                ).forEach { (opt, icon, _) ->
+                    "Cold" to Icons.Filled.AcUnit,
+                    "Warm" to Icons.Filled.WbSunny,
+                    "Rainy" to Icons.Filled.Umbrella,
+                ).forEach { (opt, icon) ->
                     FilterPill(
-                        label = opt,
+                        label    = opt,
                         selected = climate == opt,
-                        onClick = { climate = if (climate == opt) null else opt },
-                        icon = icon
+                        onClick  = { climate = if (climate == opt) null else opt },
+                        icon     = icon,
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(Spacing.xxl))
 
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(bottom = Spacing.lg),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.md),
             ) {
-                Button(
+                LoomButton(
+                    text    = "Clear",
                     onClick = { style = null; climate = null },
-                    shape = RoundedCornerShape(50),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(48.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = PillUnselectedBg,
-                        contentColor = Color(0xFF333333)
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(0.dp)
-                ) {
-                    Text("Clear filters", fontWeight = FontWeight.Medium)
-                }
-
-                Button(
-                    onClick = { onApply(style, climate) },
-                    shape = RoundedCornerShape(50),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(48.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = PillSelectedBg,
-                        contentColor = Color.White
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(0.dp)
-                ) {
-                    Text("Apply", fontWeight = FontWeight.SemiBold)
-                }
+                    variant = LoomButtonVariant.Secondary,
+                    modifier = Modifier.weight(1f),
+                )
+                LoomButton(
+                    text     = "Apply",
+                    onClick  = { onApply(style, climate) },
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
     }

@@ -93,15 +93,15 @@ fun ActivitiesStep(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth(),
-            color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.85f),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
         ) {
             Button(
                 onClick = onContinue,
                 enabled = selected.isNotEmpty(),
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = androidx.compose.ui.graphics.Color.Black,
-                    contentColor = androidx.compose.ui.graphics.Color.White,
+                shape   = MaterialTheme.shapes.large,
+                colors  = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor   = MaterialTheme.colorScheme.onPrimary,
                 ),
                 modifier = Modifier
                     .fillMaxWidth()

@@ -2,7 +2,7 @@ package com.example.outfitai.ui.trips
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import com.example.outfitai.ui.components.AppBottomBar
@@ -14,6 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.outfitai.ui.theme.Spacing
 import com.example.outfitai.ui.trips.steps.*
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -27,24 +28,24 @@ private data class TripHeaderData(
 
 private fun headerForStep(state: TripPlannerUiState): TripHeaderData {
     return when (state.step) {
-        TripStep.WHERE_TO -> TripHeaderData("Where to?")
-        TripStep.DATES -> TripHeaderData("Trip dates")
-        TripStep.BAG_TYPE -> TripHeaderData("Pack your bag")
-        TripStep.ACTIVITIES -> TripHeaderData("Add activities")
+        TripStep.WHERE_TO        -> TripHeaderData("Where to?")
+        TripStep.DATES           -> TripHeaderData("Trip dates")
+        TripStep.BAG_TYPE        -> TripHeaderData("Pack your bag")
+        TripStep.ACTIVITIES      -> TripHeaderData("Add activities")
         TripStep.ASSIGN_ACTIVITIES -> TripHeaderData("Plan your days")
-        TripStep.LOADING -> TripHeaderData("Planning your trip…")
-        TripStep.REVIEW -> {
+        TripStep.LOADING         -> TripHeaderData("Planning your trip…")
+        TripStep.REVIEW          -> {
             val plan = state.plan
             if (plan != null) {
-                val fmt = DateTimeFormatter.ofPattern("MMM d")
+                val fmt   = DateTimeFormatter.ofPattern("MMM d")
                 val start = LocalDate.parse(plan.startDate).format(fmt)
-                val end = LocalDate.parse(plan.endDate).format(fmt)
+                val end   = LocalDate.parse(plan.endDate).format(fmt)
                 val nights = ChronoUnit.DAYS.between(
                     LocalDate.parse(plan.startDate), LocalDate.parse(plan.endDate)
                 )
                 TripHeaderData(
-                    title = "${plan.flag} ${plan.city}",
-                    subtitle = "$nights nights · $start – $end · ${plan.bagSize.replace('_', ' ')}",
+                    title      = "${plan.flag} ${plan.city}",
+                    subtitle   = "$nights nights · $start – $end · ${plan.bagSize.replace('_', ' ')}",
                     isBigTitle = true,
                 )
             } else {
@@ -56,11 +57,11 @@ private fun headerForStep(state: TripPlannerUiState): TripHeaderData {
 
 private fun previousStep(step: TripStep): TripStep? = when (step) {
     TripStep.WHERE_TO, TripStep.LOADING -> null
-    TripStep.DATES -> TripStep.WHERE_TO
-    TripStep.BAG_TYPE -> TripStep.DATES
-    TripStep.ACTIVITIES -> TripStep.BAG_TYPE
-    TripStep.ASSIGN_ACTIVITIES -> TripStep.ACTIVITIES
-    TripStep.REVIEW -> TripStep.ASSIGN_ACTIVITIES
+    TripStep.DATES              -> TripStep.WHERE_TO
+    TripStep.BAG_TYPE           -> TripStep.DATES
+    TripStep.ACTIVITIES         -> TripStep.BAG_TYPE
+    TripStep.ASSIGN_ACTIVITIES  -> TripStep.ACTIVITIES
+    TripStep.REVIEW             -> TripStep.ASSIGN_ACTIVITIES
 }
 
 @Composable
@@ -80,27 +81,27 @@ fun TripPlannerRoute(
     }
 
     TripPlannerScreen(
-        state = state,
-        onClose = onClose,
-        onStudioClick = onStudioClick,
-        onWardrobeClick = onWardrobeClick,
-        onProfileClick = onProfileClick,
-        onAddClick = onAddClick,
-        onDestinationSelected = vm::selectDestination,
-        onContinueFromWhere = { vm.goToStep(TripStep.DATES) },
-        onStartDate = vm::setStartDate,
-        onEndDate = vm::setEndDate,
-        onContinueFromDates = { vm.goToStep(TripStep.BAG_TYPE) },
-        onBagSize = vm::setBagSize,
-        onContinueFromBag = { vm.goToStep(TripStep.ACTIVITIES) },
-        onToggleActivity = vm::toggleActivity,
+        state                    = state,
+        onClose                  = onClose,
+        onStudioClick            = onStudioClick,
+        onWardrobeClick          = onWardrobeClick,
+        onProfileClick           = onProfileClick,
+        onAddClick               = onAddClick,
+        onDestinationSelected    = vm::selectDestination,
+        onContinueFromWhere      = { vm.goToStep(TripStep.DATES) },
+        onStartDate              = vm::setStartDate,
+        onEndDate                = vm::setEndDate,
+        onContinueFromDates      = { vm.goToStep(TripStep.BAG_TYPE) },
+        onBagSize                = vm::setBagSize,
+        onContinueFromBag        = { vm.goToStep(TripStep.ACTIVITIES) },
+        onToggleActivity         = vm::toggleActivity,
         onContinueFromActivities = { vm.goToStep(TripStep.ASSIGN_ACTIVITIES) },
-        onToggleActivityForDay = vm::toggleActivityForDay,
-        onQuickFill = vm::quickFillDay,
-        onGenerate = vm::generateTrip,
-        onSave = vm::saveTrip,
-        onBack = { vm.goToStep(it) },
-        onClearError = vm::clearError,
+        onToggleActivityForDay   = vm::toggleActivityForDay,
+        onQuickFill              = vm::quickFillDay,
+        onGenerate               = vm::generateTrip,
+        onSave                   = vm::saveTrip,
+        onBack                   = { vm.goToStep(it) },
+        onClearError             = vm::clearError,
     )
 }
 
@@ -133,21 +134,21 @@ private fun TripPlannerScreen(
     Scaffold(
         topBar = {
             TripTopBar(
-                step = state.step,
+                step       = state.step,
                 headerData = headerData,
-                onClose = onClose,
-                onBack = onBack,
+                onClose    = onClose,
+                onBack     = onBack,
             )
         },
         bottomBar = {
-            Box(modifier = Modifier.padding(bottom = 24.dp)) {
+            Box(modifier = Modifier.padding(bottom = Spacing.xxl)) {
                 AppBottomBar(
-                    active = BottomBarDest.TRIP,
-                    onTrip = {},
-                    onStudio = onStudioClick,
-                    onAdd = onAddClick,
-                    onWardrobe = onWardrobeClick,
-                    onProfile = onProfileClick,
+                    active      = BottomBarDest.TRIP,
+                    onTrip      = {},
+                    onStudio    = onStudioClick,
+                    onAdd       = onAddClick,
+                    onWardrobe  = onWardrobeClick,
+                    onProfile   = onProfileClick,
                 )
             }
         },
@@ -157,48 +158,48 @@ private fun TripPlannerScreen(
             when (state.step) {
                 TripStep.WHERE_TO -> WhereToStep(
                     destinations = state.destinations,
-                    loading = state.destinationsLoading,
-                    selected = state.selectedDestination,
-                    onSelect = onDestinationSelected,
-                    onContinue = onContinueFromWhere,
+                    loading      = state.destinationsLoading,
+                    selected     = state.selectedDestination,
+                    onSelect     = onDestinationSelected,
+                    onContinue   = onContinueFromWhere,
                 )
                 TripStep.DATES -> DatesStep(
-                    startDate = state.startDate,
-                    endDate = state.endDate,
+                    startDate  = state.startDate,
+                    endDate    = state.endDate,
                     onStartDate = onStartDate,
-                    onEndDate = onEndDate,
-                    onContinue = onContinueFromDates,
+                    onEndDate   = onEndDate,
+                    onContinue  = onContinueFromDates,
                 )
                 TripStep.BAG_TYPE -> BagTypeStep(
-                    selected = state.bagSize,
+                    selected    = state.bagSize,
                     destination = state.selectedDestination,
-                    startDate = state.startDate,
-                    endDate = state.endDate,
-                    onSelect = onBagSize,
-                    onContinue = onContinueFromBag,
+                    startDate   = state.startDate,
+                    endDate     = state.endDate,
+                    onSelect    = onBagSize,
+                    onContinue  = onContinueFromBag,
                 )
                 TripStep.ACTIVITIES -> ActivitiesStep(
-                    selected = state.selectedActivities,
-                    onToggle = onToggleActivity,
+                    selected   = state.selectedActivities,
+                    onToggle   = onToggleActivity,
                     onContinue = onContinueFromActivities,
                 )
                 TripStep.ASSIGN_ACTIVITIES -> AssignActivitiesStep(
-                    startDate = state.startDate,
-                    endDate = state.endDate,
+                    startDate          = state.startDate,
+                    endDate            = state.endDate,
                     selectedActivities = state.selectedActivities,
-                    dayActivities = state.dayActivities,
+                    dayActivities      = state.dayActivities,
                     onToggleActivityForDay = onToggleActivityForDay,
-                    onQuickFill = onQuickFill,
-                    onGenerate = onGenerate,
+                    onQuickFill        = onQuickFill,
+                    onGenerate         = onGenerate,
                 )
                 TripStep.LOADING -> LoadingStep(
                     destination = state.selectedDestination?.city ?: "",
                 )
                 TripStep.REVIEW -> ReviewStep(
-                    plan = state.plan,
-                    isSaving = state.isSaving,
-                    error = state.error,
-                    onSave = onSave,
+                    plan         = state.plan,
+                    isSaving     = state.isSaving,
+                    error        = state.error,
+                    onSave       = onSave,
                     onClearError = onClearError,
                 )
             }
@@ -213,51 +214,46 @@ private fun TripTopBar(
     onClose: () -> Unit,
     onBack: (TripStep) -> Unit,
 ) {
-    val totalSteps = 5
+    val totalSteps  = 5
     val currentStep = when (step) {
-        TripStep.WHERE_TO -> 1
-        TripStep.DATES -> 2
-        TripStep.BAG_TYPE -> 3
-        TripStep.ACTIVITIES -> 4
+        TripStep.WHERE_TO          -> 1
+        TripStep.DATES             -> 2
+        TripStep.BAG_TYPE          -> 3
+        TripStep.ACTIVITIES        -> 4
         TripStep.ASSIGN_ACTIVITIES -> 5
         TripStep.LOADING, TripStep.REVIEW -> 5
     }
     val prevStep = previousStep(step)
 
     Column(modifier = Modifier.statusBarsPadding()) {
-        // Progress bar — topmost element, hidden on LOADING and REVIEW
         if (step != TripStep.LOADING && step != TripStep.REVIEW) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                    .padding(horizontal = Spacing.xl, vertical = Spacing.sm),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment     = Alignment.CenterVertically,
             ) {
                 repeat(totalSteps) { i ->
-                    val filled = i < currentStep
                     LinearProgressIndicator(
-                        progress = { if (filled) 1f else 0f },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(4.dp),
-                        color = MaterialTheme.colorScheme.primary,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        progress = { if (i < currentStep) 1f else 0f },
+                        modifier = Modifier.weight(1f).height(4.dp),
+                        color       = MaterialTheme.colorScheme.primary,
+                        trackColor  = MaterialTheme.colorScheme.surfaceVariant,
                     )
                 }
             }
         }
 
-        // Back | Title | X row
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 4.dp, vertical = 4.dp),
+                .padding(horizontal = Spacing.xs, vertical = Spacing.xs),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (prevStep != null) {
                 IconButton(onClick = { onBack(prevStep) }) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                 }
             } else {
                 Spacer(Modifier.size(48.dp))
@@ -269,18 +265,18 @@ private fun TripTopBar(
             ) {
                 if (headerData.title.isNotEmpty()) {
                     Text(
-                        headerData.title,
-                        style = if (headerData.isBigTitle) MaterialTheme.typography.headlineLarge
-                                else MaterialTheme.typography.headlineSmall,
+                        text      = headerData.title,
+                        style     = if (headerData.isBigTitle) MaterialTheme.typography.headlineLarge
+                                    else MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
+                        textAlign  = TextAlign.Center,
                     )
                 }
                 headerData.subtitle?.let { sub ->
                     Text(
-                        sub,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        text      = sub,
+                        style     = MaterialTheme.typography.bodySmall,
+                        color     = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
                     )
                 }

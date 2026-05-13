@@ -32,10 +32,6 @@ import com.example.outfitai.data.model.TripPlanResponseDto
 import java.time.LocalDate
 import kotlin.math.roundToInt
 
-// ── DESIGN.md tokens ─────────────────────────────────────────────────────────
-private val SurfaceCard = Color(0xFFF2F2F7)       // Level 1 container
-private val HeroTile    = Color(0xFFF9F9F9)       // Clothing hero card background
-private val GlassBar    = Color(0xFFFFFFFF)       // Floating bar (alpha applied)
 private const val ContentMaxWidth = 560
 
 @Composable
@@ -141,7 +137,7 @@ fun ReviewStep(
                 .fillMaxWidth(),
         ) {
             Surface(
-                color = GlassBar.copy(alpha = 0.85f),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
                 tonalElevation = 0.dp,
                 modifier = Modifier.fillMaxWidth(),
             ) {
@@ -154,10 +150,10 @@ fun ReviewStep(
                     Button(
                         onClick = { showSaveDialog = true },
                         enabled = !isSaving,
-                        shape = RoundedCornerShape(20.dp),
+                        shape = MaterialTheme.shapes.large,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Black,
-                            contentColor = Color.White,
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor   = MaterialTheme.colorScheme.onPrimary,
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -166,8 +162,8 @@ fun ReviewStep(
                     ) {
                         if (isSaving) {
                             CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                color = Color.White,
+                                modifier    = Modifier.size(20.dp),
+                                color       = MaterialTheme.colorScheme.onPrimary,
                                 strokeWidth = 2.dp,
                             )
                         } else {
@@ -175,7 +171,7 @@ fun ReviewStep(
                             Spacer(Modifier.width(8.dp))
                             Text(
                                 "Save Collection",
-                                style = MaterialTheme.typography.bodyLarge,
+                                style      = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.SemiBold,
                             )
                         }
@@ -202,7 +198,7 @@ private fun SectionTitle(text: String) {
 private fun ForecastStrip(forecast: List<DayForecastDto>) {
     Surface(
         shape = RoundedCornerShape(22.dp),
-        color = SurfaceCard,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         modifier = Modifier.fillMaxWidth(),
     ) {
         if (forecast.size <= 5) {
@@ -241,7 +237,7 @@ private fun ForecastDay(day: DayForecastDto) {
         Icon(
             weatherIcon(day.weatherCode, day.precipMm),
             contentDescription = null,
-            tint = Color.Black,
+            tint = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.size(24.dp),
         )
         Spacer(Modifier.height(8.dp))
@@ -269,7 +265,7 @@ private fun weatherIcon(code: Int, precipMm: Double): ImageVector = when {
 private fun OutfitDayCard(outfit: GeneratedOutfitDto) {
     Surface(
         shape = RoundedCornerShape(24.dp),
-        color = SurfaceCard,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
@@ -366,7 +362,7 @@ private fun OutfitItemGrid(outfit: GeneratedOutfitDto) {
 private fun HeroTileBox(item: ItemMinimalDto?, slotLabel: String, modifier: Modifier = Modifier) {
     Surface(
         shape = RoundedCornerShape(18.dp),
-        color = HeroTile,
+        color = MaterialTheme.colorScheme.surfaceContainerLowest,
         modifier = modifier.aspectRatio(0.72f),
     ) {
         Box(
@@ -394,18 +390,17 @@ private fun HeroTileBox(item: ItemMinimalDto?, slotLabel: String, modifier: Modi
 
 @Composable
 private fun TagChip(text: String, isPrimary: Boolean) {
-    val bg = if (isPrimary) Color.Black else Color.White
-    val fg = if (isPrimary) Color.White else Color.Black
+    val cs = MaterialTheme.colorScheme
     Surface(
         shape = CircleShape,
-        color = bg,
+        color = if (isPrimary) cs.primary else cs.surface,
     ) {
         Text(
             text,
-            style = MaterialTheme.typography.labelMedium,
+            style      = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Medium,
-            color = fg,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            color      = if (isPrimary) cs.onPrimary else cs.onSurface,
+            modifier   = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
         )
     }
 }
@@ -421,26 +416,26 @@ private fun SaveTripDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(24.dp),
+        shape = MaterialTheme.shapes.extraLarge,
         title = { Text("Save Collection", fontWeight = FontWeight.SemiBold) },
         text = {
             OutlinedTextField(
-                value = name,
+                value         = name,
                 onValueChange = { name = it },
-                label = { Text("Collection name") },
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth(),
+                label         = { Text("Collection name") },
+                singleLine    = true,
+                shape         = MaterialTheme.shapes.medium,
+                modifier      = Modifier.fillMaxWidth(),
             )
         },
         confirmButton = {
             Button(
-                onClick = { onConfirm(name) },
-                enabled = name.isNotBlank() && !isSaving,
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Black,
-                    contentColor = Color.White,
+                onClick  = { onConfirm(name) },
+                enabled  = name.isNotBlank() && !isSaving,
+                shape    = MaterialTheme.shapes.large,
+                colors   = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor   = MaterialTheme.colorScheme.onPrimary,
                 ),
             ) { Text("Save") }
         },

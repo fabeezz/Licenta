@@ -3,7 +3,6 @@ package com.example.outfitai.ui.outfits
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -22,11 +21,11 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.example.outfitai.data.model.ItemConstants
 import com.example.outfitai.data.model.ItemOutDto
-import com.example.outfitai.ui.common.FormDropdownSelector
-import com.example.outfitai.ui.common.FormTextField
+import com.example.outfitai.ui.components.LoomButton
+import com.example.outfitai.ui.components.LoomDropdownSelector
+import com.example.outfitai.ui.components.LoomTextField
 import com.example.outfitai.core.media.mediaUrl
-import androidx.compose.ui.text.capitalize
-import java.util.Locale
+import com.example.outfitai.ui.theme.Spacing
 
 @Composable
 fun SaveOutfitDialog(
@@ -59,8 +58,8 @@ fun SaveOutfitDialog(
                         }
                         Text(
                             text = "Save Outfit",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.SemiBold,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.weight(1f),
                         )
@@ -74,30 +73,16 @@ fun SaveOutfitDialog(
                     tonalElevation = 0.dp,
                     modifier = Modifier.imePadding(),
                 ) {
-                    Button(
+                    LoomButton(
+                        text = "Confirm Save",
                         onClick = onSave,
                         enabled = !state.isSaving,
-                        shape = RoundedCornerShape(20.dp),
+                        isLoading = state.isSaving,
                         modifier = Modifier
                             .fillMaxWidth()
                             .navigationBarsPadding()
-                            .padding(horizontal = 20.dp, vertical = 16.dp)
-                            .heightIn(min = 56.dp),
-                    ) {
-                        if (state.isSaving) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                strokeWidth = 2.dp,
-                            )
-                        } else {
-                            Text(
-                                "Confirm Save",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold,
-                            )
-                        }
-                    }
+                            .padding(horizontal = Spacing.xl, vertical = Spacing.lg),
+                    )
                 }
             },
         ) { padding ->
@@ -113,7 +98,7 @@ fun SaveOutfitDialog(
 
                 // --- Visual Preview ---
                 Surface(
-                    shape = RoundedCornerShape(24.dp),
+                    shape = MaterialTheme.shapes.extraLarge,
                     color = MaterialTheme.colorScheme.surfaceContainerLow,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -136,7 +121,7 @@ fun SaveOutfitDialog(
                 }
 
                 // --- Form Fields ---
-                FormTextField(
+                LoomTextField(
                     label = "Outfit Name",
                     value = state.outfitName,
                     onValueChange = onNameChange,
@@ -164,7 +149,7 @@ fun SaveOutfitDialog(
                     }
                 }
 
-                FormDropdownSelector(
+                LoomDropdownSelector(
                     label = "Style",
                     selectedOption = state.selectedStyle,
                     options = listOf("") + ItemConstants.STYLES,
@@ -240,7 +225,7 @@ private fun PreviewItem(
         modifier = Modifier
             .width(width)
             .height(height)
-            .clip(RoundedCornerShape(12.dp))
+            .clip(MaterialTheme.shapes.medium)
             .background(MaterialTheme.colorScheme.surfaceContainerHighest),
         contentAlignment = Alignment.Center
     ) {

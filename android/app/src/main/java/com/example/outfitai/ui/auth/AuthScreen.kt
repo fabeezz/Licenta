@@ -5,8 +5,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import com.example.outfitai.ui.theme.Elevation
+import com.example.outfitai.ui.theme.Spacing
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Email
@@ -23,9 +24,7 @@ import androidx.compose.ui.unit.dp
 
 internal enum class AuthMode { Login, Register, Reset }
 
-private val PageMargin = 20.dp
-private val StackLarge = 32.dp
-private val StackMedium = 16.dp
+// spacing aliases kept for readability; resolve to Spacing tokens at usage sites
 
 @Composable
 fun AuthScreen(
@@ -44,14 +43,14 @@ fun AuthScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
-            .padding(PageMargin),
+            .padding(Spacing.xl),
         contentAlignment = Alignment.Center,
     ) {
         Box(modifier = Modifier.fillMaxWidth().widthIn(max = 420.dp)) {
-            DecorativeBackdrop(modifier = Modifier.matchParentSize().offset(y = (-24).dp))
+            DecorativeBackdrop(modifier = Modifier.matchParentSize().offset(y = (-Spacing.xxl)))
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(StackLarge),
+                verticalArrangement = Arrangement.spacedBy(Spacing.xxxl),
             ) {
                 AuthHeader(mode = mode)
                 if (mode != AuthMode.Reset) {
@@ -97,18 +96,18 @@ private fun AuthCard(
         modifier = Modifier
             .fillMaxWidth()
             .border(
-                BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-                shape = RoundedCornerShape(24.dp),
+                BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                shape = MaterialTheme.shapes.extraLarge,
             ),
-        shape = RoundedCornerShape(24.dp),
+        shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = Elevation.Level3),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 28.dp),
-            verticalArrangement = Arrangement.spacedBy(StackMedium),
+                .padding(horizontal = Spacing.xxl, vertical = Spacing.xxl),
+            verticalArrangement = Arrangement.spacedBy(Spacing.lg),
         ) {
             AuthTextField(
                 value = state.username,

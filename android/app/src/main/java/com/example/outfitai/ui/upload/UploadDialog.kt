@@ -3,7 +3,6 @@ package com.example.outfitai.ui.upload
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -13,15 +12,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.example.outfitai.data.model.ItemConstants
-import com.example.outfitai.ui.common.FormDropdownSelector
-import com.example.outfitai.ui.common.FormTextField
+import com.example.outfitai.ui.components.LoomButton
+import com.example.outfitai.ui.components.LoomDropdownSelector
+import com.example.outfitai.ui.components.LoomTextField
+import com.example.outfitai.ui.theme.Spacing
 
 @Composable
 fun UploadDialog(
@@ -47,7 +47,7 @@ fun UploadDialog(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 8.dp, vertical = 8.dp),
+                            .padding(horizontal = Spacing.sm, vertical = Spacing.sm),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         IconButton(onClick = onDismiss) {
@@ -55,8 +55,7 @@ fun UploadDialog(
                         }
                         Text(
                             text = "Add New Item",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleLarge,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.weight(1f),
                         )
@@ -70,30 +69,15 @@ fun UploadDialog(
                     tonalElevation = 0.dp,
                     modifier = Modifier.imePadding(),
                 ) {
-                    Button(
+                    LoomButton(
+                        text = "Upload to Wardrobe",
                         onClick = onUpload,
-                        enabled = !uploadState.isUploading,
-                        shape = RoundedCornerShape(20.dp),
+                        isLoading = uploadState.isUploading,
                         modifier = Modifier
                             .fillMaxWidth()
                             .navigationBarsPadding()
-                            .padding(horizontal = 20.dp, vertical = 16.dp)
-                            .heightIn(min = 56.dp),
-                    ) {
-                        if (uploadState.isUploading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                strokeWidth = 2.dp,
-                            )
-                        } else {
-                            Text(
-                                "Upload to Wardrobe",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold,
-                            )
-                        }
-                    }
+                            .padding(horizontal = Spacing.xl, vertical = Spacing.lg),
+                    )
                 }
             },
         ) { padding ->
@@ -108,7 +92,7 @@ fun UploadDialog(
                 Spacer(Modifier.height(8.dp))
 
                 Surface(
-                    shape = RoundedCornerShape(24.dp),
+                    shape = MaterialTheme.shapes.extraLarge,
                     color = MaterialTheme.colorScheme.surfaceContainerLow,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -122,17 +106,19 @@ fun UploadDialog(
                     )
                 }
 
-                FormTextField(
+                LoomTextField(
                     label = "Brand",
                     value = uploadState.brand,
                     onValueChange = onBrandChange,
+                    modifier = Modifier.fillMaxWidth(),
                 )
 
-                FormDropdownSelector(
+                LoomDropdownSelector(
                     label = "Material",
                     selectedOption = uploadState.material,
                     options = ItemConstants.MATERIALS,
                     onOptionSelected = onMaterialChange,
+                    modifier = Modifier.fillMaxWidth(),
                 )
 
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -180,12 +166,12 @@ fun UploadDialog(
                 }
 
                 Surface(
-                    shape = RoundedCornerShape(20.dp),
+                    shape = MaterialTheme.shapes.large,
                     color = MaterialTheme.colorScheme.surfaceContainerLow,
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 ) {
                     Row(
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier.padding(Spacing.lg),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {

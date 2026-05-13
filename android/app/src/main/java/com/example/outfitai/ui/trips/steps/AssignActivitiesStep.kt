@@ -20,8 +20,6 @@ import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.Locale
 
-private val SurfaceCard = Color(0xFFF2F2F7)
-private val GlassBar = Color(0xFFFFFFFF)
 private const val ContentMaxWidth = 560
 
 private val ACTIVITY_LABELS: Map<String, String> = mapOf(
@@ -86,9 +84,9 @@ fun AssignActivitiesStep(
             item { Spacer(Modifier.height(120.dp)) }
         }
 
-        // Floating glassmorphic action bar
+        // Floating action bar
         Surface(
-            color = GlassBar.copy(alpha = 0.85f),
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth(),
@@ -101,10 +99,10 @@ fun AssignActivitiesStep(
             ) {
                 Button(
                     onClick = onGenerate,
-                    shape = RoundedCornerShape(20.dp),
+                    shape = MaterialTheme.shapes.large,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Black,
-                        contentColor = Color.White,
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor   = MaterialTheme.colorScheme.onPrimary,
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -113,7 +111,7 @@ fun AssignActivitiesStep(
                 ) {
                     Text(
                         "Help Me Pack",
-                        style = MaterialTheme.typography.bodyLarge,
+                        style      = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Spacer(Modifier.width(8.dp))
@@ -138,8 +136,8 @@ private fun DayCard(
     val allFilled = availableActivities.isNotEmpty() && assignedActivities.containsAll(availableActivities)
 
     Surface(
-        shape = RoundedCornerShape(24.dp),
-        color = SurfaceCard,
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -171,17 +169,18 @@ private fun DayCard(
                 if (availableActivities.isNotEmpty()) {
                     Surface(
                         shape = CircleShape,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.surface,
                     ) {
                         IconButton(
-                            onClick = onQuickFill,
-                            enabled = !allFilled,
+                            onClick  = onQuickFill,
+                            enabled  = !allFilled,
                             modifier = Modifier.size(36.dp),
                         ) {
+                            val cs = MaterialTheme.colorScheme
                             Icon(
                                 Icons.Default.Shuffle,
                                 contentDescription = "Quick fill",
-                                tint = if (allFilled) Color.Black.copy(alpha = 0.3f) else Color.Black,
+                                tint     = if (allFilled) cs.onSurface.copy(alpha = 0.3f) else cs.onSurface,
                                 modifier = Modifier.size(18.dp),
                             )
                         }
@@ -212,9 +211,10 @@ private fun DayCard(
 
 @Composable
 private fun ActivityPillChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    val cs = MaterialTheme.colorScheme
     Surface(
-        shape = CircleShape,
-        color = if (selected) Color.Black else Color.White,
+        shape   = CircleShape,
+        color   = if (selected) cs.primary else cs.surface,
         onClick = onClick,
     ) {
         Row(
@@ -225,16 +225,16 @@ private fun ActivityPillChip(label: String, selected: Boolean, onClick: () -> Un
                 Icon(
                     Icons.Default.Check,
                     contentDescription = null,
-                    tint = Color.White,
+                    tint     = cs.onPrimary,
                     modifier = Modifier.size(14.dp),
                 )
                 Spacer(Modifier.width(6.dp))
             }
             Text(
                 label,
-                style = MaterialTheme.typography.bodyMedium,
+                style      = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
-                color = if (selected) Color.White else Color.Black,
+                color      = if (selected) cs.onPrimary else cs.onSurface,
             )
         }
     }

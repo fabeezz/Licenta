@@ -7,10 +7,10 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -18,10 +18,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.outfitai.data.model.ItemConstants
+import com.example.outfitai.ui.components.LoomButton
+import com.example.outfitai.ui.components.LoomButtonVariant
+import com.example.outfitai.ui.theme.Spacing
 
 // ── Category strip (Pieces tab) ───────────────────────────────────────────────
 
@@ -41,7 +43,7 @@ internal fun WardrobeCategoryStrip(
         Box(modifier = Modifier.weight(1f)) {
             Row(
                 modifier = Modifier.horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 CategoryPill(label = "All", selected = selectedBucket == null, onClick = { onBucketSelect(null) })
@@ -52,19 +54,19 @@ internal fun WardrobeCategoryStrip(
                         onClick = { onBucketSelect(bucket) },
                     )
                 }
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(Spacing.md))
             }
             // Right-edge fade
             Box(
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
-                    .width(24.dp)
+                    .width(Spacing.xxl)
                     .matchParentSize()
                     .background(Brush.horizontalGradient(listOf(Color.Transparent, bg))),
             )
         }
 
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(Spacing.sm))
 
         Box(contentAlignment = Alignment.TopEnd) {
             Box(
@@ -103,13 +105,12 @@ private fun CategoryPill(label: String, selected: Boolean, onClick: () -> Unit) 
     Text(
         text = label,
         color = text,
-        fontSize = 15.sp,
-        fontWeight = FontWeight.Medium,
+        style = MaterialTheme.typography.titleMedium,
         modifier = Modifier
-            .clip(RoundedCornerShape(50))
+            .clip(CircleShape)
             .background(bg)
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
     )
 }
 
@@ -166,26 +167,24 @@ internal fun WardrobeFiltersSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        shape = MaterialTheme.shapes.extraLarge,
         containerColor = MaterialTheme.colorScheme.surface,
         dragHandle = { BottomSheetDefaults.DragHandle() },
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            // Title
             Text(
                 text = "Filters",
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
             )
-            HorizontalDivider(modifier = Modifier.padding(top = 12.dp))
+            HorizontalDivider(modifier = Modifier.padding(top = Spacing.md))
 
-            // Scrollable content
             Column(
                 modifier = Modifier
                     .weight(1f, fill = false)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp)
-                    .padding(top = 24.dp),
+                    .padding(horizontal = Spacing.xxl)
+                    .padding(top = Spacing.xxl),
                 verticalArrangement = Arrangement.spacedBy(28.dp),
             ) {
                 if (showColors) {
@@ -193,37 +192,28 @@ internal fun WardrobeFiltersSheet(
                 }
                 WeatherSection(selected = state.filterWeather, onSelect = onFilterWeather)
                 StyleSection(selected = state.filterStyle, onSelect = onFilterStyle)
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(Spacing.xs))
             }
 
-            // Footer
             HorizontalDivider()
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 20.dp)
+                    .padding(horizontal = Spacing.xxl, vertical = Spacing.xl)
                     .navigationBarsPadding(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(onClick = { onClearFilters(); onDismiss() }) {
-                    Text(
-                        text = "Clear filters",
-                        color = MaterialTheme.colorScheme.outline,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 15.sp,
-                    )
-                }
-                Button(
+                LoomButton(
+                    text = "Clear filters",
+                    onClick = { onClearFilters(); onDismiss() },
+                    variant = LoomButtonVariant.Ghost,
+                )
+                LoomButton(
+                    text = "Done",
                     onClick = onDismiss,
-                    shape = RoundedCornerShape(50),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                    ),
-                    modifier = Modifier.defaultMinSize(minWidth = 120.dp, minHeight = 48.dp),
-                ) {
-                    Text("Done", fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                }
+                    modifier = Modifier.defaultMinSize(minWidth = 120.dp),
+                )
             }
         }
     }
@@ -237,7 +227,7 @@ private fun ColorSection(selected: String?, onSelect: (String?) -> Unit) {
         FilterSectionHeader("Colors")
         Row(
             modifier = Modifier.horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
             ItemConstants.COLORS.forEach { name ->
                 ColorSwatch(
@@ -260,18 +250,13 @@ private fun ColorSwatch(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    val primary = MaterialTheme.colorScheme.primary
-    val borderModifier = if (selected)
-        Modifier.border(2.dp, primary, CircleShape).padding(2.dp)
-    else
-        Modifier
+    val cs = MaterialTheme.colorScheme
 
     Box(
         modifier = Modifier
             .size(32.dp)
             .clip(CircleShape)
-            .background(if (selected) Color.Transparent else Color.Transparent)
-            .then(if (selected) Modifier.border(2.dp, primary, CircleShape) else Modifier)
+            .then(if (selected) Modifier.border(2.dp, cs.primary, CircleShape) else Modifier)
             .clickable(onClick = onClick),
     ) {
         Box(
@@ -281,7 +266,7 @@ private fun ColorSwatch(
                 .clip(CircleShape)
                 .background(color)
                 .then(
-                    if (isLight) Modifier.border(1.dp, Color(0xFFE0E0E0), CircleShape)
+                    if (isLight) Modifier.border(1.dp, cs.outline, CircleShape)
                     else Modifier
                 ),
         )
@@ -311,23 +296,23 @@ private fun colorForName(name: String): Color = when (name) {
 
 // ── Section: Weather ──────────────────────────────────────────────────────────
 
-private data class WeatherOption(val key: String, val label: String, val emoji: String)
+private data class WeatherOption(val key: String, val label: String, val icon: ImageVector)
 
 private val weatherOptions = listOf(
-    WeatherOption("cold", "Cold", "❄️"),
-    WeatherOption("warm", "Warm", "☀️"),
-    WeatherOption("rainy", "Rainy", "🌧️"),
-    WeatherOption("all-weather", "All Weather", "🌈"),
+    WeatherOption("cold", "Cold", Icons.Outlined.AcUnit),
+    WeatherOption("warm", "Warm", Icons.Outlined.WbSunny),
+    WeatherOption("rainy", "Rainy", Icons.Outlined.WaterDrop),
+    WeatherOption("all-weather", "All Weather", Icons.Outlined.Cloud),
 )
 
 @Composable
 private fun WeatherSection(selected: String?, onSelect: (String?) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         FilterSectionHeader("Weather")
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             weatherOptions.chunked(2).forEach { row ->
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     row.forEach { opt ->
@@ -357,34 +342,34 @@ private fun WeatherTile(
 
     Row(
         modifier = modifier
-            .clip(RoundedCornerShape(20.dp))
+            .clip(MaterialTheme.shapes.large)
             .background(bgColor)
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(horizontal = Spacing.lg, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
-        Text(option.emoji, fontSize = 18.sp)
-        Spacer(Modifier.width(8.dp))
-        Text(option.label, color = textColor, fontWeight = FontWeight.Medium, fontSize = 15.sp)
+        Icon(option.icon, contentDescription = null, tint = textColor, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(Spacing.sm))
+        Text(option.label, color = textColor, style = MaterialTheme.typography.titleMedium)
     }
 }
 
 // ── Section: Style ────────────────────────────────────────────────────────────
 
-private data class StyleOption(val key: String, val label: String, val emoji: String)
+private data class StyleOption(val key: String, val label: String, val icon: ImageVector)
 
 private val styleOptions = listOf(
-    StyleOption("casual", "Casual", "👕"),
-    StyleOption("formal", "Formal", "👔"),
-    StyleOption("sporty", "Sporty", "👟"),
+    StyleOption("casual", "Casual", Icons.Outlined.Checkroom),
+    StyleOption("formal", "Formal", Icons.Outlined.Work),
+    StyleOption("sporty", "Sporty", Icons.Outlined.DirectionsRun),
 )
 
 @Composable
 private fun StyleSection(selected: String?, onSelect: (String?) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         FilterSectionHeader("Style")
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             styleOptions.forEach { opt ->
                 StyleChip(
                     option = opt,
@@ -403,15 +388,15 @@ private fun StyleChip(option: StyleOption, selected: Boolean, onClick: () -> Uni
 
     Row(
         modifier = Modifier
-            .clip(RoundedCornerShape(50))
+            .clip(CircleShape)
             .background(bgColor)
             .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 12.dp),
+            .padding(horizontal = Spacing.xl, vertical = Spacing.md),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
     ) {
-        Text(option.emoji, fontSize = 16.sp)
-        Text(option.label, color = textColor, fontWeight = FontWeight.Medium, fontSize = 15.sp)
+        Icon(option.icon, contentDescription = null, tint = textColor, modifier = Modifier.size(16.dp))
+        Text(option.label, color = textColor, style = MaterialTheme.typography.titleMedium)
     }
 }
 
@@ -421,9 +406,7 @@ private fun StyleChip(option: StyleOption, selected: Boolean, onClick: () -> Uni
 private fun FilterSectionHeader(title: String) {
     Text(
         text = title.uppercase(),
-        color = MaterialTheme.colorScheme.outline,
-        fontSize = 12.sp,
-        fontWeight = FontWeight.SemiBold,
-        letterSpacing = 0.5.sp,
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 }
