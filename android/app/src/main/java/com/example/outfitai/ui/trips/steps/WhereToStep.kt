@@ -91,7 +91,7 @@ fun WhereToStep(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth(),
-            color = MaterialTheme.colorScheme.background.copy(alpha = 0.95f),
+            color = MaterialTheme.colorScheme.background,
             tonalElevation = 0.dp,
         ) {
             Button(

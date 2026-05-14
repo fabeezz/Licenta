@@ -1,13 +1,18 @@
 package com.example.outfitai.ui.outfits
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -16,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
@@ -51,49 +57,56 @@ fun OutfitStudioRoute(
 
     if (state.showSaveDialog) {
         SaveOutfitDialog(
-            state         = state,
-            onDismiss     = vm::closeSaveDialog,
-            onSave        = vm::save,
-            onNameChange  = vm::updateOutfitName,
+            state           = state,
+            onDismiss       = vm::closeSaveDialog,
+            onSave          = vm::save,
+            onNameChange    = vm::updateOutfitName,
             onWeatherChange = vm::updateWeather,
-            onStyleChange = vm::updateStyle,
+            onStyleChange   = vm::updateStyle,
         )
     }
 
-    if (state.showFilterDialog) {
-        OutfitFilterDialog(
-            initialState = state.filterState,
-            onDismiss    = vm::closeFilterDialog,
-            onApply      = vm::applyFilters,
+    if (state.showContextSheet) {
+        OutfitContextSheet(
+            isLoading        = state.isFetchingWeather,
+            forecast         = state.weatherForecast,
+            error            = state.weatherError,
+            locationLabel    = state.locationLabel,
+            initialState     = state.filterState,
+            onDismiss        = vm::closeContextSheet,
+            onApply          = vm::applyFilters,
+            onRefreshWeather = vm::refreshWeather,
         )
     }
 
-    if (state.showWeatherSheet) {
-        WeatherForecastSheet(
-            isLoading     = state.isFetchingWeather,
-            forecast      = state.weatherForecast,
-            error         = state.weatherError,
-            locationLabel = state.locationLabel,
-            onDismiss     = vm::closeWeatherSheet,
-            onApply       = vm::applyWeatherFilter,
-            onRetry       = vm::openWeatherSheet,
+    state.pickerSlot?.let { slot ->
+        SlotPickerSheet(
+            slot     = slot,
+            items    = when (slot) {
+                Slot.TOP    -> state.top
+                Slot.BOTTOM -> state.bottom
+                Slot.OUTER  -> state.outer
+                Slot.SHOES  -> state.shoes
+            },
+            onSelect  = vm::selectSlotItem,
+            onDismiss = vm::closePicker,
         )
     }
 
     OutfitStudioScreen(
-        state             = state,
+        state              = state,
+        snackbarHostState  = snackbarHostState,
+        onStep             = vm::stepSlot,
+        onToggleLayers     = vm::toggleLayers,
+        onShuffle          = vm::shuffle,
+        onSave             = vm::openSaveDialog,
+        onWardrobeClick    = onWardrobeClick,
+        onTripClick        = onTripClick,
+        onProfileClick     = onProfileClick,
+        onAddClick         = upload.launch,
+        onContextClick     = vm::openContextSheet,
         onInspirationClick = onInspirationClick,
-        snackbarHostState = snackbarHostState,
-        onStep            = vm::stepSlot,
-        onToggleLayers    = vm::toggleLayers,
-        onShuffle         = vm::shuffle,
-        onSave            = vm::openSaveDialog,
-        onWardrobeClick   = onWardrobeClick,
-        onTripClick       = onTripClick,
-        onProfileClick    = onProfileClick,
-        onAddClick        = upload.launch,
-        onFilterClick     = vm::openFilterDialog,
-        onWeatherClick    = vm::openWeatherSheet,
+        onOpenPicker       = vm::openPicker,
     )
 }
 
@@ -109,12 +122,13 @@ private fun OutfitStudioScreen(
     onTripClick: () -> Unit,
     onProfileClick: () -> Unit,
     onAddClick: () -> Unit,
-    onFilterClick: () -> Unit,
-    onWeatherClick: () -> Unit,
-    onInspirationClick: () -> Unit = {},
+    onContextClick: () -> Unit,
+    onInspirationClick: () -> Unit,
+    onOpenPicker: (Slot) -> Unit,
 ) {
     val canSave = state.top.current != null && state.bottom.current != null && state.shoes.current != null
     val colors = MaterialTheme.colorScheme
+    var pillExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         containerColor = colors.surface,
@@ -138,7 +152,6 @@ private fun OutfitStudioScreen(
                 .padding(top = innerPad.calculateTopPadding()),
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
-
                 state.error?.let { err ->
                     Text(
                         text     = err,
@@ -169,33 +182,74 @@ private fun OutfitStudioScreen(
                     if (state.isLoading) {
                         CircularProgressIndicator()
                     } else if (state.includeOuter) {
-                        FourPieceLayout(state = state, availH = availH, availW = availW, gap = gap, onStep = onStep)
+                        FourPieceLayout(state = state, availH = availH, availW = availW, gap = gap, onStep = onStep, onOpenPicker = onOpenPicker)
                     } else {
-                        ThreePieceLayout(state = state, availH = availH, availW = availW, gap = gap, onStep = onStep)
+                        ThreePieceLayout(state = state, availH = availH, availW = availW, gap = gap, onStep = onStep, onOpenPicker = onOpenPicker)
                     }
                 }
             }
 
-            // Floating right-edge controls (fixed, not scrolling)
+            // Right-edge control rail
             Column(
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
                     .padding(end = Spacing.md),
-                verticalArrangement = Arrangement.spacedBy(Spacing.md),
+                verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+                horizontalAlignment = Alignment.End,
             ) {
-                FloatingControlButton(onClick = onInspirationClick, icon = { Icon(Icons.Default.AutoAwesome, contentDescription = "From image") })
-                FloatingControlButton(onClick = onWeatherClick, icon = { Icon(Icons.Outlined.WbSunny, contentDescription = "Weather") })
-                FloatingControlButton(onClick = onToggleLayers, icon = { Icon(Icons.Outlined.Layers, contentDescription = "Toggle layers") }, highlighted = state.includeOuter)
-                FloatingControlButton(onClick = onFilterClick, icon = { Icon(Icons.Default.Tune, contentDescription = "Filter") })
-                FloatingControlButton(onClick = onShuffle, icon = { Icon(Icons.Outlined.Shuffle, contentDescription = "Shuffle") })
+                // Primary actions
                 FloatingControlButton(
-                    onClick = onSave,
-                    icon = {
+                    onClick = onShuffle,
+                    icon    = { Icon(Icons.Outlined.Shuffle, contentDescription = "Shuffle") },
+                )
+                FloatingControlButton(
+                    onClick  = onSave,
+                    enabled  = canSave,
+                    icon     = {
                         if (state.isSaving) Icon(Icons.Filled.Bookmark, contentDescription = "Saving")
                         else Icon(Icons.Outlined.BookmarkBorder, contentDescription = "Save fit")
                     },
-                    enabled = canSave,
                 )
+
+                // Expand/collapse toggle
+                FloatingControlButton(
+                    onClick = { pillExpanded = !pillExpanded },
+                    icon    = {
+                        Icon(
+                            imageVector        = if (pillExpanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                            contentDescription = if (pillExpanded) "Collapse" else "More options",
+                        )
+                    },
+                )
+
+                // Secondary actions — expands downward below the arrow
+                AnimatedVisibility(
+                    visible = pillExpanded,
+                    enter   = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
+                    exit    = shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut(),
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+                        horizontalAlignment = Alignment.End,
+                        modifier = Modifier.padding(top = Spacing.xs),
+                    ) {
+                        SecondaryPillRow(
+                            icon    = Icons.Outlined.CameraAlt,
+                            label   = "Match image",
+                            onClick = { pillExpanded = false; onInspirationClick() },
+                        )
+                        SecondaryPillRow(
+                            icon    = Icons.Outlined.Layers,
+                            label   = if (state.includeOuter) "Remove outer" else "Add outer",
+                            onClick = { onToggleLayers() },
+                        )
+                        SecondaryPillRow(
+                            icon    = Icons.Filled.Tune,
+                            label   = "Filter",
+                            onClick = { pillExpanded = false; onContextClick() },
+                        )
+                    }
+                }
             }
         }
     }
@@ -208,6 +262,7 @@ private fun ThreePieceLayout(
     availW: Dp,
     gap: Dp,
     onStep: (Slot, Int) -> Unit,
+    onOpenPicker: (Slot) -> Unit,
 ) {
     val sizeByH = (availH - gap * 2) / 2.75f
     val itemSize = minOf(sizeByH, availW)
@@ -216,9 +271,9 @@ private fun ThreePieceLayout(
         modifier = Modifier.width(itemSize),
         verticalArrangement = Arrangement.spacedBy(gap),
     ) {
-        SwipeableSlotTile(slot = state.top, label = "Top", width = itemSize, height = itemSize, onStep = { onStep(Slot.TOP, it) })
-        SwipeableSlotTile(slot = state.bottom, label = "Bottom", width = itemSize, height = itemSize, onStep = { onStep(Slot.BOTTOM, it) })
-        SwipeableSlotTile(slot = state.shoes, label = "Shoes", width = itemSize, height = itemSize * 0.75f, onStep = { onStep(Slot.SHOES, it) })
+        SwipeableSlotTile(slot = state.top, label = "Top", width = itemSize, height = itemSize, onStep = { onStep(Slot.TOP, it) }, onClick = { onOpenPicker(Slot.TOP) })
+        SwipeableSlotTile(slot = state.bottom, label = "Bottom", width = itemSize, height = itemSize, onStep = { onStep(Slot.BOTTOM, it) }, onClick = { onOpenPicker(Slot.BOTTOM) })
+        SwipeableSlotTile(slot = state.shoes, label = "Shoes", width = itemSize, height = itemSize * 0.75f, onStep = { onStep(Slot.SHOES, it) }, onClick = { onOpenPicker(Slot.SHOES) })
     }
 }
 
@@ -229,6 +284,7 @@ private fun FourPieceLayout(
     availW: Dp,
     gap: Dp,
     onStep: (Slot, Int) -> Unit,
+    onOpenPicker: (Slot) -> Unit,
 ) {
     val itemW     = (availW - gap) / 2
     val rowH      = itemW * 1.25f
@@ -238,11 +294,11 @@ private fun FourPieceLayout(
 
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(gap)) {
         Row(horizontalArrangement = Arrangement.spacedBy(gap), modifier = Modifier.fillMaxWidth()) {
-            SwipeableSlotTile(slot = state.outer, label = "Outer", width = itemW, height = rowH, onStep = { onStep(Slot.OUTER, it) })
-            SwipeableSlotTile(slot = state.top, label = "Top", width = itemW, height = rowH, onStep = { onStep(Slot.TOP, it) })
+            SwipeableSlotTile(slot = state.outer, label = "Outer", width = itemW, height = rowH, onStep = { onStep(Slot.OUTER, it) }, onClick = { onOpenPicker(Slot.OUTER) })
+            SwipeableSlotTile(slot = state.top, label = "Top", width = itemW, height = rowH, onStep = { onStep(Slot.TOP, it) }, onClick = { onOpenPicker(Slot.TOP) })
         }
-        SwipeableSlotTile(slot = state.bottom, label = "Bottom", width = availW, height = bottomH, onStep = { onStep(Slot.BOTTOM, it) })
-        SwipeableSlotTile(slot = state.shoes, label = "Shoes", width = availW, height = shoesH, onStep = { onStep(Slot.SHOES, it) })
+        SwipeableSlotTile(slot = state.bottom, label = "Bottom", width = availW, height = bottomH, onStep = { onStep(Slot.BOTTOM, it) }, onClick = { onOpenPicker(Slot.BOTTOM) })
+        SwipeableSlotTile(slot = state.shoes, label = "Shoes", width = availW, height = shoesH, onStep = { onStep(Slot.SHOES, it) }, onClick = { onOpenPicker(Slot.SHOES) })
     }
 }
 
@@ -253,6 +309,7 @@ private fun SwipeableSlotTile(
     width: Dp,
     height: Dp,
     onStep: (Int) -> Unit,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var dragX by remember { mutableFloatStateOf(0f) }
@@ -265,6 +322,11 @@ private fun SwipeableSlotTile(
             .height(height)
             .clip(MaterialTheme.shapes.extraLarge)
             .background(colors.surfaceContainerLow)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            )
             .pointerInput(slot.items.size) {
                 detectHorizontalDragGestures(
                     onDragEnd = {
@@ -313,6 +375,39 @@ private fun EmptySlotHint(label: String) {
         color    = MaterialTheme.colorScheme.outline,
         modifier = Modifier.padding(Spacing.lg),
     )
+}
+
+@Composable
+private fun SecondaryPillRow(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    Surface(
+        shape           = MaterialTheme.shapes.extraLarge,
+        color           = colors.surfaceContainerHighest,
+        shadowElevation = Elevation.Level2,
+        modifier        = Modifier.clickable(onClick = onClick),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            modifier = Modifier.padding(horizontal = Spacing.md, vertical = Spacing.sm),
+        ) {
+            Text(
+                text  = label,
+                style = MaterialTheme.typography.labelLarge,
+                color = colors.onSurface,
+            )
+            Icon(
+                imageVector        = icon,
+                contentDescription = null,
+                tint               = colors.onSurface,
+                modifier           = Modifier.size(20.dp),
+            )
+        }
+    }
 }
 
 @Composable

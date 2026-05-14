@@ -93,7 +93,7 @@ fun ActivitiesStep(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth(),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+            color = MaterialTheme.colorScheme.background,
         ) {
             Button(
                 onClick = onContinue,

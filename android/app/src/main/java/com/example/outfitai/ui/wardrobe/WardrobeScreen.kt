@@ -26,6 +26,7 @@ fun WardrobeRoute(
     onItemClick: (Int) -> Unit,
     onOutfitClick: (Int) -> Unit,
     onStudioClick: () -> Unit,
+    onNewCollection: () -> Unit,
     onTripClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
     sharedTransitionScope: SharedTransitionScope,
@@ -51,7 +52,7 @@ fun WardrobeRoute(
         onFilterStyle           = vm::setFilterStyle,
         onClearFilters          = vm::clearFilters,
         onSearchQueryChange     = vm::setSearchQuery,
-        onCreateCollection      = vm::createCollection,
+        onNewCollection         = onNewCollection,
         onRenameCollection      = vm::renameCollection,
         onDeleteCollection      = vm::deleteCollection,
         sharedTransitionScope   = sharedTransitionScope,
@@ -77,7 +78,7 @@ private fun WardrobeScreen(
     onFilterStyle: (String?) -> Unit,
     onClearFilters: () -> Unit,
     onSearchQueryChange: (String) -> Unit,
-    onCreateCollection: (String, List<Int>) -> Unit,
+    onNewCollection: () -> Unit,
     onRenameCollection: (Int, String) -> Unit,
     onDeleteCollection: (Int) -> Unit,
     sharedTransitionScope: SharedTransitionScope,
@@ -182,7 +183,7 @@ private fun WardrobeScreen(
                 WardrobeTab.Collections -> CollectionsContent(
                     state              = state,
                     onOutfitClick      = onOutfitClick,
-                    onCreateCollection = onCreateCollection,
+                    onNewCollection    = onNewCollection,
                     onRenameCollection = onRenameCollection,
                     onDeleteCollection = onDeleteCollection,
                     bottomPadding      = pad.calculateBottomPadding(),
@@ -193,13 +194,17 @@ private fun WardrobeScreen(
 
         if (sheetOpen) {
             WardrobeFiltersSheet(
-                state           = state,
-                showColors      = state.selectedTab == WardrobeTab.Clothes,
-                onFilterColor   = onFilterColor,
-                onFilterWeather = onFilterWeather,
-                onFilterStyle   = onFilterStyle,
-                onClearFilters  = { onClearFilters() },
-                onDismiss       = { sheetOpen = false },
+                initialColor   = state.filterColor,
+                initialWeather = state.filterWeather,
+                initialStyle   = state.filterStyle,
+                showColors     = state.selectedTab == WardrobeTab.Clothes,
+                onApply        = { color, weather, style ->
+                    onFilterColor(color)
+                    onFilterWeather(weather)
+                    onFilterStyle(style)
+                    sheetOpen = false
+                },
+                onDismiss      = { sheetOpen = false },
             )
         }
     }

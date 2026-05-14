@@ -23,6 +23,7 @@ import com.example.outfitai.ui.outfits.OutfitStudioRoute
 import com.example.outfitai.ui.profile.EditProfileRoute
 import com.example.outfitai.ui.profile.ProfileRoute
 import com.example.outfitai.ui.trips.TripPlannerRoute
+import com.example.outfitai.ui.wardrobe.CreateCollectionRoute
 import com.example.outfitai.ui.wardrobe.WardrobeRoute
 import com.example.outfitai.ui.wardrobe.WardrobeViewModel
 
@@ -41,6 +42,7 @@ object Routes {
     const val Insights = "insights"
     const val Gaps = "gaps"
     const val Inspiration = "inspiration"
+    const val CreateCollection = "create-collection"
 }
 
 private fun NavController.navigateTab(route: String) {
@@ -93,10 +95,8 @@ fun AppNav(
             composable(Routes.Inspiration) {
                 InspirationRoute(
                     onBack = { navController.popBackStack() },
-                    onOutfitSaved = { outfitId ->
-                        navController.navigate(Routes.outfitDetail(outfitId)) {
-                            popUpTo(Routes.Inspiration) { inclusive = true }
-                        }
+                    onOutfitSaved = { _ ->
+                        navController.popBackStack(Routes.OutfitStudio, inclusive = false)
                     },
                 )
             }
@@ -125,6 +125,7 @@ fun AppNav(
                     vm                      = vm,
                     onItemClick             = { id -> navController.navigate(Routes.itemDetails(id)) },
                     onOutfitClick           = { id -> navController.navigate(Routes.outfitDetail(id)) },
+                    onNewCollection         = { navController.navigate(Routes.CreateCollection) },
                     sharedTransitionScope   = sharedTransitionScope,
                     animatedVisibilityScope = animVisScope,
                 )
@@ -200,6 +201,22 @@ fun AppNav(
             composable(Routes.Gaps) {
                 GapsRoute(
                     onBack = { navController.popBackStack() },
+                )
+            }
+
+            composable(Routes.CreateCollection) { entry ->
+                val wardrobeEntry = remember(entry) {
+                    navController.getBackStackEntry(Routes.Wardrobe)
+                }
+                val vm: WardrobeViewModel = hiltViewModel(wardrobeEntry)
+                val state by vm.state.collectAsState()
+                CreateCollectionRoute(
+                    outfits  = state.outfits,
+                    onBack   = { navController.popBackStack() },
+                    onCreate = { name, ids ->
+                        vm.createCollection(name, ids)
+                        navController.popBackStack()
+                    },
                 )
             }
         }

@@ -26,6 +26,7 @@ import com.example.outfitai.data.model.ItemMinimalDto
 import com.example.outfitai.data.model.OutfitSavedDto
 import com.example.outfitai.core.ui.color.colorNameToComposeColor
 import com.example.outfitai.core.media.mediaUrl
+import com.example.outfitai.ui.components.LoomConfirmDialog
 import com.example.outfitai.ui.components.LoomTopBarWithBack
 import com.example.outfitai.ui.theme.Elevation
 import com.example.outfitai.ui.theme.Spacing
@@ -45,10 +46,22 @@ fun OutfitDetailRoute(
         }
     }
 
+    if (state.showDeleteConfirmation) {
+        LoomConfirmDialog(
+            title = "Delete this outfit?",
+            message = "The outfit will be removed from your wardrobe. This can't be undone.",
+            confirmText = "Delete",
+            destructive = true,
+            isLoading = state.isDeleting,
+            onConfirm = vm::confirmDelete,
+            onDismiss = vm::dismissDeleteConfirmation,
+        )
+    }
+
     OutfitDetailScreen(
-        state = state,
-        onBack = onBack,
-        onDelete = vm::delete
+        state    = state,
+        onBack   = onBack,
+        onDelete = vm::requestDelete,
     )
 }
 

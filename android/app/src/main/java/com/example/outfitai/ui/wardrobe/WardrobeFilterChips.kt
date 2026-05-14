@@ -7,20 +7,18 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.outfitai.data.model.ItemConstants
 import com.example.outfitai.ui.components.LoomButton
 import com.example.outfitai.ui.components.LoomButtonVariant
 import com.example.outfitai.ui.theme.Spacing
@@ -154,93 +152,161 @@ internal fun FitsFilterRow(hasActiveFilters: Boolean, onFilterClick: () -> Unit)
 
 // ── Filter bottom sheet ───────────────────────────────────────────────────────
 
+private val sortedColors = listOf(
+    "black", "white", "gray", "beige", "brown",
+    "burgundy", "red", "pink", "orange", "yellow",
+    "olive", "dark green", "green", "cyan", "blue", "navy", "purple",
+)
+
+private val weatherPills = listOf(
+    Triple("cold", "Cold", Icons.Filled.AcUnit),
+    Triple("warm", "Warm", Icons.Filled.WbSunny),
+    Triple("rainy", "Rainy", Icons.Filled.Umbrella),
+    Triple("all-weather", "All Weather", Icons.Filled.Cloud),
+)
+
+private val stylePills = listOf(
+    Triple("casual", "Casual", Icons.Filled.Checkroom),
+    Triple("formal", "Formal", Icons.Filled.Work),
+    Triple("sporty", "Sporty", Icons.Filled.DirectionsRun),
+)
+
+@Composable
+private fun FilterPill(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    icon: ImageVector? = null,
+) {
+    val cs = MaterialTheme.colorScheme
+    val bg = if (selected) cs.primary else cs.surfaceContainer
+    val fg = if (selected) cs.onPrimary else cs.onSurfaceVariant
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(bg)
+            .clickable(onClick = onClick)
+            .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
+    ) {
+        icon?.let {
+            Icon(imageVector = it, contentDescription = null, tint = fg, modifier = Modifier.size(16.dp))
+        }
+        Text(text = label, color = fg, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Medium)
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun WardrobeFiltersSheet(
-    state: WardrobeUiState,
+    initialColor: String?,
+    initialWeather: String?,
+    initialStyle: String?,
     showColors: Boolean = true,
-    onFilterColor: (String?) -> Unit,
-    onFilterWeather: (String?) -> Unit,
-    onFilterStyle: (String?) -> Unit,
-    onClearFilters: () -> Unit,
+    onApply: (color: String?, weather: String?, style: String?) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        shape = MaterialTheme.shapes.extraLarge,
-        containerColor = MaterialTheme.colorScheme.surface,
-        dragHandle = { BottomSheetDefaults.DragHandle() },
-    ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = "Filters",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.align(Alignment.CenterHorizontally),
-            )
-            HorizontalDivider(modifier = Modifier.padding(top = Spacing.md))
+    var color by remember { mutableStateOf(initialColor) }
+    var weather by remember { mutableStateOf(initialWeather) }
+    var style by remember { mutableStateOf(initialStyle) }
 
-            Column(
-                modifier = Modifier
-                    .weight(1f, fill = false)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = Spacing.xxl)
-                    .padding(top = Spacing.xxl),
-                verticalArrangement = Arrangement.spacedBy(28.dp),
-            ) {
-                if (showColors) {
-                    ColorSection(selected = state.filterColor, onSelect = onFilterColor)
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Spacing.xl, vertical = Spacing.lg),
+            horizontalAlignment = Alignment.Start,
+        ) {
+            if (showColors) {
+                Text(
+                    text = "Colors",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(bottom = Spacing.sm),
+                )
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+                ) {
+                    sortedColors.forEach { name ->
+                        ColorSwatch(
+                            name = name,
+                            color = colorForName(name),
+                            isLight = name == "white" || name == "beige" || name == "cream",
+                            selected = color == name,
+                            onClick = { color = if (color == name) null else name },
+                        )
+                    }
                 }
-                WeatherSection(selected = state.filterWeather, onSelect = onFilterWeather)
-                StyleSection(selected = state.filterStyle, onSelect = onFilterStyle)
-                Spacer(Modifier.height(Spacing.xs))
+                Spacer(modifier = Modifier.height(Spacing.xl))
             }
 
-            HorizontalDivider()
+            Text(
+                text = "Weather",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(bottom = Spacing.sm),
+            )
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+            ) {
+                weatherPills.forEach { (key, label, icon) ->
+                    FilterPill(
+                        label    = label,
+                        selected = weather == key,
+                        onClick  = { weather = if (weather == key) null else key },
+                        icon     = icon,
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(Spacing.xl))
+
+            Text(
+                text = "Style",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(bottom = Spacing.sm),
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                stylePills.forEach { (key, label, icon) ->
+                    FilterPill(
+                        label    = label,
+                        selected = style == key,
+                        onClick  = { style = if (style == key) null else key },
+                        icon     = icon,
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(Spacing.xxl))
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = Spacing.xxl, vertical = Spacing.xl)
-                    .navigationBarsPadding(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+                    .padding(bottom = Spacing.lg),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.md),
             ) {
                 LoomButton(
-                    text = "Clear filters",
-                    onClick = { onClearFilters(); onDismiss() },
-                    variant = LoomButtonVariant.Ghost,
+                    text     = "Clear",
+                    onClick  = { color = null; weather = null; style = null },
+                    variant  = LoomButtonVariant.Secondary,
+                    modifier = Modifier.weight(1f),
                 )
                 LoomButton(
-                    text = "Done",
-                    onClick = onDismiss,
-                    modifier = Modifier.defaultMinSize(minWidth = 120.dp),
+                    text     = "Apply",
+                    onClick  = { onApply(color, weather, style) },
+                    modifier = Modifier.weight(1f),
                 )
             }
         }
     }
 }
 
-// ── Section: Colors ───────────────────────────────────────────────────────────
-
-@Composable
-private fun ColorSection(selected: String?, onSelect: (String?) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        FilterSectionHeader("Colors")
-        Row(
-            modifier = Modifier.horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
-        ) {
-            ItemConstants.COLORS.forEach { name ->
-                ColorSwatch(
-                    name = name,
-                    color = colorForName(name),
-                    isLight = name == "white" || name == "beige" || name == "cream",
-                    selected = selected == name,
-                    onClick = { onSelect(if (selected == name) null else name) },
-                )
-            }
-        }
-    }
-}
+// ── Color swatch ──────────────────────────────────────────────────────────────
 
 @Composable
 private fun ColorSwatch(
@@ -292,121 +358,4 @@ private fun colorForName(name: String): Color = when (name) {
     "blue"       -> Color(0xFF2563EB)
     "purple"     -> Color(0xFF6B21A8)
     else         -> Color(0xFF9E9E9E)
-}
-
-// ── Section: Weather ──────────────────────────────────────────────────────────
-
-private data class WeatherOption(val key: String, val label: String, val icon: ImageVector)
-
-private val weatherOptions = listOf(
-    WeatherOption("cold", "Cold", Icons.Outlined.AcUnit),
-    WeatherOption("warm", "Warm", Icons.Outlined.WbSunny),
-    WeatherOption("rainy", "Rainy", Icons.Outlined.WaterDrop),
-    WeatherOption("all-weather", "All Weather", Icons.Outlined.Cloud),
-)
-
-@Composable
-private fun WeatherSection(selected: String?, onSelect: (String?) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        FilterSectionHeader("Weather")
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-            weatherOptions.chunked(2).forEach { row ->
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    row.forEach { opt ->
-                        WeatherTile(
-                            option = opt,
-                            selected = selected == opt.key,
-                            onClick = { onSelect(if (selected == opt.key) null else opt.key) },
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                    if (row.size == 1) Spacer(Modifier.weight(1f))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun WeatherTile(
-    option: WeatherOption,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val bgColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
-    val textColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-
-    Row(
-        modifier = modifier
-            .clip(MaterialTheme.shapes.large)
-            .background(bgColor)
-            .clickable(onClick = onClick)
-            .padding(horizontal = Spacing.lg, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
-    ) {
-        Icon(option.icon, contentDescription = null, tint = textColor, modifier = Modifier.size(18.dp))
-        Spacer(Modifier.width(Spacing.sm))
-        Text(option.label, color = textColor, style = MaterialTheme.typography.titleMedium)
-    }
-}
-
-// ── Section: Style ────────────────────────────────────────────────────────────
-
-private data class StyleOption(val key: String, val label: String, val icon: ImageVector)
-
-private val styleOptions = listOf(
-    StyleOption("casual", "Casual", Icons.Outlined.Checkroom),
-    StyleOption("formal", "Formal", Icons.Outlined.Work),
-    StyleOption("sporty", "Sporty", Icons.Outlined.DirectionsRun),
-)
-
-@Composable
-private fun StyleSection(selected: String?, onSelect: (String?) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        FilterSectionHeader("Style")
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-            styleOptions.forEach { opt ->
-                StyleChip(
-                    option = opt,
-                    selected = selected == opt.key,
-                    onClick = { onSelect(if (selected == opt.key) null else opt.key) },
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun StyleChip(option: StyleOption, selected: Boolean, onClick: () -> Unit) {
-    val bgColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
-    val textColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-
-    Row(
-        modifier = Modifier
-            .clip(CircleShape)
-            .background(bgColor)
-            .clickable(onClick = onClick)
-            .padding(horizontal = Spacing.xl, vertical = Spacing.md),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
-    ) {
-        Icon(option.icon, contentDescription = null, tint = textColor, modifier = Modifier.size(16.dp))
-        Text(option.label, color = textColor, style = MaterialTheme.typography.titleMedium)
-    }
-}
-
-// ── Shared ────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun FilterSectionHeader(title: String) {
-    Text(
-        text = title.uppercase(),
-        style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
 }

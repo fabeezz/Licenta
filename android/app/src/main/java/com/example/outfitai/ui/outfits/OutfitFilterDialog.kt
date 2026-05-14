@@ -6,8 +6,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AcUnit
+import androidx.compose.material.icons.filled.Checkroom
+import androidx.compose.material.icons.filled.DirectionsRun
 import androidx.compose.material.icons.filled.Umbrella
 import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -81,11 +84,16 @@ fun OutfitFilterDialog(
                 modifier = Modifier.padding(bottom = Spacing.sm),
             )
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                listOf("Casual", "Athleisure", "Formal").forEach { opt ->
+                listOf(
+                    "Casual" to Icons.Filled.Checkroom,
+                    "Athleisure" to Icons.Filled.DirectionsRun,
+                    "Formal" to Icons.Filled.Work,
+                ).forEach { (opt, icon) ->
                     FilterPill(
                         label    = opt,
                         selected = style == opt,
                         onClick  = { style = if (style == opt) null else opt },
+                        icon     = icon,
                     )
                 }
             }

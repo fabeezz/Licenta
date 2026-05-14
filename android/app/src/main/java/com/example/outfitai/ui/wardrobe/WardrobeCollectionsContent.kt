@@ -5,20 +5,16 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -28,19 +24,21 @@ import com.example.outfitai.core.media.mediaUrl
 import com.example.outfitai.data.model.CollectionResponseDto
 import com.example.outfitai.data.model.ItemMinimalDto
 import com.example.outfitai.data.model.OutfitSavedDto
+import com.example.outfitai.ui.components.LoomConfirmDialog
+import com.example.outfitai.ui.components.LoomInputDialog
+import com.example.outfitai.ui.theme.Spacing
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun CollectionsContent(
     state: WardrobeUiState,
     onOutfitClick: (Int) -> Unit,
-    onCreateCollection: (String, List<Int>) -> Unit,
+    onNewCollection: () -> Unit,
     onRenameCollection: (Int, String) -> Unit,
     onDeleteCollection: (Int) -> Unit,
     bottomPadding: Dp,
     modifier: Modifier = Modifier,
 ) {
-    var showCreateDialog by remember { mutableStateOf(false) }
     var detailCollection by remember { mutableStateOf<CollectionResponseDto?>(null) }
 
     when {
@@ -58,19 +56,19 @@ internal fun CollectionsContent(
             Text(
                 text = state.error,
                 color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(20.dp),
+                modifier = Modifier.padding(Spacing.xl),
             )
         }
 
         else -> LazyVerticalGrid(
             columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(bottom = bottomPadding + 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(bottom = bottomPadding + Spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
             modifier = modifier,
         ) {
             item(key = "__add__") {
-                AddCollectionTile(onClick = { showCreateDialog = true })
+                AddCollectionTile(onClick = onNewCollection)
             }
             items(state.collections, key = { it.id }) { collection ->
                 CollectionCard(
@@ -81,17 +79,6 @@ internal fun CollectionsContent(
                 )
             }
         }
-    }
-
-    if (showCreateDialog) {
-        CreateCollectionDialog(
-            outfits = state.outfits,
-            onCreate = { name, ids ->
-                onCreateCollection(name, ids)
-                showCreateDialog = false
-            },
-            onDismiss = { showCreateDialog = false },
-        )
     }
 
     detailCollection?.let { col ->
@@ -119,12 +106,12 @@ private fun AddCollectionTile(onClick: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Icon(
-                imageVector = Icons.Default.Add,
+                imageVector = Icons.Outlined.Add,
                 contentDescription = "New collection",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(40.dp),
+                modifier = Modifier.size(Spacing.xxxl),
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(Spacing.sm))
             Text(
                 text = "New collection",
                 style = MaterialTheme.typography.bodyMedium,
@@ -154,14 +141,16 @@ private fun CollectionCard(
             .aspectRatio(3f / 4f),
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize().padding(12.dp)) {
+            Column(modifier = Modifier
+                .fillMaxSize()
+                .padding(Spacing.md)) {
                 CollectionMosaic(
                     items = collection.outfits.take(4).map { it.top },
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f),
                 )
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(Spacing.sm))
                 Text(
                     text = collection.name,
                     style = MaterialTheme.typography.bodyMedium,
@@ -177,17 +166,17 @@ private fun CollectionCard(
 
             Box(modifier = Modifier.align(Alignment.TopEnd)) {
                 IconButton(onClick = { menuExpanded = true }) {
-                    Icon(Icons.Default.MoreVert, contentDescription = "Options")
+                    Icon(Icons.Outlined.MoreVert, contentDescription = "Options")
                 }
                 DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
                     DropdownMenuItem(
                         text = { Text("Rename") },
-                        leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
+                        leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) },
                         onClick = { menuExpanded = false; showRenameDialog = true },
                     )
                     DropdownMenuItem(
                         text = { Text("Delete") },
-                        leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) },
+                        leadingIcon = { Icon(Icons.Outlined.Delete, contentDescription = null) },
                         onClick = { menuExpanded = false; showDeleteConfirm = true },
                     )
                 }
@@ -196,33 +185,30 @@ private fun CollectionCard(
     }
 
     if (showRenameDialog) {
-        RenameCollectionDialog(
-            current = collection.name,
-            onRename = { newName -> onRename(collection.id, newName); showRenameDialog = false },
+        LoomInputDialog(
+            title = "Rename collection",
+            label = "Name",
+            initialValue = collection.name,
+            confirmText = "Rename",
+            onConfirm = { newName -> onRename(collection.id, newName); showRenameDialog = false },
             onDismiss = { showRenameDialog = false },
         )
     }
 
     if (showDeleteConfirm) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("Delete collection?") },
-            text = { Text("\"${collection.name}\" will be removed. Outfits inside won't be deleted.") },
-            confirmButton = {
-                TextButton(onClick = { onDelete(collection.id); showDeleteConfirm = false }) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) { Text("Cancel") }
-            },
+        LoomConfirmDialog(
+            title = "Delete collection?",
+            message = "\"${collection.name}\" will be removed. Outfits inside won't be deleted.",
+            confirmText = "Delete",
+            destructive = true,
+            onConfirm = { onDelete(collection.id); showDeleteConfirm = false },
+            onDismiss = { showDeleteConfirm = false },
         )
     }
 }
 
 @Composable
 private fun CollectionMosaic(items: List<ItemMinimalDto>, modifier: Modifier = Modifier) {
-    val gap = 4.dp
     Box(
         modifier = modifier
             .clip(MaterialTheme.shapes.medium)
@@ -231,23 +217,23 @@ private fun CollectionMosaic(items: List<ItemMinimalDto>, modifier: Modifier = M
         when (items.size) {
             0 -> Unit
             1 -> MosaicCell(items[0], Modifier.fillMaxSize())
-            2 -> Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(gap)) {
+            2 -> Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 MosaicCell(items[0], Modifier.weight(1f).fillMaxHeight())
                 MosaicCell(items[1], Modifier.weight(1f).fillMaxHeight())
             }
-            3 -> Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(gap)) {
+            3 -> Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 MosaicCell(items[0], Modifier.fillMaxWidth().weight(1f))
-                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(gap)) {
+                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                     MosaicCell(items[1], Modifier.weight(1f).fillMaxHeight())
                     MosaicCell(items[2], Modifier.weight(1f).fillMaxHeight())
                 }
             }
-            else -> Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(gap)) {
-                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(gap)) {
+            else -> Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                     MosaicCell(items[0], Modifier.weight(1f).fillMaxHeight())
                     MosaicCell(items[1], Modifier.weight(1f).fillMaxHeight())
                 }
-                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(gap)) {
+                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                     MosaicCell(items[2], Modifier.weight(1f).fillMaxHeight())
                     MosaicCell(items[3], Modifier.weight(1f).fillMaxHeight())
                 }
@@ -264,7 +250,7 @@ private fun MosaicCell(item: ItemMinimalDto, modifier: Modifier = Modifier) {
         contentScale = ContentScale.Fit,
         modifier = modifier
             .clip(MaterialTheme.shapes.extraSmall)
-            .padding(2.dp),
+            .padding(Spacing.xs / 2),
     )
 }
 
@@ -279,14 +265,16 @@ private fun CollectionDetailSheet(
         Text(
             text = collection.name,
             style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 20.dp).padding(bottom = 12.dp),
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier
+                .padding(horizontal = Spacing.xl)
+                .padding(bottom = Spacing.md),
         )
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(horizontal = Spacing.xl, vertical = Spacing.sm),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(max = 500.dp),
@@ -295,108 +283,7 @@ private fun CollectionDetailSheet(
                 FitCard(outfit = outfit, onClick = { onOutfitClick(outfit.id) })
             }
         }
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(Spacing.xxl))
     }
 }
 
-@Composable
-private fun CreateCollectionDialog(
-    outfits: List<OutfitSavedDto>,
-    onCreate: (String, List<Int>) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    var name by remember { mutableStateOf("") }
-    val selected = remember { mutableStateOf(setOf<Int>()) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("New collection") },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Name") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(12.dp))
-                if (outfits.isEmpty()) {
-                    Text(
-                        "Save some outfits first to add them to a collection.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                } else {
-                    Text("Select outfits", style = MaterialTheme.typography.labelMedium)
-                    Spacer(Modifier.height(4.dp))
-                    LazyColumn(modifier = Modifier.heightIn(max = 260.dp)) {
-                        items(outfits, key = { it.id }) { outfit ->
-                            val checked = outfit.id in selected.value
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth(),
-                            ) {
-                                Checkbox(
-                                    checked = checked,
-                                    onCheckedChange = { on ->
-                                        selected.value = if (on)
-                                            selected.value + outfit.id
-                                        else
-                                            selected.value - outfit.id
-                                    },
-                                )
-                                Text(outfit.name, style = MaterialTheme.typography.bodyMedium)
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onCreate(name.trim(), selected.value.toList()) },
-                enabled = name.isNotBlank() && selected.value.isNotEmpty(),
-            ) {
-                Text("Create")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
-        },
-    )
-}
-
-@Composable
-private fun RenameCollectionDialog(
-    current: String,
-    onRename: (String) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    var name by remember { mutableStateOf(current) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Rename collection") },
-        text = {
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text("Name") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onRename(name.trim()) },
-                enabled = name.isNotBlank() && name.trim() != current,
-            ) {
-                Text("Rename")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
-        },
-    )
-}

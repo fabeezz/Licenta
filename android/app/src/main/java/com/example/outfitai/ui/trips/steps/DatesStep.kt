@@ -135,7 +135,7 @@ fun DatesStep(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth(),
-            color = MaterialTheme.colorScheme.background.copy(alpha = 0.95f),
+            color = MaterialTheme.colorScheme.background,
         ) {
             Button(
                 onClick = onContinue,

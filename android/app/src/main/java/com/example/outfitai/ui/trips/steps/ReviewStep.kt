@@ -137,7 +137,7 @@ fun ReviewStep(
                 .fillMaxWidth(),
         ) {
             Surface(
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+                color = MaterialTheme.colorScheme.background,
                 tonalElevation = 0.dp,
                 modifier = Modifier.fillMaxWidth(),
             ) {

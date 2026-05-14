@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.Instant
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
@@ -83,7 +84,7 @@ class OutfitStudioViewModel @Inject constructor(
                         } else if (fState.climate == "Rainy") {
                             when (slot) {
                                 Slot.OUTER -> materialOverride = "nylon"
-                                Slot.TOP -> Unit // no weather filter — warm/cold/rainy/all-weather all valid
+                                Slot.TOP -> Unit
                                 Slot.BOTTOM -> weatherOverride = "all-weather,cold"
                                 Slot.SHOES -> weatherOverride = "all-weather"
                             }
@@ -112,15 +113,8 @@ class OutfitStudioViewModel @Inject constructor(
                 slots
             }.onSuccess { slots ->
                 _state.update { s ->
-                    val shouldIncludeOuter = when (fState.climate) {
-                        "Cold" -> true
-                        "Rainy" -> true
-                        "Warm" -> false
-                        else -> s.includeOuter
-                    }
                     s.copy(
                         isLoading = false,
-                        includeOuter = shouldIncludeOuter,
                         top = slots[Slot.TOP] ?: SlotItems(),
                         bottom = slots[Slot.BOTTOM] ?: SlotItems(),
                         outer = slots[Slot.OUTER] ?: SlotItems(),
@@ -133,17 +127,48 @@ class OutfitStudioViewModel @Inject constructor(
         }
     }
 
-    fun openFilterDialog() { _state.update { it.copy(showFilterDialog = true) } }
-    fun closeFilterDialog() { _state.update { it.copy(showFilterDialog = false) } }
+    fun openContextSheet() {
+        val s = _state.value
+        val needsFetch = s.weatherFetchedAt == null ||
+            Instant.now().epochSecond - s.weatherFetchedAt.epochSecond > 1800
 
-    fun openWeatherSheet() {
-        _state.update { it.copy(showWeatherSheet = true, isFetchingWeather = true, weatherError = null) }
+        _state.update { it.copy(showContextSheet = true, weatherError = null) }
+
+        if (needsFetch) {
+            _state.update { it.copy(isFetchingWeather = true) }
+            viewModelScope.launch {
+                val loc = locationStore.location.first()
+                _state.update { it.copy(locationLabel = loc.label) }
+                when (val result = getTodayWeather(loc.lat, loc.lon)) {
+                    is Resource.Success -> _state.update {
+                        it.copy(
+                            isFetchingWeather = false,
+                            weatherForecast = result.data,
+                            weatherFetchedAt = Instant.now(),
+                        )
+                    }
+                    is Resource.Error -> _state.update {
+                        it.copy(isFetchingWeather = false, weatherError = result.message)
+                    }
+                    Resource.Loading -> Unit
+                }
+            }
+        }
+    }
+
+    fun closeContextSheet() { _state.update { it.copy(showContextSheet = false) } }
+
+    fun refreshWeather() {
+        _state.update { it.copy(isFetchingWeather = true, weatherError = null) }
         viewModelScope.launch {
             val loc = locationStore.location.first()
-            _state.update { it.copy(locationLabel = loc.label) }
             when (val result = getTodayWeather(loc.lat, loc.lon)) {
                 is Resource.Success -> _state.update {
-                    it.copy(isFetchingWeather = false, weatherForecast = result.data)
+                    it.copy(
+                        isFetchingWeather = false,
+                        weatherForecast = result.data,
+                        weatherFetchedAt = Instant.now(),
+                    )
                 }
                 is Resource.Error -> _state.update {
                     it.copy(isFetchingWeather = false, weatherError = result.message)
@@ -153,17 +178,19 @@ class OutfitStudioViewModel @Inject constructor(
         }
     }
 
-    fun closeWeatherSheet() { _state.update { it.copy(showWeatherSheet = false) } }
-
-    fun applyWeatherFilter() {
-        val forecast = _state.value.weatherForecast ?: return
-        val style = _state.value.filterState.style
-        applyFilters(style, forecast.toClimate())
-        _state.update { it.copy(showWeatherSheet = false) }
-    }
-
     fun applyFilters(style: String?, climate: String?) {
-        _state.update { it.copy(filterState = OutfitFilterState(style, climate), showFilterDialog = false) }
+        _state.update { s ->
+            val newIncludeOuter = when (climate) {
+                "Cold", "Rainy" -> true
+                "Warm"          -> false
+                else            -> s.includeOuter
+            }
+            s.copy(
+                filterState = OutfitFilterState(style, climate),
+                showContextSheet = false,
+                includeOuter = newIncludeOuter,
+            )
+        }
         loadAllSlots()
     }
 
@@ -175,6 +202,16 @@ class OutfitStudioViewModel @Inject constructor(
             s.withSlot(slot, slotItems.copy(index = newIndex))
         }
     }
+
+    fun selectSlotItem(slot: Slot, index: Int) {
+        _state.update { s ->
+            val items = s.slotOf(slot)
+            s.withSlot(slot, items.copy(index = index)).copy(pickerSlot = null)
+        }
+    }
+
+    fun openPicker(slot: Slot) { _state.update { it.copy(pickerSlot = slot) } }
+    fun closePicker() { _state.update { it.copy(pickerSlot = null) } }
 
     fun toggleLayers() {
         val s = _state.value
@@ -216,7 +253,6 @@ class OutfitStudioViewModel @Inject constructor(
                                 return
                             }
                         }
-                        // Fallback: random pick within slot
                         if (slotItems.items.size > 1) {
                             next = next.withSlot(slot, slotItems.copy(index = Random.nextInt(slotItems.items.size)))
                         }
@@ -228,7 +264,6 @@ class OutfitStudioViewModel @Inject constructor(
                     next
                 }
             } else {
-                // Network error — fall back to per-slot random
                 _state.update { current ->
                     var next = current
                     for (slot in Slot.entries) {
@@ -245,7 +280,22 @@ class OutfitStudioViewModel @Inject constructor(
     }
 
     fun openSaveDialog() {
-        _state.update { it.copy(showSaveDialog = true, outfitName = "", selectedWeather = emptyList(), selectedStyle = "") }
+        val filter = _state.value.filterState
+        val prefilledWeather = filter.climate?.lowercase()?.let { listOf(it) } ?: emptyList()
+        val prefilledStyle = when (filter.style) {
+            "Casual"     -> "casual"
+            "Formal"     -> "formal"
+            "Athleisure" -> "sporty"
+            else         -> ""
+        }
+        _state.update {
+            it.copy(
+                showSaveDialog = true,
+                outfitName = "",
+                selectedWeather = prefilledWeather,
+                selectedStyle = prefilledStyle,
+            )
+        }
     }
 
     fun closeSaveDialog() { _state.update { it.copy(showSaveDialog = false) } }

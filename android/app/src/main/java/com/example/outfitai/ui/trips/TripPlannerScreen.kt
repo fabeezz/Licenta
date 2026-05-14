@@ -227,22 +227,14 @@ private fun TripTopBar(
 
     Column(modifier = Modifier.statusBarsPadding()) {
         if (step != TripStep.LOADING && step != TripStep.REVIEW) {
-            Row(
+            LinearProgressIndicator(
+                progress = { currentStep.toFloat() / totalSteps },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = Spacing.xl, vertical = Spacing.sm),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment     = Alignment.CenterVertically,
-            ) {
-                repeat(totalSteps) { i ->
-                    LinearProgressIndicator(
-                        progress = { if (i < currentStep) 1f else 0f },
-                        modifier = Modifier.weight(1f).height(4.dp),
-                        color       = MaterialTheme.colorScheme.primary,
-                        trackColor  = MaterialTheme.colorScheme.surfaceVariant,
-                    )
-                }
-            }
+                    .height(3.dp),
+                color      = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+            )
         }
 
         Row(

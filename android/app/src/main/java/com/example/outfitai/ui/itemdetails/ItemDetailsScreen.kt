@@ -9,7 +9,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -20,12 +19,14 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
 import com.example.outfitai.data.model.ItemConstants
 import com.example.outfitai.core.ui.color.colorNameToComposeColor
 import com.example.outfitai.core.media.mediaUrl
 import com.example.outfitai.ui.components.LoomButton
 import com.example.outfitai.ui.components.LoomButtonVariant
+import com.example.outfitai.ui.components.LoomCard
+import com.example.outfitai.ui.components.LoomConfirmDialog
+import com.example.outfitai.ui.components.LoomImage
 import com.example.outfitai.ui.components.LoomTopBarWithBack
 import com.example.outfitai.ui.theme.Spacing
 import kotlinx.serialization.json.JsonArray
@@ -114,7 +115,6 @@ private fun ItemDetailsScreen(
     val cs = MaterialTheme.colorScheme
     val shapes = MaterialTheme.shapes
 
-    // Color picker dialogs (unchanged)
     if (showDominantDialog) {
         ColorSelectionDialog(
             title = "Dominant Color",
@@ -134,7 +134,6 @@ private fun ItemDetailsScreen(
         )
     }
 
-    // Edit sheets
     if (activeSheet == EditSheet.CATEGORY) {
         SingleSelectSheet(
             title = "Category",
@@ -243,7 +242,7 @@ private fun ItemDetailsScreen(
                 state.error != null -> Text(
                     text = state.error,
                     color = cs.error,
-                    modifier = Modifier.align(Alignment.Center).padding(20.dp),
+                    modifier = Modifier.align(Alignment.Center).padding(Spacing.xl),
                 )
 
                 state.item == null -> Text(
@@ -266,12 +265,12 @@ private fun ItemDetailsScreen(
                         modifier = Modifier
                             .fillMaxSize()
                             .verticalScroll(rememberScrollState())
-                            .padding(horizontal = 20.dp)
-                            .padding(bottom = 24.dp),
+                            .padding(horizontal = Spacing.xl)
+                            .padding(bottom = Spacing.xxl),
                     ) {
-                        Spacer(Modifier.height(8.dp))
+                        Spacer(Modifier.height(Spacing.sm))
 
-                        // Hero — responsive, ~46% of screen height
+                        // Hero
                         Surface(
                             color = cs.surfaceContainerLowest,
                             shape = shapes.extraLarge,
@@ -282,7 +281,7 @@ private fun ItemDetailsScreen(
                                 contentAlignment = Alignment.Center,
                             ) {
                                 with(sharedTransitionScope) {
-                                    AsyncImage(
+                                    LoomImage(
                                         model = mediaUrl(filename),
                                         contentDescription = item.category,
                                         contentScale = ContentScale.Fit,
@@ -297,7 +296,7 @@ private fun ItemDetailsScreen(
                             }
                         }
 
-                        Spacer(Modifier.height(16.dp))
+                        Spacer(Modifier.height(Spacing.lg))
 
                         // Color swatches (left) + wear stats (right)
                         Row(
@@ -306,7 +305,7 @@ private fun ItemDetailsScreen(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Row(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 if (state.isEditing && dominant.isEmpty()) {
@@ -352,99 +351,83 @@ private fun ItemDetailsScreen(
                                     }
                                 }
                                 if (state.isEditing && accent.isNotEmpty() && accent.size < 5) {
-                                    IconButton(
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = cs.surfaceContainerHigh,
                                         onClick = { showAccentDialog = true },
-                                        modifier = Modifier
-                                            .size(32.dp)
-                                            .clip(CircleShape)
-                                            .background(cs.surfaceContainerHigh),
+                                        modifier = Modifier.size(32.dp),
                                     ) {
-                                        Icon(
-                                            Icons.Default.Add,
-                                            contentDescription = "Add accent",
-                                            modifier = Modifier.size(16.dp),
-                                        )
+                                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                                            Icon(
+                                                Icons.Default.Add,
+                                                contentDescription = "Add accent",
+                                                modifier = Modifier.size(16.dp),
+                                            )
+                                        }
                                     }
                                 }
                             }
 
-                            // Wear stats — right aligned
+                            // Wear stats
                             Column(horizontalAlignment = Alignment.End) {
                                 Text(
                                     text = "${item.wearCount}×",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    color = cs.onSurfaceVariant,
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontFeatureSettings = "tnum",
+                                    ),
+                                    color = cs.onSurface,
                                 )
                                 Text(
                                     text = relativeTime(item.lastWornAt),
-                                    style = MaterialTheme.typography.labelLarge,
+                                    style = MaterialTheme.typography.bodyMedium,
                                     color = cs.onSurfaceVariant,
                                 )
                             }
                         }
 
-                        Spacer(Modifier.height(16.dp))
+                        Spacer(Modifier.height(Spacing.lg))
 
-                        // Info pill grid
-                        Surface(
-                            color = cs.surfaceContainerLow,
-                            shape = shapes.large,
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(12.dp),
-                                verticalArrangement = Arrangement.spacedBy(10.dp),
+                        // Attribute list
+                        LoomCard(modifier = Modifier.fillMaxWidth()) {
+                            DetailRow(
+                                label = "Category",
+                                editable = state.isEditing,
+                                onClick = if (state.isEditing) ({ activeSheet = EditSheet.CATEGORY }) else null,
                             ) {
-                                // 3-col row: Category + Material + Brand
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                ) {
-                                    InfoValueTile(
-                                        label = "Category",
-                                        value = if (state.isEditing) state.category else item.category,
-                                        modifier = Modifier.weight(1f),
-                                        editable = state.isEditing,
-                                        onClick = if (state.isEditing) ({ activeSheet = EditSheet.CATEGORY }) else null,
-                                    )
-                                    InfoValueTile(
-                                        label = "Material",
-                                        value = if (state.isEditing) state.material else item.material,
-                                        modifier = Modifier.weight(1f),
-                                        editable = state.isEditing,
-                                        onClick = if (state.isEditing) ({ activeSheet = EditSheet.MATERIAL }) else null,
-                                    )
-                                    InfoValueTile(
-                                        label = "Brand",
-                                        value = if (state.isEditing) state.brand else item.brand,
-                                        modifier = Modifier.weight(1f),
-                                        editable = state.isEditing,
-                                        onClick = if (state.isEditing) ({ activeSheet = EditSheet.BRAND }) else null,
-                                    )
-                                }
-
-                                // 2-col row: Weather + Style
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                ) {
-                                    InfoChipsTile(
-                                        label = "Weather",
-                                        items = if (state.isEditing) state.weather else item.weather,
-                                        modifier = Modifier.weight(1f),
-                                        editable = state.isEditing,
-                                        onClick = if (state.isEditing) ({ activeSheet = EditSheet.WEATHER }) else null,
-                                    )
-
-                                    InfoChipsTile(
-                                        label = "Style",
-                                        items = if (state.isEditing) state.style else item.style,
-                                        modifier = Modifier.weight(1f),
-                                        editable = state.isEditing,
-                                        onClick = if (state.isEditing) ({ activeSheet = EditSheet.STYLE }) else null,
-                                    )
-                                }
+                                DetailValueText(if (state.isEditing) state.category else item.category)
+                            }
+                            HorizontalDivider(color = cs.outlineVariant)
+                            DetailRow(
+                                label = "Material",
+                                editable = state.isEditing,
+                                onClick = if (state.isEditing) ({ activeSheet = EditSheet.MATERIAL }) else null,
+                            ) {
+                                DetailValueText(if (state.isEditing) state.material else item.material)
+                            }
+                            HorizontalDivider(color = cs.outlineVariant)
+                            DetailRow(
+                                label = "Brand",
+                                editable = state.isEditing,
+                                onClick = if (state.isEditing) ({ activeSheet = EditSheet.BRAND }) else null,
+                            ) {
+                                DetailValueText(if (state.isEditing) state.brand else item.brand)
+                            }
+                            HorizontalDivider(color = cs.outlineVariant)
+                            DetailRow(
+                                label = "Weather",
+                                editable = state.isEditing,
+                                onClick = if (state.isEditing) ({ activeSheet = EditSheet.WEATHER }) else null,
+                            ) {
+                                DetailChipsRow(if (state.isEditing) state.weather else item.weather)
+                            }
+                            HorizontalDivider(color = cs.outlineVariant)
+                            DetailRow(
+                                label = "Style",
+                                editable = state.isEditing,
+                                onClick = if (state.isEditing) ({ activeSheet = EditSheet.STYLE }) else null,
+                            ) {
+                                DetailChipsRow(if (state.isEditing) state.style else item.style)
                             }
                         }
                     }
@@ -453,24 +436,16 @@ private fun ItemDetailsScreen(
             }
 
             if (confirmDelete) {
-                AlertDialog(
-                    onDismissRequest = { confirmDelete = false },
-                    title = { Text("Delete item?") },
-                    text = { Text("This action cannot be undone.") },
-                    confirmButton = {
-                        LoomButton(
-                            text = "Delete",
-                            onClick = { confirmDelete = false; onDelete() },
-                            variant = LoomButtonVariant.Destructive,
-                        )
-                    },
-                    dismissButton = {
-                        LoomButton(
-                            text = "Cancel",
-                            onClick = { confirmDelete = false },
-                            variant = LoomButtonVariant.Ghost,
-                        )
-                    },
+                val categoryLabel = state.item?.category
+                    ?.replaceFirstChar { it.uppercase() }
+                    ?: "Item"
+                LoomConfirmDialog(
+                    title = "Delete item?",
+                    message = "$categoryLabel will be removed from your wardrobe. This can't be undone.",
+                    confirmText = "Delete",
+                    destructive = true,
+                    onConfirm = { confirmDelete = false; onDelete() },
+                    onDismiss = { confirmDelete = false },
                 )
             }
         }

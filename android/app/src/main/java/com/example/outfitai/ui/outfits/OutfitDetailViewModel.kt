@@ -20,6 +20,7 @@ data class OutfitDetailUiState(
     val error: String? = null,
     val isDeleting: Boolean = false,
     val isDeleted: Boolean = false,
+    val showDeleteConfirmation: Boolean = false,
 )
 
 @HiltViewModel
@@ -50,9 +51,12 @@ class OutfitDetailViewModel @Inject constructor(
         }
     }
 
-    fun delete() {
+    fun requestDelete() { reduce { copy(showDeleteConfirmation = true) } }
+    fun dismissDeleteConfirmation() { reduce { copy(showDeleteConfirmation = false) } }
+
+    fun confirmDelete() {
         if (_state.value.isDeleting) return
-        reduce { copy(isDeleting = true) }
+        reduce { copy(showDeleteConfirmation = false, isDeleting = true) }
         viewModelScope.launch {
             when (val result = deleteOutfit(outfitId)) {
                 is Resource.Success -> reduce { copy(isDeleting = false, isDeleted = true) }

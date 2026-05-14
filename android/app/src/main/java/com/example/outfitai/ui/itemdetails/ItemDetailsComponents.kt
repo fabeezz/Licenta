@@ -2,11 +2,11 @@ package com.example.outfitai.ui.itemdetails
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -16,110 +16,84 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.example.outfitai.ui.theme.Spacing
 import com.example.outfitai.util.capitalizeFirst
 
-private val TileShape = RoundedCornerShape(18.dp)
+// ── Key-value list rows ────────────────────────────────────────────────────
 
 @Composable
-internal fun InfoTile(
+internal fun DetailRow(
     label: String,
     modifier: Modifier = Modifier,
     editable: Boolean = false,
     onClick: (() -> Unit)? = null,
-    content: @Composable ColumnScope.() -> Unit,
+    valueContent: @Composable RowScope.() -> Unit,
 ) {
     val cs = MaterialTheme.colorScheme
-    val baseModifier = modifier
-        .clip(TileShape)
-        .background(cs.surfaceContainerLowest)
-        .run {
-            if (editable && onClick != null)
-                border(1.dp, cs.outlineVariant.copy(alpha = 0.6f), TileShape)
-                    .clickable(onClick = onClick)
-            else this
-        }
-        .padding(horizontal = 14.dp, vertical = 12.dp)
-
-    Column(modifier = baseModifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .fillMaxWidth()
+            .run {
+                if (editable && onClick != null) clickable(onClick = onClick) else this
+            }
+            .padding(vertical = Spacing.md),
+    ) {
         Text(
-            text = label.uppercase(),
-            style = MaterialTheme.typography.labelLarge.copy(fontSize = 11.sp, letterSpacing = 0.6.sp),
-            color = cs.outline,
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = cs.onSurfaceVariant,
         )
-        content()
+        Spacer(Modifier.width(Spacing.md))
+        Row(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            valueContent()
+        }
+        if (editable && onClick != null) {
+            Spacer(Modifier.width(Spacing.xs))
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = cs.onSurfaceVariant,
+                modifier = Modifier.size(20.dp),
+            )
+        }
     }
 }
 
 @Composable
-internal fun InfoValueTile(
-    label: String,
-    value: String?,
-    modifier: Modifier = Modifier,
-    editable: Boolean = false,
-    onClick: (() -> Unit)? = null,
-) {
+internal fun DetailValueText(value: String?) {
     val cs = MaterialTheme.colorScheme
-    InfoTile(label = label, modifier = modifier, editable = editable, onClick = onClick) {
-        Text(
-            text = if (value.isNullOrBlank()) "—" else value.capitalizeFirst(),
-            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-            color = if (value.isNullOrBlank()) cs.onSurfaceVariant else cs.onSurface,
-            maxLines = 2,
-        )
-    }
+    val isEmpty = value.isNullOrBlank()
+    Text(
+        text = if (isEmpty) "—" else value!!.capitalizeFirst(),
+        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+        color = if (isEmpty) cs.onSurfaceVariant else cs.onSurface,
+        maxLines = 2,
+    )
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun InfoChipsTile(
-    label: String,
-    items: List<String>,
-    modifier: Modifier = Modifier,
-    editable: Boolean = false,
-    onClick: (() -> Unit)? = null,
-) {
-    val cs = MaterialTheme.colorScheme
-    InfoTile(label = label, modifier = modifier, editable = editable, onClick = onClick) {
-        if (items.isEmpty()) {
-            Text(
-                text = "—",
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                color = cs.onSurfaceVariant,
-            )
-        } else {
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                items.forEach { item ->
-                    OccasionChip(label = item.capitalizeFirst(), selected = true, clickable = false, onClick = {})
-                }
+internal fun DetailChipsRow(items: List<String>) {
+    if (items.isEmpty()) {
+        DetailValueText(null)
+    } else {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.xs),
+            verticalArrangement = Arrangement.spacedBy(Spacing.xs),
+        ) {
+            items.forEach { item ->
+                OccasionChip(label = item.capitalizeFirst(), selected = true, clickable = false, onClick = {})
             }
         }
     }
 }
 
-@Composable
-internal fun WeatherChips(tags: List<String>) {
-    val cs = MaterialTheme.colorScheme
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        tags.forEach { tag ->
-            Surface(
-                shape = CircleShape,
-                color = cs.surfaceContainer,
-                border = BorderStroke(1.dp, cs.outlineVariant.copy(alpha = 0.4f)),
-            ) {
-                Text(
-                    text = tag.capitalizeFirst(),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = cs.onSurface,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                )
-            }
-        }
-    }
-}
+// ── Color swatches ─────────────────────────────────────────────────────────
 
 @Composable
 internal fun ColorSwatch(
@@ -133,18 +107,17 @@ internal fun ColorSwatch(
     val cs = MaterialTheme.colorScheme
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(Spacing.xs),
         modifier = Modifier
             .clip(MaterialTheme.shapes.medium)
             .run { if (clickable) clickable(onClick = onClick) else this }
-            .padding(4.dp),
+            .padding(Spacing.xs),
     ) {
         Box(
             modifier = Modifier
                 .size(size)
                 .clip(CircleShape)
-                .background(color)
-                .border(1.dp, cs.outlineVariant.copy(alpha = 0.5f), CircleShape),
+                .background(color),
         )
         Text(
             text = name.capitalizeFirst(),
@@ -155,10 +128,33 @@ internal fun ColorSwatch(
         if (role.isNotEmpty()) {
             Text(
                 text = role,
-                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 11.sp),
+                style = MaterialTheme.typography.labelSmall,
                 color = cs.onSurfaceVariant,
                 maxLines = 1,
             )
+        }
+    }
+}
+
+// ── Chips ──────────────────────────────────────────────────────────────────
+
+@Composable
+internal fun WeatherChips(tags: List<String>) {
+    val cs = MaterialTheme.colorScheme
+    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        tags.forEach { tag ->
+            Surface(
+                shape = CircleShape,
+                color = cs.surfaceContainer,
+                border = BorderStroke(1.dp, cs.outlineVariant.copy(alpha = 0.4f)),
+            ) {
+                Text(
+                    text = tag.capitalizeFirst(),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = cs.onSurface,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                )
+            }
         }
     }
 }

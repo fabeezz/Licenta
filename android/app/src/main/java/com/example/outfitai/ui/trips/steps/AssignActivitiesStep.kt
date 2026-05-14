@@ -86,7 +86,7 @@ fun AssignActivitiesStep(
 
         // Floating action bar
         Surface(
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+            color = MaterialTheme.colorScheme.background,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth(),
