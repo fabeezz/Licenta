@@ -112,7 +112,7 @@ class ItemListQuery(BaseModel):
     style: str | None = None
     sort_by: Literal["created_at", "wear_count", "last_worn_at"] = "created_at"
     sort_dir: Literal["asc", "desc"] = "desc"
-    limit: int = Field(50, ge=1, le=200)
+    limit: int = Field(50, ge=1, le=500)
     offset: int = Field(0, ge=0)
 
     @field_validator("category", "material", "weather", "style", "dominant_color", mode="before")

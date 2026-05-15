@@ -4,8 +4,8 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.remember
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -18,6 +18,7 @@ import com.example.outfitai.ui.gaps.GapsRoute
 import com.example.outfitai.ui.insights.InsightsRoute
 import com.example.outfitai.ui.inspiration.InspirationRoute
 import com.example.outfitai.ui.itemdetails.ItemDetailsRoute
+import com.example.outfitai.ui.itemdetails.ItemDetailsViewModel
 import com.example.outfitai.ui.outfits.OutfitDetailRoute
 import com.example.outfitai.ui.outfits.OutfitStudioRoute
 import com.example.outfitai.ui.profile.EditProfileRoute
@@ -107,9 +108,9 @@ fun AppNav(
 
                 val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
 
-                val shouldRefresh by savedStateHandle?.getStateFlow("wardrobe_refresh", false)
-                    ?.collectAsState()
-                    ?: androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+                val fallbackRefresh = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+                val shouldRefresh by (savedStateHandle?.getStateFlow("wardrobe_refresh", false)
+                    ?.collectAsStateWithLifecycle() ?: fallbackRefresh)
 
                 LaunchedEffect(shouldRefresh) {
                     if (shouldRefresh) {
@@ -136,7 +137,12 @@ fun AppNav(
                 arguments = listOf(navArgument("itemId") { type = NavType.IntType }),
             ) {
                 val animVisScope = this
+                val detailsVm: ItemDetailsViewModel = hiltViewModel()
+                val wardrobeEntry = runCatching { navController.getBackStackEntry(Routes.Wardrobe) }.getOrNull()
+                val wardrobeVm: WardrobeViewModel? = if (wardrobeEntry != null) hiltViewModel<WardrobeViewModel>(wardrobeEntry) else null
+
                 ItemDetailsRoute(
+                    vm                      = detailsVm,
                     onBack                  = { navController.popBackStack() },
                     onItemChanged           = {
                         navController.previousBackStackEntry
@@ -145,9 +151,7 @@ fun AppNav(
                         navController.popBackStack()
                     },
                     onItemMutatedInPlace    = {
-                        navController.previousBackStackEntry
-                            ?.savedStateHandle
-                            ?.set("wardrobe_refresh", true)
+                        detailsVm.state.value.item?.let { wardrobeVm?.applyItemUpdate(it) }
                     },
                     sharedTransitionScope   = sharedTransitionScope,
                     animatedVisibilityScope = animVisScope,
@@ -209,7 +213,7 @@ fun AppNav(
                     navController.getBackStackEntry(Routes.Wardrobe)
                 }
                 val vm: WardrobeViewModel = hiltViewModel(wardrobeEntry)
-                val state by vm.state.collectAsState()
+                val state by vm.state.collectAsStateWithLifecycle()
                 CreateCollectionRoute(
                     outfits  = state.outfits,
                     onBack   = { navController.popBackStack() },

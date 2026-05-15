@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.outfitai.core.common.Resource
 import com.example.outfitai.data.location.LocationStore
+import com.example.outfitai.data.model.ItemOutDto
 import com.example.outfitai.data.model.OutfitCreateDto
 import com.example.outfitai.Config
 import com.example.outfitai.domain.usecase.auth.GetCurrentUserUseCase
@@ -12,8 +13,9 @@ import com.example.outfitai.domain.usecase.outfits.SuggestOutfitUseCase
 import com.example.outfitai.domain.usecase.wardrobe.GetFilteredWardrobeUseCase
 import com.example.outfitai.domain.usecase.weather.GetTodayWeatherUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
+import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
@@ -38,6 +40,8 @@ class OutfitStudioViewModel @Inject constructor(
     private val _state = MutableStateFlow(OutfitStudioUiState())
     val state = _state.asStateFlow()
 
+    private var loadJob: Job? = null
+
     init {
         loadUsername()
         loadAllSlots()
@@ -53,10 +57,10 @@ class OutfitStudioViewModel @Inject constructor(
     }
 
     private fun loadAllSlots() {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             _state.update { it.copy(isLoading = true, error = null) }
             val fState = _state.value.filterState
-
             val occ = when (fState.style) {
                 "Casual"     -> "casual"
                 "Athleisure" -> "sporty"
@@ -65,66 +69,54 @@ class OutfitStudioViewModel @Inject constructor(
             }
 
             runCatching {
-                val slots = Slot.entries.map { slot ->
-                    async {
-                        val categories = slotCategories(slot)
-                        var weatherOverride: String? = null
-                        var materialOverride: String? = null
-                        var skip = false
-
-                        if (fState.climate == "Cold") {
-                            weatherOverride = when (slot) {
-                                Slot.OUTER -> "cold"
-                                Slot.TOP -> null
-                                Slot.BOTTOM, Slot.SHOES -> "all-weather,cold"
-                            }
-                        } else if (fState.climate == "Warm") {
-                            if (slot == Slot.OUTER) skip = true
-                            else weatherOverride = "warm,all-weather"
-                        } else if (fState.climate == "Rainy") {
-                            when (slot) {
-                                Slot.OUTER -> materialOverride = "nylon"
-                                Slot.TOP -> Unit
-                                Slot.BOTTOM -> weatherOverride = "all-weather,cold"
-                                Slot.SHOES -> weatherOverride = "all-weather"
-                            }
-                        }
-
-                        if (skip) {
-                            slot to SlotItems()
-                        } else {
-                            val items = categories.map { cat ->
-                                async {
-                                    val result = getFilteredWardrobe(
-                                        category = cat,
-                                        style = occ,
-                                        colors = null,
-                                        weather = weatherOverride,
-                                        material = materialOverride,
-                                        limit = 200,
-                                    )
-                                    if (result is Resource.Success) result.data else emptyList()
-                                }
-                            }.awaitAll().flatten()
-                            slot to SlotItems(items = items)
-                        }
-                    }
-                }.awaitAll().toMap()
-                slots
-            }.onSuccess { slots ->
+                val result = getFilteredWardrobe(category = null, style = occ, limit = 500)
+                if (result is Resource.Error) error(result.message ?: "Load failed")
+                (result as Resource.Success).data
+            }.onSuccess { allItems ->
+                val bySlot = Slot.entries.associateWith { slot ->
+                    val cats = slotCategories(slot)
+                    val items = allItems
+                        .filter { it.category != null && it.category in cats }
+                        .let { applyClimateFilter(it, slot, fState.climate) }
+                    SlotItems(items = items.toImmutableList())
+                }
                 _state.update { s ->
                     s.copy(
                         isLoading = false,
-                        top = slots[Slot.TOP] ?: SlotItems(),
-                        bottom = slots[Slot.BOTTOM] ?: SlotItems(),
-                        outer = slots[Slot.OUTER] ?: SlotItems(),
-                        shoes = slots[Slot.SHOES] ?: SlotItems(),
+                        top    = bySlot[Slot.TOP]    ?: SlotItems(),
+                        bottom = bySlot[Slot.BOTTOM] ?: SlotItems(),
+                        outer  = bySlot[Slot.OUTER]  ?: SlotItems(),
+                        shoes  = bySlot[Slot.SHOES]  ?: SlotItems(),
                     )
                 }
             }.onFailure { e ->
+                if (e is CancellationException) throw e
                 _state.update { it.copy(isLoading = false, error = "Failed to load wardrobe: ${e.message}") }
             }
         }
+    }
+
+    private fun applyClimateFilter(
+        items: List<ItemOutDto>,
+        slot: Slot,
+        climate: String?,
+    ): List<ItemOutDto> = when (climate) {
+        "Cold" -> when (slot) {
+            Slot.OUTER          -> items.filter { "cold" in it.weather }
+            Slot.BOTTOM, Slot.SHOES -> items.filter { it.weather.any { w -> w == "all-weather" || w == "cold" } }
+            Slot.TOP            -> items
+        }
+        "Warm" -> when (slot) {
+            Slot.OUTER -> emptyList()
+            else       -> items.filter { it.weather.any { w -> w == "warm" || w == "all-weather" } }
+        }
+        "Rainy" -> when (slot) {
+            Slot.OUTER  -> items.filter { it.material?.lowercase() == "nylon" }
+            Slot.BOTTOM -> items.filter { it.weather.any { w -> w == "all-weather" || w == "cold" } }
+            Slot.SHOES  -> items.filter { "all-weather" in it.weather }
+            Slot.TOP    -> items
+        }
+        else -> items
     }
 
     fun openContextSheet() {
@@ -240,38 +232,40 @@ class OutfitStudioViewModel @Inject constructor(
 
         viewModelScope.launch {
             val result = suggestOutfit(style = style, weather = weather)
+            val snap = _state.value
             if (result is Resource.Success) {
                 val suggestion = result.data
+                fun resolveIndex(slot: Slot, suggestedId: Int?): Int? {
+                    val slotItems = snap.slotOf(slot)
+                    if (suggestedId != null) {
+                        val idx = slotItems.items.indexOfFirst { it.id == suggestedId }
+                        if (idx >= 0) return idx
+                    }
+                    return if (slotItems.items.size > 1) Random.nextInt(slotItems.items.size) else null
+                }
+                val indices = mapOf(
+                    Slot.TOP    to resolveIndex(Slot.TOP, suggestion?.top),
+                    Slot.BOTTOM to resolveIndex(Slot.BOTTOM, suggestion?.bottom),
+                    Slot.SHOES  to resolveIndex(Slot.SHOES, suggestion?.shoes),
+                    Slot.OUTER  to if (snap.includeOuter) resolveIndex(Slot.OUTER, suggestion?.outer) else null,
+                )
                 _state.update { current ->
                     var next = current
-                    fun applySlot(slot: Slot, suggestedId: Int?) {
-                        val slotItems = current.slotOf(slot)
-                        if (suggestedId != null) {
-                            val idx = slotItems.items.indexOfFirst { it.id == suggestedId }
-                            if (idx >= 0) {
-                                next = next.withSlot(slot, slotItems.copy(index = idx))
-                                return
-                            }
-                        }
-                        if (slotItems.items.size > 1) {
-                            next = next.withSlot(slot, slotItems.copy(index = Random.nextInt(slotItems.items.size)))
-                        }
+                    for ((slot, idx) in indices) {
+                        if (idx != null) next = next.withSlot(slot, current.slotOf(slot).copy(index = idx))
                     }
-                    applySlot(Slot.TOP, suggestion?.top)
-                    applySlot(Slot.BOTTOM, suggestion?.bottom)
-                    applySlot(Slot.SHOES, suggestion?.shoes)
-                    if (current.includeOuter) applySlot(Slot.OUTER, suggestion?.outer)
                     next
                 }
             } else {
+                val indices = Slot.entries.mapNotNull { slot ->
+                    if (slot == Slot.OUTER && !snap.includeOuter) return@mapNotNull null
+                    val items = snap.slotOf(slot)
+                    if (items.items.size > 1) slot to Random.nextInt(items.items.size) else null
+                }.toMap()
                 _state.update { current ->
                     var next = current
-                    for (slot in Slot.entries) {
-                        val items = current.slotOf(slot)
-                        if (slot == Slot.OUTER && !current.includeOuter) continue
-                        if (items.items.size > 1) {
-                            next = next.withSlot(slot, items.copy(index = Random.nextInt(items.items.size)))
-                        }
+                    for ((slot, idx) in indices) {
+                        next = next.withSlot(slot, current.slotOf(slot).copy(index = idx))
                     }
                     next
                 }
@@ -281,7 +275,7 @@ class OutfitStudioViewModel @Inject constructor(
 
     fun openSaveDialog() {
         val filter = _state.value.filterState
-        val prefilledWeather = filter.climate?.lowercase()?.let { listOf(it) } ?: emptyList()
+        val prefilledWeather = filter.climate?.lowercase()?.let { kotlinx.collections.immutable.persistentListOf(it) } ?: kotlinx.collections.immutable.persistentListOf()
         val prefilledStyle = when (filter.style) {
             "Casual"     -> "casual"
             "Formal"     -> "formal"
@@ -301,7 +295,7 @@ class OutfitStudioViewModel @Inject constructor(
     fun closeSaveDialog() { _state.update { it.copy(showSaveDialog = false) } }
 
     fun updateOutfitName(name: String) { _state.update { it.copy(outfitName = name) } }
-    fun updateWeather(tags: List<String>) { _state.update { it.copy(selectedWeather = tags) } }
+    fun updateWeather(tags: List<String>) { _state.update { it.copy(selectedWeather = tags.toImmutableList()) } }
     fun updateStyle(style: String) { _state.update { it.copy(selectedStyle = style) } }
 
     fun save() {

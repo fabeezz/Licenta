@@ -14,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.outfitai.ui.components.AppBottomBar
 import com.example.outfitai.ui.components.BottomBarDest
 import com.example.outfitai.ui.components.LoomTopBar
@@ -33,8 +34,8 @@ fun WardrobeRoute(
     animatedVisibilityScope: AnimatedVisibilityScope,
     vm: WardrobeViewModel = hiltViewModel(),
 ) {
-    val state by vm.state.collectAsState()
-    val upload = rememberUploadLauncher(onDone = { vm.refresh() })
+    val state by vm.state.collectAsStateWithLifecycle()
+    val upload = rememberUploadLauncher(onDone = vm::refresh)
 
     WardrobeScreen(
         state                   = state,

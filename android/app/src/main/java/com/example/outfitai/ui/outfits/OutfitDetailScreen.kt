@@ -19,10 +19,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.compose.ui.platform.LocalContext
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.outfitai.data.model.ItemMinimalDto
+import com.example.outfitai.ui.components.LoomImage
 import com.example.outfitai.data.model.OutfitSavedDto
 import com.example.outfitai.core.ui.color.colorNameToComposeColor
 import com.example.outfitai.core.media.mediaUrl
@@ -38,7 +37,7 @@ fun OutfitDetailRoute(
     onDeleted: () -> Unit,
     vm: OutfitDetailViewModel = hiltViewModel()
 ) {
-    val state by vm.state.collectAsState()
+    val state by vm.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(state.isDeleted) {
         if (state.isDeleted) {
@@ -229,20 +228,15 @@ private fun StaticSlotTile(
     item: ItemMinimalDto,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
     Surface(
         shape = MaterialTheme.shapes.extraLarge,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         modifier = modifier
     ) {
-        AsyncImage(
-            model = ImageRequest.Builder(context)
-                .data(mediaUrl(item.imageNoBgName ?: item.imageOriginalName))
-                .crossfade(true)
-                .build(),
+        LoomImage(
+            model = mediaUrl(item.imageNoBgName ?: item.imageOriginalName),
             contentDescription = null,
             contentScale = ContentScale.Fit,
-            filterQuality = androidx.compose.ui.graphics.FilterQuality.High,
             modifier = Modifier
                 .padding(Spacing.xs)
                 .fillMaxSize()
@@ -252,12 +246,14 @@ private fun StaticSlotTile(
 
 @Composable
 private fun ColorPalette(outfit: OutfitSavedDto) {
-    val colors = listOfNotNull(
-        outfit.top.dominantColor,
-        outfit.bottom.dominantColor,
-        outfit.outer?.dominantColor,
-        outfit.shoe.dominantColor
-    )
+    val colors = remember(outfit.top.dominantColor, outfit.bottom.dominantColor, outfit.outer?.dominantColor, outfit.shoe.dominantColor) {
+        listOfNotNull(
+            outfit.top.dominantColor,
+            outfit.bottom.dominantColor,
+            outfit.outer?.dominantColor,
+            outfit.shoe.dominantColor
+        )
+    }
 
     Row(
         horizontalArrangement = Arrangement.spacedBy(12.dp),

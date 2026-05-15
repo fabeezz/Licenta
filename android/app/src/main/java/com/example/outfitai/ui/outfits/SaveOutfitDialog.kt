@@ -18,8 +18,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import coil.compose.AsyncImage
 import com.example.outfitai.data.model.ItemConstants
+import com.example.outfitai.ui.components.LoomImage
 import com.example.outfitai.data.model.ItemOutDto
 import com.example.outfitai.ui.components.LoomButton
 import com.example.outfitai.ui.components.LoomDropdownSelector
@@ -230,7 +230,7 @@ private fun PreviewItem(
         contentAlignment = Alignment.Center
     ) {
         if (item != null) {
-            AsyncImage(
+            LoomImage(
                 model = mediaUrl(item.imageNoBgName ?: item.imageOriginalName),
                 contentDescription = null,
                 contentScale = ContentScale.Fit,

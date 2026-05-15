@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,6 +23,18 @@ import androidx.compose.ui.unit.dp
 import com.example.outfitai.ui.components.LoomButton
 import com.example.outfitai.ui.components.LoomButtonVariant
 import com.example.outfitai.ui.theme.Spacing
+
+private val STYLE_OPTIONS = listOf(
+    "Casual" to Icons.Filled.Checkroom,
+    "Athleisure" to Icons.Filled.DirectionsRun,
+    "Formal" to Icons.Filled.Work,
+)
+
+private val CLIMATE_OPTIONS = listOf(
+    "Cold" to Icons.Filled.AcUnit,
+    "Warm" to Icons.Filled.WbSunny,
+    "Rainy" to Icons.Filled.Umbrella,
+)
 
 @Composable
 private fun FilterPill(
@@ -67,8 +80,8 @@ fun OutfitFilterDialog(
     onDismiss: () -> Unit,
     onApply: (style: String?, climate: String?) -> Unit,
 ) {
-    var style by remember { mutableStateOf(initialState.style) }
-    var climate by remember { mutableStateOf(initialState.climate) }
+    var style by rememberSaveable { mutableStateOf(initialState.style) }
+    var climate by rememberSaveable { mutableStateOf(initialState.climate) }
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
@@ -84,11 +97,7 @@ fun OutfitFilterDialog(
                 modifier = Modifier.padding(bottom = Spacing.sm),
             )
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                listOf(
-                    "Casual" to Icons.Filled.Checkroom,
-                    "Athleisure" to Icons.Filled.DirectionsRun,
-                    "Formal" to Icons.Filled.Work,
-                ).forEach { (opt, icon) ->
+                STYLE_OPTIONS.forEach { (opt, icon) ->
                     FilterPill(
                         label    = opt,
                         selected = style == opt,
@@ -107,11 +116,7 @@ fun OutfitFilterDialog(
                 modifier = Modifier.padding(bottom = Spacing.sm),
             )
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                listOf(
-                    "Cold" to Icons.Filled.AcUnit,
-                    "Warm" to Icons.Filled.WbSunny,
-                    "Rainy" to Icons.Filled.Umbrella,
-                ).forEach { (opt, icon) ->
+                CLIMATE_OPTIONS.forEach { (opt, icon) ->
                     FilterPill(
                         label    = opt,
                         selected = climate == opt,

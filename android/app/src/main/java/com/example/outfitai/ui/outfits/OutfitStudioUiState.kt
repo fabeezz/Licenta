@@ -1,16 +1,21 @@
 package com.example.outfitai.ui.outfits
 
+import androidx.compose.runtime.Immutable
 import com.example.outfitai.data.model.ItemOutDto
 import com.example.outfitai.domain.weather.WeatherForecast
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 import java.time.Instant
 
+@Immutable
 data class SlotItems(
-    val items: List<ItemOutDto> = emptyList(),
+    val items: ImmutableList<ItemOutDto> = persistentListOf(),
     val index: Int = 0,
 ) {
     val current: ItemOutDto? get() = items.getOrNull(index)
 }
 
+@Immutable
 data class OutfitFilterState(
     val style: String? = null,
     val climate: String? = null,
@@ -28,7 +33,7 @@ data class OutfitStudioUiState(
     val isSaving: Boolean = false,
     val showSaveDialog: Boolean = false,
     val outfitName: String = "",
-    val selectedWeather: List<String> = emptyList(),
+    val selectedWeather: ImmutableList<String> = persistentListOf(),
     val selectedStyle: String = "",
     val savedOutfitId: Int? = null,
     val snackbarMessage: String? = null,

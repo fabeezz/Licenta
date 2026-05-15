@@ -19,8 +19,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import com.example.outfitai.core.media.mediaUrl
+import com.example.outfitai.ui.components.LoomImage
 import com.example.outfitai.data.model.CollectionResponseDto
 import com.example.outfitai.data.model.ItemMinimalDto
 import com.example.outfitai.data.model.OutfitSavedDto
@@ -144,8 +144,9 @@ private fun CollectionCard(
             Column(modifier = Modifier
                 .fillMaxSize()
                 .padding(Spacing.md)) {
+                val mosaicItems = remember(collection.outfits) { collection.outfits.take(4).map { it.top } }
                 CollectionMosaic(
-                    items = collection.outfits.take(4).map { it.top },
+                    items = mosaicItems,
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f),
@@ -244,7 +245,7 @@ private fun CollectionMosaic(items: List<ItemMinimalDto>, modifier: Modifier = M
 
 @Composable
 private fun MosaicCell(item: ItemMinimalDto, modifier: Modifier = Modifier) {
-    AsyncImage(
+    LoomImage(
         model = mediaUrl(item.imageNoBgName ?: item.imageOriginalName),
         contentDescription = null,
         contentScale = ContentScale.Fit,

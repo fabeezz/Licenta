@@ -8,13 +8,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.outfitai.ui.auth.*
 import com.example.outfitai.ui.nav.AppNav
 import com.example.outfitai.ui.onboarding.*
 
 @Composable
 fun AppRoot(vm: AuthViewModel) {
-    val state by vm.state.collectAsState()
+    val state by vm.state.collectAsStateWithLifecycle()
 
     when (val st = state.status) {
         AuthStatus.Checking -> Box(
@@ -39,7 +40,7 @@ fun AppRoot(vm: AuthViewModel) {
         is AuthStatus.LoggedIn -> {
             if (st.user.onboardedAt == null) {
                 val onboardingVm: OnboardingViewModel = hiltViewModel()
-                val onboardingState by onboardingVm.state.collectAsState()
+                val onboardingState by onboardingVm.state.collectAsStateWithLifecycle()
 
                 LaunchedEffect(st.user.username) {
                     onboardingVm.initDisplayName(st.user.username)

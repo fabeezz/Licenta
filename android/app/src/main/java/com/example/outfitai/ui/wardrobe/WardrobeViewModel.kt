@@ -7,10 +7,12 @@ import com.example.outfitai.domain.usecase.collections.CreateCollectionUseCase
 import com.example.outfitai.domain.usecase.collections.DeleteCollectionUseCase
 import com.example.outfitai.domain.usecase.collections.GetCollectionsUseCase
 import com.example.outfitai.domain.usecase.collections.RenameCollectionUseCase
+import com.example.outfitai.data.model.ItemOutDto
 import com.example.outfitai.domain.usecase.wardrobe.GetFilteredWardrobeUseCase
 import com.example.outfitai.domain.usecase.wardrobe.GetWardrobeOutfitsUseCase
 import com.example.outfitai.domain.usecase.wardrobe.SearchWardrobeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -75,7 +77,7 @@ class WardrobeViewModel @Inject constructor(
                                 style = f.style,
                             )) {
                                 is Resource.Success -> reduce {
-                                    copy(isLoading = false, items = result.data, error = null)
+                                    copy(isLoading = false, items = result.data.toImmutableList(), error = null)
                                 }
                                 is Resource.Error -> reduce { copy(isLoading = false, error = result.message) }
                                 Resource.Loading -> Unit
@@ -90,7 +92,7 @@ class WardrobeViewModel @Inject constructor(
                                 is Resource.Success -> {
                                     val filtered = if (f.bucket == null) result.data
                                     else result.data.filter { it.category in f.bucket.members }
-                                    reduce { copy(isLoading = false, items = filtered, error = null) }
+                                    reduce { copy(isLoading = false, items = filtered.toImmutableList(), error = null) }
                                 }
                                 is Resource.Error -> reduce { copy(isLoading = false, error = result.message) }
                                 Resource.Loading -> Unit
@@ -102,7 +104,7 @@ class WardrobeViewModel @Inject constructor(
                             style = f.style,
                         )) {
                             is Resource.Success -> reduce {
-                                copy(isLoading = false, outfits = result.data, error = null)
+                                copy(isLoading = false, outfits = result.data.toImmutableList(), error = null)
                             }
                             is Resource.Error -> reduce { copy(isLoading = false, error = result.message) }
                             Resource.Loading -> Unit
@@ -110,7 +112,7 @@ class WardrobeViewModel @Inject constructor(
                     } else {
                         when (val result = getCollections()) {
                             is Resource.Success -> reduce {
-                                copy(isLoading = false, collections = result.data, error = null)
+                                copy(isLoading = false, collections = result.data.toImmutableList(), error = null)
                             }
                             is Resource.Error -> reduce { copy(isLoading = false, error = result.message) }
                             Resource.Loading -> Unit
@@ -165,6 +167,13 @@ class WardrobeViewModel @Inject constructor(
     fun setFilterStyle(value: String?) = onIntent(WardrobeIntent.SetStyleFilter(value))
     fun clearFilters() = onIntent(WardrobeIntent.ClearFilters)
     fun setSearchQuery(query: String) = onIntent(WardrobeIntent.SetSearchQuery(query))
+
+    fun applyItemUpdate(updated: ItemOutDto) {
+        _state.update { s ->
+            val newItems = s.items.map { if (it.id == updated.id) updated else it }.toImmutableList()
+            s.copy(items = newItems)
+        }
+    }
 
     fun createCollection(name: String, outfitIds: List<Int>) {
         viewModelScope.launch {

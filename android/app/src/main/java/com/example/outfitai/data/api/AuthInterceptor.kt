@@ -1,20 +1,20 @@
 package com.example.outfitai.data.api
 
-import com.example.outfitai.data.auth.AuthStore
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.Response
+import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class AuthInterceptor @Inject constructor(
-    private val authStore: AuthStore,
-) : Interceptor {
+class AuthInterceptor @Inject constructor() : Interceptor {
+
+    private val cachedToken = AtomicReference<String?>()
+
+    fun updateToken(token: String?) = cachedToken.set(token)
 
     override fun intercept(chain: Interceptor.Chain): Response {
-        val token = runBlocking { authStore.token.first() }
+        val token = cachedToken.get()
 
         val req = if (!token.isNullOrBlank()) {
             chain.request().newBuilder()

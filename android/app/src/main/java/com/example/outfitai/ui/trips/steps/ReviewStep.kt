@@ -23,8 +23,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.example.outfitai.core.media.mediaUrl
+import com.example.outfitai.ui.components.LoomImage
 import com.example.outfitai.data.model.DayForecastDto
 import com.example.outfitai.data.model.GeneratedOutfitDto
 import com.example.outfitai.data.model.ItemMinimalDto
@@ -122,7 +122,7 @@ fun ReviewStep(
             // Outfit cards
             item { SectionTitle("Your Outfits") }
 
-            items(plan.outfits) { outfit ->
+            items(plan.outfits, key = { it.dayLabel }) { outfit ->
                 OutfitDayCard(outfit = outfit)
                 Spacer(Modifier.height(12.dp))
             }
@@ -215,7 +215,7 @@ private fun ForecastStrip(forecast: List<DayForecastDto>) {
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
                 horizontalArrangement = Arrangement.spacedBy(24.dp),
             ) {
-                items(forecast) { day -> ForecastDay(day) }
+                items(forecast, key = { it.date }) { day -> ForecastDay(day) }
             }
         }
     }
@@ -223,10 +223,11 @@ private fun ForecastStrip(forecast: List<DayForecastDto>) {
 
 @Composable
 private fun ForecastDay(day: DayForecastDto) {
-    val date = LocalDate.parse(day.date)
-    val dayName = date.dayOfWeek.getDisplayName(
-        java.time.format.TextStyle.SHORT, java.util.Locale.getDefault()
-    )
+    val dayName = remember(day.date) {
+        LocalDate.parse(day.date).dayOfWeek.getDisplayName(
+            java.time.format.TextStyle.SHORT, java.util.Locale.getDefault()
+        )
+    }
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             dayName,
@@ -339,13 +340,15 @@ private fun OutfitDayCard(outfit: GeneratedOutfitDto) {
 
 @Composable
 private fun OutfitItemGrid(outfit: GeneratedOutfitDto) {
-    val slots = listOfNotNull(
-        outfit.slots.top?.let { it to "Top" },
-        outfit.slots.bottom?.let { it to "Bottom" },
-        outfit.slots.shoes?.let { it to "Shoes" },
-        outfit.slots.outer?.let { it to "Outer" },
-        outfit.slots.bag?.let { it to "Bag" },
-    )
+    val slots = remember(outfit) {
+        listOfNotNull(
+            outfit.slots.top?.let { it to "Top" },
+            outfit.slots.bottom?.let { it to "Bottom" },
+            outfit.slots.shoes?.let { it to "Shoes" },
+            outfit.slots.outer?.let { it to "Outer" },
+            outfit.slots.bag?.let { it to "Bag" },
+        )
+    }
     if (slots.isEmpty()) return
 
     Row(
@@ -371,7 +374,7 @@ private fun HeroTileBox(item: ItemMinimalDto?, slotLabel: String, modifier: Modi
         ) {
             if (item != null) {
                 val imageFile = item.imageNoBgName ?: item.imageOriginalName
-                AsyncImage(
+                LoomImage(
                     model = mediaUrl(imageFile),
                     contentDescription = null,
                     contentScale = ContentScale.Fit,

@@ -19,6 +19,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.outfitai.data.model.ItemConstants
 import com.example.outfitai.core.ui.color.colorNameToComposeColor
 import com.example.outfitai.core.media.mediaUrl
@@ -46,7 +47,7 @@ fun ItemDetailsRoute(
     animatedVisibilityScope: AnimatedVisibilityScope,
     vm: ItemDetailsViewModel = hiltViewModel(),
 ) {
-    val state by vm.state.collectAsState()
+    val state by vm.state.collectAsStateWithLifecycle()
     ItemDetailsScreen(
         state                   = state,
         onBack                  = onBack,
@@ -254,9 +255,10 @@ private fun ItemDetailsScreen(
                     val item = state.item
                     val filename = item.imageNoBgName ?: item.imageOriginalName
                     val dominant = if (state.isEditing) state.dominantColors
-                                   else extractColorList(item.colorTags, "dominant")
+                                   else remember(item.id, item.colorTags) { extractColorList(item.colorTags, "dominant") }
                     val accent = if (state.isEditing) state.accentColors
-                                 else extractColorList(item.colorTags, "accent")
+                                 else remember(item.id, item.colorTags) { extractColorList(item.colorTags, "accent") }
+                    val lastWornText = remember(item.lastWornAt) { relativeTime(item.lastWornAt) }
 
                     BoxWithConstraints(Modifier.fillMaxSize()) {
                     val heroHeight = maxHeight * 0.46f
@@ -379,7 +381,7 @@ private fun ItemDetailsScreen(
                                     color = cs.onSurface,
                                 )
                                 Text(
-                                    text = relativeTime(item.lastWornAt),
+                                    text = lastWornText,
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = cs.onSurfaceVariant,
                                 )

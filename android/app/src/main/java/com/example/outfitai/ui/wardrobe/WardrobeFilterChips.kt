@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,6 +34,7 @@ internal fun WardrobeCategoryStrip(
     onFilterClick: () -> Unit,
 ) {
     val bg = MaterialTheme.colorScheme.background
+    val fade = remember(bg) { Brush.horizontalGradient(listOf(Color.Transparent, bg)) }
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -60,7 +62,7 @@ internal fun WardrobeCategoryStrip(
                     .align(Alignment.CenterEnd)
                     .width(Spacing.xxl)
                     .matchParentSize()
-                    .background(Brush.horizontalGradient(listOf(Color.Transparent, bg))),
+                    .background(fade),
             )
         }
 
@@ -208,9 +210,9 @@ internal fun WardrobeFiltersSheet(
     onApply: (color: String?, weather: String?, style: String?) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var color by remember { mutableStateOf(initialColor) }
-    var weather by remember { mutableStateOf(initialWeather) }
-    var style by remember { mutableStateOf(initialStyle) }
+    var color by rememberSaveable { mutableStateOf(initialColor) }
+    var weather by rememberSaveable { mutableStateOf(initialWeather) }
+    var style by rememberSaveable { mutableStateOf(initialStyle) }
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(

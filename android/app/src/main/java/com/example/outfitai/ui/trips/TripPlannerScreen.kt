@@ -14,6 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.outfitai.ui.theme.Spacing
 import com.example.outfitai.ui.trips.steps.*
 import java.time.LocalDate
@@ -74,7 +75,7 @@ fun TripPlannerRoute(
     onAddClick: () -> Unit = {},
     vm: TripPlannerViewModel = hiltViewModel(),
 ) {
-    val state by vm.state.collectAsState()
+    val state by vm.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(state.savedCollectionId) {
         state.savedCollectionId?.let { onSaved(it) }
@@ -129,7 +130,7 @@ private fun TripPlannerScreen(
     onBack: (TripStep) -> Unit,
     onClearError: () -> Unit,
 ) {
-    val headerData = headerForStep(state)
+    val headerData = remember(state.step, state.plan) { headerForStep(state) }
 
     Scaffold(
         topBar = {

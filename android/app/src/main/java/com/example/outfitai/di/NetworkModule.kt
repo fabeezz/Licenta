@@ -1,5 +1,6 @@
 package com.example.outfitai.di
 
+import android.content.Context
 import com.example.outfitai.BuildConfig
 import com.example.outfitai.Config
 import com.example.outfitai.data.api.AuthApi
@@ -15,12 +16,15 @@ import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFact
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.serialization.json.Json
+import okhttp3.Cache
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
+import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
 @Module
@@ -36,8 +40,13 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttp(authInterceptor: AuthInterceptor): OkHttpClient =
+    fun provideOkHttp(
+        @ApplicationContext context: Context,
+        authInterceptor: AuthInterceptor,
+    ): OkHttpClient =
         OkHttpClient.Builder()
+            .cache(Cache(context.cacheDir.resolve("http_cache"), 20L * 1024 * 1024))
+            .callTimeout(60, TimeUnit.SECONDS)
             .addInterceptor(authInterceptor)
             .apply {
                 if (BuildConfig.DEBUG) {

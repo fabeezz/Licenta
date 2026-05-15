@@ -12,8 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
-import coil.compose.AsyncImage
 import com.example.outfitai.core.media.mediaUrl
+import com.example.outfitai.ui.components.LoomImage
 import com.example.outfitai.data.model.ItemMinimalDto
 import com.example.outfitai.data.model.OutfitSavedDto
 import com.example.outfitai.ui.components.LoomEmptyState
@@ -116,7 +116,7 @@ internal fun FitCardItem(item: ItemMinimalDto, modifier: Modifier = Modifier) {
             .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)),
         contentAlignment = Alignment.Center,
     ) {
-        AsyncImage(
+        LoomImage(
             model              = mediaUrl(item.imageNoBgName ?: item.imageOriginalName),
             contentDescription = null,
             contentScale       = ContentScale.Fit,

@@ -27,8 +27,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.outfitai.ui.components.AppBottomBar
+import com.example.outfitai.ui.components.LoomImage
 import com.example.outfitai.ui.components.BottomBarDest
 import com.example.outfitai.ui.theme.Elevation
 import com.example.outfitai.ui.theme.Spacing
@@ -44,7 +45,7 @@ fun OutfitStudioRoute(
     onInspirationClick: () -> Unit = {},
     vm: OutfitStudioViewModel = hiltViewModel(),
 ) {
-    val state by vm.state.collectAsState()
+    val state by vm.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val upload = rememberUploadLauncher()
 
@@ -344,7 +345,7 @@ private fun SwipeableSlotTile(
             EmptySlotHint(label)
         } else {
             val item = slot.current!!
-            AsyncImage(
+            LoomImage(
                 model              = mediaUrl(item.imageNoBgName ?: item.imageOriginalName),
                 contentDescription = label,
                 contentScale       = ContentScale.Fit,

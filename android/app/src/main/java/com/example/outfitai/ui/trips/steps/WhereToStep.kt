@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -28,7 +29,7 @@ fun WhereToStep(
     onSelect: (DestinationDto) -> Unit,
     onContinue: () -> Unit,
 ) {
-    var query by remember { mutableStateOf("") }
+    var query by rememberSaveable { mutableStateOf("") }
     val filtered = remember(query, destinations) {
         if (query.isBlank()) destinations
         else destinations.filter {
@@ -75,7 +76,7 @@ fun WhereToStep(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(bottom = 100.dp),
                 ) {
-                    items(filtered) { dest ->
+                    items(filtered, key = { it.key }) { dest ->
                         DestinationCard(
                             destination = dest,
                             selected = dest.key == selected?.key,

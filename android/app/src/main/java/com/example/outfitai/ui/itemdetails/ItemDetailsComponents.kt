@@ -34,9 +34,7 @@ internal fun DetailRow(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
-            .run {
-                if (editable && onClick != null) clickable(onClick = onClick) else this
-            }
+            .clickable(enabled = editable && onClick != null, onClick = onClick ?: {})
             .padding(vertical = Spacing.md),
     ) {
         Text(
@@ -110,7 +108,7 @@ internal fun ColorSwatch(
         verticalArrangement = Arrangement.spacedBy(Spacing.xs),
         modifier = Modifier
             .clip(MaterialTheme.shapes.medium)
-            .run { if (clickable) clickable(onClick = onClick) else this }
+            .clickable(enabled = clickable, onClick = onClick)
             .padding(Spacing.xs),
     ) {
         Box(

@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -56,7 +57,7 @@ fun AssignActivitiesStep(
     onQuickFill: (LocalDate) -> Unit,
     onGenerate: () -> Unit,
 ) {
-    val days = buildDayList(startDate, endDate)
+    val days = remember(startDate, endDate) { buildDayList(startDate, endDate) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
@@ -69,7 +70,7 @@ fun AssignActivitiesStep(
         ) {
             item { Spacer(Modifier.height(8.dp)) }
 
-            items(days) { date ->
+            items(days, key = { it.toString() }) { date ->
                 val assigned = dayActivities[date] ?: emptySet()
                 DayCard(
                     date = date,

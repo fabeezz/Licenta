@@ -191,7 +191,7 @@ private fun ForecastContent(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         contentPadding = PaddingValues(horizontal = 0.dp),
     ) {
-        items(hourly) { hour ->
+        items(hourly, key = { it.timeIso }) { hour ->
             HourCard(hour)
         }
     }
